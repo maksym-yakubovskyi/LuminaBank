@@ -1,18 +1,15 @@
 package com.lumina_bank.accountservice.model;
 
-import com.lumina_bank.accountservice.enums.AccountType;
 import com.lumina_bank.accountservice.enums.CardNetwork;
 import com.lumina_bank.accountservice.enums.CardType;
 import com.lumina_bank.accountservice.enums.Status;
 import jakarta.persistence.*;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 
@@ -27,7 +24,7 @@ import java.time.YearMonth;
 public class Card {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @Column(nullable = false, unique = true, length = 16)
@@ -36,15 +33,13 @@ public class Card {
     private YearMonth expirationDate;
     @Column(nullable = false, length = 3)
     private String cvv;
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private CardType cardType;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private CardNetwork cardNetwork;
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private AccountType accountType;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Status status;

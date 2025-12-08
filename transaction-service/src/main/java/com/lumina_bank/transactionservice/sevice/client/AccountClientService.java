@@ -1,10 +1,9 @@
 package com.lumina_bank.transactionservice.sevice.client;
 
-import com.lumina_bank.transactionservice.dto.AccountOperationDto;
-import com.lumina_bank.transactionservice.dto.AccountResponse;
+import com.lumina_bank.transactionservice.dto.client.AccountOperationDto;
+import com.lumina_bank.transactionservice.dto.client.AccountResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;

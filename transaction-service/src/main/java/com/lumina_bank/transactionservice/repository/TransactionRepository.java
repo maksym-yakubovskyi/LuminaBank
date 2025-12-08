@@ -1,16 +1,13 @@
 package com.lumina_bank.transactionservice.repository;
 
-import com.lumina_bank.transactionservice.dto.TransactionResponse;
 import com.lumina_bank.transactionservice.model.Transaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
-    List<Transaction> findAllByFromAccountId(Long accountId);
 
     List<Transaction> findAllByFromAccountIdOrToAccountId(Long fromId, Long toId);
 }

@@ -1,6 +1,5 @@
 package com.lumina_bank.paymentservice.service.payment;
 
-import com.lumina_bank.paymentservice.enums.Currency;
 import com.lumina_bank.paymentservice.enums.PaymentStatus;
 import com.lumina_bank.paymentservice.model.Payment;
 import com.lumina_bank.paymentservice.model.PaymentTemplate;
@@ -9,9 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+//TODO: додати логування
 @Service
 @RequiredArgsConstructor
 public class PaymentTransactionService {

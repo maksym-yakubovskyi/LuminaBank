@@ -1,8 +1,7 @@
 package com.lumina_bank.paymentservice.controller;
 
 
-import com.lumina_bank.paymentservice.exception.BusinessException;
-import com.lumina_bank.paymentservice.exception.PaymentCancellationException;
+import com.lumina_bank.common.exception.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -11,12 +10,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
-import static com.lumina_bank.paymentservice.dto.ErrorResponse.buildErrorResponse;
+import static com.lumina_bank.common.exception.ErrorResponse.buildErrorResponse;
 
 @RestControllerAdvice
 @Slf4j
@@ -34,35 +30,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(buildErrorResponse(HttpStatus.BAD_REQUEST, msq, req.getRequestURI()));
     }
 
-    // Некоректні дані
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex,HttpServletRequest req) {
-        log.warn("Illegal Argument Exception: {}", ex.getMessage());
-        return ResponseEntity.badRequest()
-                .body(buildErrorResponse(HttpStatus.BAD_REQUEST,ex.getMessage(),req.getRequestURI()));
-    }
-
-    // Запис не знайдено
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<?> handleNoSuchElementException(NoSuchElementException ex,HttpServletRequest req) {
-        log.warn("NoSuchElementException: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage(), req.getRequestURI()));
+    // всі внутрішні помилки
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<?> handleBusinessException(BusinessException ex, HttpServletRequest req) {
+        log.warn("BusinessException: {}", ex.getMessage());
+        return ResponseEntity.status(ex.getStatus())
+                .body(buildErrorResponse(ex.getStatus(), ex.getMessage(), req.getRequestURI()));
     }
 
     //Інші помилки
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleOtherException(Exception ex, HttpServletRequest req) {
-        log.warn("Exception: {}", ex.getMessage());
+        log.warn("Unexpected exception at {}: {}", req.getRequestURI(), ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), req.getRequestURI()));
-    }
-
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<?> handleBusinessException(BusinessException ex, HttpServletRequest req) {
-        log.warn("BusinessException: {}", ex.getMessage());
-        return ResponseEntity.status(ex.getStatus())
-                .body(buildErrorResponse(ex.getStatus(),ex.getMessage(),req.getRequestURI()));
     }
 }
 

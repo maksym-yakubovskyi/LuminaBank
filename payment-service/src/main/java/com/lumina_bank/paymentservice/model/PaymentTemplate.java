@@ -22,14 +22,17 @@ public class PaymentTemplate {
 
     @Column(nullable = false)
     private Long userId;
+
     @Column(nullable = false)
     private String name;
     @Column(nullable = false)
     private String description;
+
     @Column(nullable = false)
     private Long fromAccountId;
     @Column(nullable = false)
     private Long toAccountId;
+
     @Column(nullable = false)
     private BigDecimal amount;
 

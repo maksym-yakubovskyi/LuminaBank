@@ -1,7 +1,8 @@
 package com.lumina_bank.transactionservice.sevice;
 
-import com.lumina_bank.transactionservice.dto.AccountOperationDto;
-import com.lumina_bank.transactionservice.dto.AccountResponse;
+import com.lumina_bank.common.exception.BusinessException;
+import com.lumina_bank.transactionservice.dto.client.AccountOperationDto;
+import com.lumina_bank.transactionservice.dto.client.AccountResponse;
 import com.lumina_bank.transactionservice.dto.TransactionCreateDto;
 import com.lumina_bank.transactionservice.dto.TransactionResponse;
 import com.lumina_bank.transactionservice.enums.TransactionOperation;
@@ -26,9 +27,9 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountClientService accountClientService;
 
-    @Transactional
     public Transaction makeTransaction(TransactionCreateDto request) {
-        validateRequest(request);
+        if (request.fromAccountId().equals(request.toAccountId()))
+            throw new SameAccountTransactionException("Sender and receiver accounts cannot be the same");
 
         Transaction transaction = createPendingTransaction(request);
 
@@ -99,32 +100,18 @@ public class TransactionService {
         switch (operation) {
             case WITHDRAW -> response = accountClientService.withdraw(accountId, dto);
             case DEPOSIT -> response = accountClientService.deposit(accountId, dto);
-            default -> throw new IllegalArgumentException("Unknown operation: " + operation);
+            default -> throw new UnknownOperationException("Unknown operation: " + operation);
         }
         if (response == null) {
             log.warn("{} operation returned null response for accountId={}", operation, accountId);
             throw new ExternalServiceException("Null response from account service");
         }
         if (!response.getStatusCode().is2xxSuccessful()) {
-            log.warn("{} operetion failed: status={}, body={}", operation, response.getStatusCode(), response.getBody());
+            log.warn("{} operation failed: status={}, body={}", operation, response.getStatusCode(), response.getBody());
             throw new ExternalServiceException(
                     String.format("%s request failed: status=%s, body=%s",
                     operation, response.getStatusCode(), response.getBody()));
         }
     }
 
-    private void validateRequest(TransactionCreateDto request) {
-        if(request == null)
-            throw new InvalidTransactionRequestException("Transaction request cannot be null");
-
-        if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0)
-            throw new InvalidAmountException("Amount must be greater than zero");
-
-        if (request.fromAccountId() == null || request.toAccountId() == null)
-            throw new InvalidTransactionRequestException("Account IDs must not be null");
-
-        if (request.fromAccountId().equals(request.toAccountId()))
-            throw new SameAccountTransactionException("Sender and receiver accounts cannot be the same");
-
-    }
 }

@@ -27,14 +27,14 @@ public class NbuExchangeRateService {
     private final ExchangeRateRepository exchangeRateRepository;
 
     @Transactional
-    public void fetchAndStoreRates(){
+    public void fetchAndStoreRates() {
         log.info("Fetching exchange rates from NBU...");
 
         ResponseEntity<List<ExchangeRateResponse>> response;
         try {
             response = nbuFeignClient.getRates();
         } catch (Exception e) {
-            log.warn("Failed to fetch exchange rates from NBU API: {}", e.getMessage(), e);
+            log.warn("Failed to fetch exchange rates from NBU API: {}", e.getMessage());
             throw new ExternalServiceException("Failed to fetch exchange rates from NBU API", e);
         }
 
@@ -76,7 +76,7 @@ public class NbuExchangeRateService {
             } catch (IllegalArgumentException e) {
                 log.warn("Unknown currency code from NBU API: {}", rate.cc());
             } catch (Exception e) {
-                log.warn("Error saving exchange rate for {}: {}", rate.cc(), e.getMessage(), e);
+                log.warn("Error saving exchange rate for {}: {}", rate.cc(), e.getMessage());
             }
         });
 
@@ -84,9 +84,9 @@ public class NbuExchangeRateService {
     }
 
     @Transactional
-    public BigDecimal getRate(Currency from, Currency to){
-        if(from.equals(to)) return BigDecimal.ONE;
-
+    public BigDecimal getRate(Currency from, Currency to) {
+        // Якщо валюти однакові → UAH = UAH
+        if (from.equals(to)) return BigDecimal.ONE;
 
         try {
             // Якщо to = UAH → шукаємо курс з UAH до from
@@ -97,7 +97,7 @@ public class NbuExchangeRateService {
                         .orElseThrow(() -> new ExchangeRateNotFoundException("No exchange rate found for " + from + " to UAH"));
             }
 
-            // Якщо from = UAH → шукаємо курс з UAH до to і інвертуємо
+            // Якщо from = UAH → шукаємо курс з UAH до to й інвертуємо
             if (from.equals(Currency.UAH)) {
                 return exchangeRateRepository
                         .findTopByBaseCurrencyAndTargetCurrencyOrderByDateDesc(Currency.UAH, to)

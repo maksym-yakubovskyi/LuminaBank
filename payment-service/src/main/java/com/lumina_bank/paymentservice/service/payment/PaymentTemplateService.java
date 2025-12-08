@@ -4,9 +4,9 @@ import com.lumina_bank.paymentservice.dto.PaymentTemplateRequest;
 import com.lumina_bank.paymentservice.exception.InvalidPaymentRequestException;
 import com.lumina_bank.paymentservice.exception.PaymentTemplateNotFoundException;
 import com.lumina_bank.paymentservice.model.PaymentTemplate;
-import com.lumina_bank.paymentservice.repository.PaymentRepository;
 import com.lumina_bank.paymentservice.repository.PaymentTemplateRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,15 +14,16 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+//TODO: додати логування
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentTemplateService {
 
     private final PaymentTemplateRepository paymentTemplateRepository;
-    private final PaymentRepository paymentRepository;
 
     @Transactional
-    public PaymentTemplate createPaymentTemplate (PaymentTemplateRequest request){
+    public PaymentTemplate createPaymentTemplate(PaymentTemplateRequest request) {
         validatePaymentTemplateRequest(request);
 
         PaymentTemplate paymentTemplate = PaymentTemplate.builder()
@@ -38,11 +39,11 @@ public class PaymentTemplateService {
                 .paymentType(request.paymentType())
                 .build();
 
-        return  paymentTemplateRepository.save(paymentTemplate);
+        return paymentTemplateRepository.save(paymentTemplate);
     }
 
     @Transactional
-    public PaymentTemplate updatePaymentTemplate (Long id,PaymentTemplateRequest request){
+    public PaymentTemplate updatePaymentTemplate(Long id, PaymentTemplateRequest request) {
         validatePaymentTemplateRequest(request);
 
         PaymentTemplate paymentTemplate = getPaymentTemplateById(id);
@@ -60,7 +61,7 @@ public class PaymentTemplateService {
     }
 
     @Transactional
-    public void deletePaymentTemplate (Long id){
+    public void deletePaymentTemplate(Long id) {
         PaymentTemplate paymentTemplate = getPaymentTemplateById(id);
         paymentTemplate.setIsActive(Boolean.FALSE);
         paymentTemplateRepository.save(paymentTemplate);
@@ -79,7 +80,6 @@ public class PaymentTemplateService {
 
         CronExpression cronExpression = CronExpression.parse(paymentTemplate.getRecurrenceCron());
         paymentTemplate.setNextExecutionTime(cronExpression.next(LocalDateTime.now()));
-
     }
 
     @Transactional(readOnly = true)
@@ -92,8 +92,9 @@ public class PaymentTemplateService {
         paymentTemplateRepository.save(paymentTemplate);
     }
 
-    private void validatePaymentTemplateRequest(PaymentTemplateRequest req){
-        if(req == null) throw new InvalidPaymentRequestException("PaymentTemplate request cannot be null");
-        if(req.fromAccountId().equals(req.toAccountId())) throw new InvalidPaymentRequestException("Account IDs must not be the same");
+    private void validatePaymentTemplateRequest(PaymentTemplateRequest req) {
+        if (req == null) throw new InvalidPaymentRequestException("PaymentTemplate request cannot be null");
+        if (req.fromAccountId().equals(req.toAccountId()))
+            throw new InvalidPaymentRequestException("Account IDs must not be the same");
     }
 }

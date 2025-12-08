@@ -1,7 +1,6 @@
 package com.lumina_bank.userservice.controller;
 
-import com.lumina_bank.userservice.exception.UserAlreadyExistsException;
-import com.lumina_bank.userservice.exception.UserNotFoundException;
+import com.lumina_bank.common.exception.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -12,7 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.stream.Collectors;
 
-import static com.lumina_bank.userservice.dto.ErrorResponse.buildErrorResponse;
+import static com.lumina_bank.common.exception.ErrorResponse.buildErrorResponse;
 
 @RestControllerAdvice
 @Slf4j
@@ -30,20 +29,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(buildErrorResponse(HttpStatus.BAD_REQUEST, msq, req.getRequestURI()));
     }
 
-    // Некоректні дані (наприклад email вже існує)
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<?> handleUserAlreadyExists(UserAlreadyExistsException ex, HttpServletRequest req) {
-        log.warn("UserAlreadyExists Exception: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), req.getRequestURI()));
-    }
-
-    // Запис не знайдено (наприклад користувач)
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<?> handleUserNotFound(UserNotFoundException ex, HttpServletRequest req) {
-        log.warn("UserNotFound Exception: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage(), req.getRequestURI()));
+    // всі внутрішні помилки
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<?> handleBusinessException(BusinessException ex, HttpServletRequest req) {
+        log.warn("BusinessException : {}", ex.getMessage());
+        return ResponseEntity.status(ex.getStatus())
+                .body(buildErrorResponse(ex.getStatus(), ex.getMessage(), req.getRequestURI()));
     }
 
     //Інші помилки
@@ -53,6 +44,4 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), req.getRequestURI()));
     }
-
-
 }

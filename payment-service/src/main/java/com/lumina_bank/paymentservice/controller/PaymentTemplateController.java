@@ -50,7 +50,9 @@ public class PaymentTemplateController {
         log.info("DELETE /payment_templates - Delete PaymentTemplate with id={}", id);
 
         paymentTemplateService.deletePaymentTemplate(id);
+
         log.info("Payment template deleted with id={} (soft delete)", id);
+
         return ResponseEntity.noContent().build();
     }
 

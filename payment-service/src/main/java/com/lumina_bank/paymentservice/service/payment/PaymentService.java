@@ -1,5 +1,6 @@
 package com.lumina_bank.paymentservice.service.payment;
 
+import com.lumina_bank.common.exception.BusinessException;
 import com.lumina_bank.paymentservice.dto.PaymentRequest;
 import com.lumina_bank.paymentservice.dto.client.AccountResponse;
 import com.lumina_bank.paymentservice.dto.client.TransactionRequest;
@@ -14,7 +15,6 @@ import com.lumina_bank.paymentservice.service.client.TransactionClientService;
 import com.lumina_bank.paymentservice.service.rate.NbuExchangeRateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
+//TODO: додати ще логування
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -36,7 +37,7 @@ public class PaymentService {
     private final PaymentTransactionService paymentTransactionService;
     private final NbuExchangeRateService nbuExchangeRateService;
 
-    private static final Duration CANCEL_WINDOW = Duration.ofSeconds(30);
+    private static final Duration CANCEL_WINDOW = Duration.ofSeconds(30);// час за який можна скасувати оплату
 
     @Transactional(readOnly = true)
     public Payment getPayment(Long paymentId) {
@@ -46,7 +47,8 @@ public class PaymentService {
 
     @Transactional
     public Payment makePayment(PaymentRequest paymentRequest) {
-        validatePaymentRequest(paymentRequest);
+        if (paymentRequest.fromAccountId().equals(paymentRequest.toAccountId()))
+            throw new InvalidPaymentRequestException("Account IDs must not be the same");
 
         PaymentTemplate template = paymentRequest.templateId() != null
                 ? paymentTemplateService.getPaymentTemplateById(paymentRequest.templateId())
@@ -66,7 +68,7 @@ public class PaymentService {
 
         payment = paymentRepository.save(payment);
         log.debug("Payment saved with id={} and status={}", payment.getId(), payment.getPaymentStatus());
-        return  payment;
+        return payment;
     }
 
     public void makePayment(PaymentTemplate paymentTemplate) {
@@ -94,24 +96,25 @@ public class PaymentService {
         return paymentRepository.save(payment);
     }
 
-    @Scheduled(fixedRate = 10000)
+    @Scheduled(fixedDelay = 5000)
     public void executePendingPayments() {
         List<Payment> payments = paymentRepository
                 .findAllByPaymentStatusAndCreatedAtBefore(PaymentStatus.PENDING, LocalDateTime.now().minus(CANCEL_WINDOW));
 
         log.debug("Found {} pending payments to process", payments.size());
 
+        log.debug("Method executePendingPayments is called at : {}", LocalDateTime.now());
+
         for (Payment payment : payments) {
-            try{
+            try {
                 executePayment(payment);
-            }catch (BusinessException e){
+            } catch (BusinessException e) {
                 log.warn("Business exception occurred during processing of payment with id={}: {}", payment.getId(), e.getMessage());
-            }catch (Exception e){
+            } catch (Exception e) {
                 log.warn("Unexpected error occurred during processing of payment with id={}: {}", payment.getId(), e.getMessage());
             }
         }
     }
-
 
     public void executePayment(Payment payment) {
         paymentTransactionService.markProcessing(payment);
@@ -121,6 +124,7 @@ public class PaymentService {
 
         if (from == null || to == null) {
             log.warn("Failed to fetch account currency: from={}, to={}", from, to);
+
             paymentTransactionService.updatePaymentStatus(payment, PaymentStatus.FAILED);
 
             throw new ExternalServiceException("Unable to fetch account currency");
@@ -147,14 +151,14 @@ public class PaymentService {
                             .description(payment.getDescription())
                             .build()
             );
-            //TODO:додати до payment транзакцію
 
-            if(response == null) {
+            if (response == null || response.getBody() == null) {
                 log.warn("Null response from transaction service for payment id={}", payment.getId());
                 throw new ExternalServiceException("Null response from transaction service");
             }
 
             if (response.getStatusCode().is2xxSuccessful()) {
+                payment.setTransactionId(response.getBody().id());
                 paymentTransactionService.updatePaymentStatus(payment, PaymentStatus.SUCCESS);
             } else {
                 paymentTransactionService.updatePaymentStatus(payment, PaymentStatus.FAILED);
@@ -165,24 +169,22 @@ public class PaymentService {
                 throw new ExternalServiceException("Transaction service returned non-2xx: "
                         + response.getStatusCode() + ", and: " + response.getBody());
             }
-
         } catch (BusinessException e) {
             log.warn("Business exception during payment id={}: {}", payment.getId(), e.getMessage());
 
             paymentTransactionService.updatePaymentStatus(payment, PaymentStatus.FAILED);
             throw e;
-        }catch (Exception e){
-            log.warn("Error executing payment id={}: {}", payment.getId(), e.getMessage(), e);
+        } catch (Exception e) {
+            log.warn("Error executing payment id={}: {}", payment.getId(), e.getMessage());
 
             paymentTransactionService.updatePaymentStatus(payment, PaymentStatus.FAILED);
-            throw new ExternalServiceException("Payment execution failed",e);
+            throw new ExternalServiceException("Payment execution failed", e);
         }
     }
 
     private Currency getAccountCurrency(Long accountId) {
-
         try {
-            ResponseEntity<AccountResponse> response = accountClientService.getAccount(accountId);
+            var response = accountClientService.getAccount(accountId);
 
             if (response == null) {
                 log.warn("Null response from account service for accountId={}", accountId);
@@ -206,11 +208,5 @@ public class PaymentService {
             log.warn("Failed to fetch account currency for accountId={}: {}", accountId, e.getMessage(), e);
             throw new ExternalServiceException("Failed to get account currency", e);
         }
-    }
-
-
-    private void validatePaymentRequest(PaymentRequest req){
-        if(req == null) throw new InvalidPaymentRequestException("Payment request cannot be null");
-        if(req.fromAccountId().equals(req.toAccountId())) throw new InvalidPaymentRequestException("Account IDs must not be the same");
     }
 }

@@ -2,45 +2,44 @@ package com.lumina_bank.accountservice.service;
 
 import com.lumina_bank.accountservice.dto.CardCreateDto;
 import com.lumina_bank.accountservice.dto.CardResponse;
-import com.lumina_bank.accountservice.enums.AccountType;
 import com.lumina_bank.accountservice.enums.Status;
 import com.lumina_bank.accountservice.exception.CardNotFoundException;
 import com.lumina_bank.accountservice.model.Account;
 import com.lumina_bank.accountservice.model.Card;
-import com.lumina_bank.accountservice.repository.AccountRepository;
 import com.lumina_bank.accountservice.repository.CardRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.YearMonth;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CardService {
     private final CardRepository cardRepository;
     private final AccountService accountService;
 
     @Transactional
     public Card createCard(Long accountId, CardCreateDto cardCreateDto) {
+        log.debug("Attempting to create card with accountId={}", accountId);
+
         Account account = accountService.getAccountById(accountId);
 
         String cardNumber = generateCardNumber();
-        while (cardRepository.existsByCardNumber(cardNumber)) {
+
+        while (cardRepository.existsByCardNumber(cardNumber))
             cardNumber = generateCardNumber();
-        }
 
         Card card = Card.builder()
                 .cardNumber(cardNumber)
-                .expirationDate(YearMonth.now().plusYears(4))// TODO: можливо доробити щоб не завжди 4 роки термін дії
+                .expirationDate(YearMonth.now().plusYears(4)) // TODO: можливо доробити щоб не завжди 4 роки термін дії
                 .cvv(generateCVV())
                 .cardType(cardCreateDto.cardType())
                 .cardNetwork(cardCreateDto.cardNetwork())
-                .accountType(account.getType())
                 .status(Status.ACTIVE)
                 .limit(cardCreateDto.limit())
                 .account(account)
@@ -51,6 +50,8 @@ public class CardService {
 
     @Transactional
     public Card setActive(Long cardId, Status status) {
+        log.debug("Attempting to change card status cardId={}", cardId);
+
         Card card = getCardById(cardId);
 
         card.setStatus(status);
@@ -58,7 +59,9 @@ public class CardService {
     }
 
     @Transactional(readOnly = true)
-    public List<CardResponse> getCardsByAccountId(Long accountId,Status status) {
+    public List<CardResponse> getCardsByAccountId(Long accountId, Status status) {
+        log.debug("Retrieving cards with accountId={}", accountId);
+
         Account account = accountService.getAccountById(accountId);
 
         return cardRepository.findAllByAccount(account)
@@ -69,6 +72,8 @@ public class CardService {
 
     @Transactional(readOnly = true)
     public Card getCardById(Long cardId) {
+        log.debug("Retrieving card with id={}", cardId);
+
         return cardRepository.findById(cardId)
                 .orElseThrow(() -> new CardNotFoundException("Card with id " + cardId + " not found"));
     }

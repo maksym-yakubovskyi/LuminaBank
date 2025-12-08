@@ -1,4 +1,4 @@
-package com.lumina_bank.transactionservice.dto;
+package com.lumina_bank.transactionservice.dto.client;
 
 import lombok.Builder;
 

@@ -1,6 +1,6 @@
 package com.lumina_bank.paymentservice.service.rate;
 
-import com.lumina_bank.paymentservice.exception.BusinessException;
+import com.lumina_bank.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,7 +16,7 @@ public class ExchangeRateSchedular {
     private final NbuExchangeRateService nbuExchangeRateService;
 
     @Scheduled(cron = "0 0 10 * * *")
-    public void updateRates(){
+    public void updateRates() {
         log.info("Starting daily exchange rate update from NBU at {}", LocalDateTime.now());
 
         try {

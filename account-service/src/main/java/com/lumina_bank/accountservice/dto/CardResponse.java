@@ -30,7 +30,6 @@ public record CardResponse(
                 cvv(card.getCvv()).
                 cardType(card.getCardType().name()).
                 cardNetwork(card.getCardNetwork().name()).
-                accountType(card.getAccountType().name()).
                 status(card.getStatus().name()).
                 limit(card.getLimit()).
                 createdAt(card.getCreatedAt()).

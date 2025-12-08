@@ -17,14 +17,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Slf4j
 public class UserService {
+
     private final UserRepository userRepository;
 
     @Transactional
     public User createUser(UserCreateDto userDto) {
-        log.debug("Checking if email={} already exists",userDto.email());
+        log.debug("Attempting to create user with email={}", userDto.email());
 
         if (userRepository.existsByEmailAndActiveTrue(userDto.email())) {
-            log.warn("User with email={} already exists", userDto.email());
             throw new UserAlreadyExistsException("Email already exists");
         }
 
@@ -56,21 +56,16 @@ public class UserService {
         log.debug("Retrieving user with id={}", id);
 
         return userRepository.findByIdAndActiveTrue(id)
-                .orElseThrow(() -> {
-                     log.warn("User with id={} not found", id);
-
-                    return new UserNotFoundException("User with id " + id + " not found");
-                });
+                .orElseThrow(() -> new UserNotFoundException("User with id " + id + " not found"));
     }
 
     @Transactional
     public User updateUser(Long id, UserUpdateDto userDto) {
+        log.debug("Updating user id={}", id);
+
         User user = getUserById(id);
 
-        log.debug("Checking if email={} already exists",userDto.email());
-
         if (!userDto.email().equals(user.getEmail()) && userRepository.existsByEmailAndActiveTrue(userDto.email())) {
-            log.warn("User with email={} already exists", userDto.email());
             throw new UserAlreadyExistsException("Email already exists");
         }
 
@@ -81,9 +76,11 @@ public class UserService {
         user.setEmail(userDto.email());
 
         Address address = user.getAddress();
+
         if (address == null) {
             address = new Address();
         }
+
         address.setStreet(userDto.street());
         address.setCity(userDto.city());
         address.setCountry(userDto.country());
@@ -92,11 +89,14 @@ public class UserService {
         user.setAddress(address);
 
         user.setAddress(address);
+
         return userRepository.save(user);
     }
 
     @Transactional
     public void deleteUser(Long id) {
+        log.debug("Deleting user id={}", id);
+
         User user = getUserById(id);
         user.setActive(false);
         userRepository.save(user);

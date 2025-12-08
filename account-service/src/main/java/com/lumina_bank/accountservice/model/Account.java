@@ -30,7 +30,6 @@ public class Account {
 
     @Column(nullable = false)
     private Long userId;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserType userType;
@@ -39,10 +38,9 @@ public class Account {
     private BigDecimal balance;
     @Column(unique = true, nullable = false)
     private String iban;
-
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private Currency currency;//валюта
+    private Currency currency; //валюта
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

@@ -1,64 +1,49 @@
 package com.lumina_bank.accountservice.controller;
 
 import com.lumina_bank.accountservice.exception.*;
+import com.lumina_bank.common.exception.BusinessException;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
+
+import static com.lumina_bank.common.exception.ErrorResponse.buildErrorResponse;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     // Валідація DTO Request
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleValidationException(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors()
-                .forEach(e -> errors.put(e.getField(), e.getDefaultMessage()));
-        return ResponseEntity.badRequest().body(errors);
+    public ResponseEntity<?> handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest req) {
+        String msq = ex.getBindingResult().getFieldErrors()
+                .stream().map(e -> e.getField() + ":" + e.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+
+        log.warn("Validation Exception: {}",msq);
+
+        return ResponseEntity.badRequest().body(buildErrorResponse(HttpStatus.BAD_REQUEST,msq,req.getRequestURI()));
     }
 
-    // Некоректні дані
-    @ExceptionHandler(InvalidAmountException.class)
-    public ResponseEntity<?> handleInvalidAmountException(InvalidAmountException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", ex.getMessage()));
-    }
-
-    @ExceptionHandler(InsufficientBalanceException.class)
-    public ResponseEntity<?> handleInsufficientBalanceException(InsufficientBalanceException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", ex.getMessage()));
-    }
-
-    // Запис не знайдено
-    @ExceptionHandler(CardNotFoundException.class)
-    public ResponseEntity<?> handleCardNotFoundException(CardNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", ex.getMessage()));
-    }
-
-    @ExceptionHandler(AccountNotFoundException.class)
-    public ResponseEntity<?> handleAccountNotFoundException(AccountNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", ex.getMessage()));
+    // всі внутрішні помилки
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<?> handleBusinessException(BusinessException ex, HttpServletRequest req) {
+        log.warn("BusinessException : {}", ex.getMessage());
+        return ResponseEntity.status(ex.getStatus())
+                .body(buildErrorResponse(ex.getStatus(), ex.getMessage(), req.getRequestURI()));
     }
 
     //Інші помилки
-    @ExceptionHandler(AccountLockedException.class)
-    public ResponseEntity<?> handleAccountLockedException(AccountLockedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("error", ex.getMessage()));
-    }
-
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleOtherException(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<?> handleOtherException(Exception ex, HttpServletRequest req) {
+        log.warn("Unexpected exception at {}: {}",req.getRequestURI(),ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR,ex.getMessage(),req.getRequestURI()));
     }
 }
 

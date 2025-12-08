@@ -4,21 +4,14 @@ import com.lumina_bank.userservice.dto.UserCreateDto;
 import com.lumina_bank.userservice.dto.UserResponse;
 import com.lumina_bank.userservice.dto.UserUpdateDto;
 import com.lumina_bank.userservice.model.User;
-import com.lumina_bank.userservice.repository.UserRepository;
 import com.lumina_bank.userservice.service.UserService;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Repository;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("users")
@@ -29,7 +22,7 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<?> createUser(@Valid @RequestBody UserCreateDto userDto) {
-        log.info("POST /users - Received request to create user {}", userDto.email());
+        log.info("POST /users - Received request to create user : {}", userDto.email());
 
         User user = userService.createUser(userDto);
 

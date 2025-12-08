@@ -27,9 +27,11 @@ public class Payment {
 
     @Column(nullable = false)
     private Long userId;
+
+    private Long transactionId;
+
     @Column(nullable = false)
     private Long fromAccountId;
-
     @Column(nullable = false)
     private Long toAccountId;
 
