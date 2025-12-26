@@ -9,10 +9,9 @@
         <outputRelativeToContentRoot value="true" />
         <module name="analytics-service" />
         <module name="report-service" />
-        <module name="notification-service" />
         <module name="fraud-detection-service" />
       </profile>
-      <profile name="Annotation profile for payment-service" enabled="true">
+      <profile name="Annotation profile for notification-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -27,6 +26,7 @@
         <module name="transaction-service" />
         <module name="user-service" />
         <module name="account-service" />
+        <module name="notification-service" />
         <module name="discovery-service" />
       </profile>
     </annotationProcessing>

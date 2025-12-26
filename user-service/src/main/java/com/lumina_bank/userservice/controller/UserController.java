@@ -1,6 +1,5 @@
 package com.lumina_bank.userservice.controller;
 
-import com.lumina_bank.userservice.dto.UserCreateDto;
 import com.lumina_bank.userservice.dto.UserResponse;
 import com.lumina_bank.userservice.dto.UserUpdateDto;
 import com.lumina_bank.userservice.model.User;
@@ -11,8 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
-
 @RestController
 @RequestMapping("users")
 @RequiredArgsConstructor
@@ -20,17 +17,17 @@ import java.net.URI;
 public class UserController {
     private final UserService userService;
 
-    @PostMapping
-    public ResponseEntity<?> createUser(@Valid @RequestBody UserCreateDto userDto) {
-        log.info("POST /users - Received request to create user : {}", userDto.email());
-
-        User user = userService.createUser(userDto);
-
-        log.info("User created id={}", user.getId());
-
-        return ResponseEntity.created(URI.create("/users/" + user.getId()))
-                .body(UserResponse.fromEntity(user));
-    }
+//    @PostMapping
+//    public ResponseEntity<?> createUser(@Valid @RequestBody UserCreateDto userDto) {
+//        log.info("POST /users - Received request to create user : {}", userDto.email());
+//
+//        User user = userService.createUser(userDto);
+//
+//        log.info("User created id={}", user.getId());
+//
+//        return ResponseEntity.created(URI.create("/users/" + user.getId()))
+//                .body(UserResponse.fromEntity(user));
+//    }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getUser(@PathVariable Long id) {

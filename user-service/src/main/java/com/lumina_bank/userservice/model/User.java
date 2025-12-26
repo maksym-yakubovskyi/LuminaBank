@@ -1,12 +1,13 @@
 package com.lumina_bank.userservice.model;
 
-import com.lumina_bank.userservice.enums.Role;
+import com.lumina_bank.common.enums.user.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -28,13 +29,14 @@ import java.time.LocalDateTime;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(unique = true, nullable = false)
+    private Long authUserId;
+
+    @Column(unique = true, nullable = false)
     private String email;
-    @Column(nullable = false)
-    private String password;
     @Column(nullable = false)
     private String firstName;
     @Column(nullable = false)
@@ -66,6 +68,9 @@ public class User {
     @LastModifiedDate
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(nullable = false)
+    private Instant registeredAt;
 
     @Column(nullable = false)
     private Boolean active;
