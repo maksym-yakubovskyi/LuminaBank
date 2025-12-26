@@ -1,6 +1,6 @@
 package com.lumina_bank.userservice.dto;
 
-import com.lumina_bank.userservice.enums.Role;
+import com.lumina_bank.common.enums.user.Role;
 import com.lumina_bank.userservice.model.Address;
 import com.lumina_bank.userservice.model.User;
 import lombok.Builder;

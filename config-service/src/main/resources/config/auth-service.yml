@@ -1,0 +1,44 @@
+server:
+  port: 9000
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/auth-service-DB
+    username: postgres
+    password: max228488
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  cloud:
+    stream:
+      bindings:
+        userRegistered-out-0:
+          destination: user-events
+          content-type: application/json
+
+        emailVerificationRequested-out-0:
+          destination: email-verification-events
+          content-type: application/json
+      kafka:
+        binder:
+          brokers: localhost:9092
+
+eureka:
+  instance:
+    hostname: localhost
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+app:
+  security:
+    jwt:
+      issuer: "https://auth.luminabank.com"
+      access-token-ttl: 10m
+      refresh-token-ttl: 30d
+      token-type: "Bearer"
+    refresh-token:
+      hmac-secret: my-secret-123

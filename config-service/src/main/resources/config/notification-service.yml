@@ -1,0 +1,43 @@
+server:
+  port: 8085
+
+spring:
+  cloud:
+    stream:
+      bindings:
+        emailVerificationRequestedConsumer-in-0:
+          destination: email-verification-events
+          group: notification-service
+          content-type: application/json
+      kafka:
+        binder:
+          brokers: localhost:9092
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: carrental8080@gmail.com
+    password: qoae imhk nsfa coiz
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+eureka:
+  instance:
+    hostname: localhost
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+app:
+  mail:
+    from: no-reply@luminabank.com

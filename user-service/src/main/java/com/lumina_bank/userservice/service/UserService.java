@@ -1,8 +1,8 @@
 package com.lumina_bank.userservice.service;
 
-import com.lumina_bank.userservice.dto.UserCreateDto;
+import com.lumina_bank.common.dto.event.user_events.UserRegisteredEvent;
+import com.lumina_bank.common.enums.user.Role;
 import com.lumina_bank.userservice.dto.UserUpdateDto;
-import com.lumina_bank.userservice.enums.Role;
 import com.lumina_bank.userservice.exception.UserAlreadyExistsException;
 import com.lumina_bank.userservice.exception.UserNotFoundException;
 import com.lumina_bank.userservice.model.Address;
@@ -21,34 +21,33 @@ public class UserService {
     private final UserRepository userRepository;
 
     @Transactional
-    public User createUser(UserCreateDto userDto) {
-        log.debug("Attempting to create user with email={}", userDto.email());
+    public void createUser(UserRegisteredEvent event) {
+        log.debug("Attempting to create user with id={}", event.authUserId());
 
-        if (userRepository.existsByEmailAndActiveTrue(userDto.email())) {
-            throw new UserAlreadyExistsException("Email already exists");
+        if (userRepository.existsByEmailAndActiveTrue(event.email())) {
+            log.warn("User with email {} already exists", event.email());
+            return;
+        }
+        if (userRepository.existsByAuthUserIdAndActiveTrue((event.authUserId()))) {
+            log.warn("User with authId {} already exists", event.authUserId());
+            return;
         }
 
-        Address address = Address.builder().
-                street(userDto.street()).
-                city(userDto.city()).
-                country(userDto.country()).
-                houseNumber(userDto.houseNumber()).
-                zipCode(userDto.zipCode()).
-                build();
+        User user = User.builder()
+                .authUserId(event.authUserId())
+                .email(event.email())
+                .firstName(event.firstName())
+                .lastName(event.lastName())
+                .phoneNumber(event.phoneNumber())
+                .birthDate(event.birthDate())
+                .role(Role.USER)
+                .registeredAt(event.registeredAt())
+                .active(Boolean.TRUE)
+                .build();
 
-        User user = User.builder().
-                email(userDto.email()).
-                password(userDto.password()).
-                firstName(userDto.firstName()).
-                lastName(userDto.lastName()).
-                phoneNumber(userDto.phoneNumber()).
-                birthDate(userDto.birthDate()).
-                address(address).
-                role(Role.USER).
-                active(Boolean.TRUE).
-                build();
+        userRepository.save(user);
 
-        return userRepository.save(user);
+        log.debug("Created user with id={}", event.authUserId());
     }
 
     @Transactional(readOnly = true)
@@ -101,4 +100,35 @@ public class UserService {
         user.setActive(false);
         userRepository.save(user);
     }
+
+//    @Transactional
+//    public User createUser(UserCreateDto userDto) {
+//        log.debug("Attempting to create user with email={}", userDto.email());
+//
+//        if (userRepository.existsByEmailAndActiveTrue(userDto.email())) {
+//            throw new UserAlreadyExistsException("Email already exists");
+//        }
+//
+//        Address address = Address.builder().
+//                street(userDto.street()).
+//                city(userDto.city()).
+//                country(userDto.country()).
+//                houseNumber(userDto.houseNumber()).
+//                zipCode(userDto.zipCode()).
+//                build();
+//
+//        User user = User.builder().
+//                email(userDto.email()).
+//                password(userDto.password()).
+//                firstName(userDto.firstName()).
+//                lastName(userDto.lastName()).
+//                phoneNumber(userDto.phoneNumber()).
+//                birthDate(userDto.birthDate()).
+//                address(address).
+//                role(Role.USER).
+//                active(Boolean.TRUE).
+//                build();
+//
+//        return userRepository.save(user);
+//    }
 }

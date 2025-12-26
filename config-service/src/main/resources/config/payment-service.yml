@@ -20,8 +20,6 @@ spring:
             readTimeout: 10000
             loggerLevel: basic
 
-
-
 eureka:
   instance:
     hostname: localhost

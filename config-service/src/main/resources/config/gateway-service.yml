@@ -1,15 +1,12 @@
 server:
   port: 8080
 
-eureka:
-  instance:
-    hostname: localhost
-    prefer-ip-address: true
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:9000/.well-known/jwks.json
   cloud:
     gateway:
       server:
@@ -29,10 +26,10 @@ spring:
             - id: account-service
               uri: lb://account-service
               predicates:
-                  - Path=/api/accounts/**
-                  - Path=/api/cards/**
+                - Path=/api/accounts/**
+                - Path=/api/cards/**
               filters:
-                  - StripPrefix=1
+                - StripPrefix=1
 
             - id: transaction-service
               uri: lb://transaction-service
@@ -47,3 +44,25 @@ spring:
                 - Path=/api/payments/**
               filters:
                 - StripPrefix=1
+
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=1
+
+eureka:
+  instance:
+    hostname: localhost
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+app:
+  security:
+    jwt:
+      issuer: "https://auth.luminabank.com"
+      jwks-uri: ${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}
+  #    jwks-uri: "http://localhost:9000/.well-known/jwks.json"
