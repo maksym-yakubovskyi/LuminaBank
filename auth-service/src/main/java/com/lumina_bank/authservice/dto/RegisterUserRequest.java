@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 
-public record RegisterRequest(
+public record RegisterUserRequest(
         @NotBlank(message = "Email is required")
         @Email(message = "Email should be valid")
         String email,

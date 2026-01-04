@@ -1,9 +1,6 @@
 package com.lumina_bank.authservice.controller;
 
-import com.lumina_bank.authservice.dto.EmailRequest;
-import com.lumina_bank.authservice.dto.LoginRequest;
-import com.lumina_bank.authservice.dto.RegisterRequest;
-import com.lumina_bank.authservice.dto.TokensResponse;
+import com.lumina_bank.authservice.dto.*;
 import com.lumina_bank.authservice.model.User;
 import com.lumina_bank.authservice.service.AuthService;
 import com.lumina_bank.authservice.service.EmailVerificationService;
@@ -41,16 +38,27 @@ public class AuthController {
         return ResponseEntity.ok(tokensResponse);
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest req) {
+    @PostMapping("/register/user")
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterUserRequest req) {
         log.info("POST /auth/register - Register request received for email: {}", req.email());
 
         User user = userService.registerUser(req);
 
         log.info("User successfully registered for email: {}, userId={}", user.getEmail(), user.getId());
 
-        return ResponseEntity.created(URI.create("/auth/register")).build();
+        return ResponseEntity.created(URI.create("/auth/register/user")).build();
     }
+
+//    @PostMapping("/register/user/business")
+//    public ResponseEntity<?> register(@Valid @RequestBody RegisterBusinessUserRequest req) {
+//        log.info("POST /auth/register - Register request received for email: {}", req.email());
+//
+//        User user = userService.registerUser(req);
+//
+//        log.info("User successfully registered for email: {}, userId={}", user.getEmail(), user.getId());
+//
+//        return ResponseEntity.created(URI.create("/auth/register")).build();
+//    }
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@AuthenticationPrincipal Jwt jwt) {
@@ -79,7 +87,7 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/sendVerificationCode")
+    @PostMapping("/verificationCode")
     public ResponseEntity<?> sendCode(@Valid @RequestBody EmailRequest req) {
         log.info("POST /auth/sendVerificationCode - Request received for email={}", req.email());
 
