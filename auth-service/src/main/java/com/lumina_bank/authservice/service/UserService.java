@@ -1,6 +1,6 @@
 package com.lumina_bank.authservice.service;
 
-import com.lumina_bank.authservice.dto.RegisterRequest;
+import com.lumina_bank.authservice.dto.RegisterUserRequest;
 import com.lumina_bank.authservice.exception.*;
 import com.lumina_bank.authservice.model.User;
 import com.lumina_bank.authservice.repository.UserRepository;
@@ -46,7 +46,7 @@ public class UserService {
     }
 
     @Transactional
-    public User registerUser(RegisterRequest req) {
+    public User registerUser(RegisterUserRequest req) {
         log.debug("Attempt to register new user with email={}", req.email());
 
         emailVerificationService.validateVerificationCode(req.email(), req.verificationCode());
@@ -62,7 +62,6 @@ public class UserService {
         );
 
         emailVerificationService.deleteVerificationCode(req.email());
-
         eventPublisher.publishEvent(userRegisteredEventFactory.from(userSaved, req));
 
         log.debug("User registered (DB saved), userId={}, email={}", userSaved.getId(), userSaved.getEmail());

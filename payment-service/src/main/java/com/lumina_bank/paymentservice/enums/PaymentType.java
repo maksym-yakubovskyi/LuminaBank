@@ -4,4 +4,5 @@ public enum PaymentType {
     TRANSFER,
     BILL_PAYMENT,
     CREDIT_PAYMENT,
+    EXCHANGE
 }

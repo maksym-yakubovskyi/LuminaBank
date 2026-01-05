@@ -26,8 +26,7 @@ spring:
             - id: account-service
               uri: lb://account-service
               predicates:
-                - Path=/api/accounts/**
-                - Path=/api/cards/**
+                - Path=/api/accounts/**, /api/cards/**
               filters:
                 - StripPrefix=1
 

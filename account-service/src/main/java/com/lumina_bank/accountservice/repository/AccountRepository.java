@@ -1,5 +1,6 @@
 package com.lumina_bank.accountservice.repository;
 
+import com.lumina_bank.accountservice.enums.Status;
 import com.lumina_bank.accountservice.model.Account;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Long> {
-    List<Account> findAllByUserId(Long userId);
-
     boolean existsByIban(String iban);
 
     Optional<Account> findByIban(String iban);
+
+    List<Account> findAllByUserIdAndStatus(Long userId, Status status);
 }

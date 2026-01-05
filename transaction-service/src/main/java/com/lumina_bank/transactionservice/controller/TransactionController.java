@@ -32,11 +32,11 @@ public class TransactionController {
 
     }
 
-    @GetMapping("/{accountId}")
-    public ResponseEntity<?> getTransactions(@PathVariable("accountId") Long accountId) {
-        log.info("GET /transactions/{accountId} - Fetching transactions with accountId={}", accountId);
-
-        return ResponseEntity.ok(transactionService.getAllUsersTransactions(accountId));
-    }
+//    @GetMapping("/{accountId}")
+//    public ResponseEntity<?> getTransactions(@PathVariable Long accountId) {
+//        log.info("GET /transactions/{accountId} - Fetching transactions with accountId={}", accountId);
+//
+//        return ResponseEntity.ok(transactionService.getAllUsersTransactions(accountId));
+//    }
 
 }

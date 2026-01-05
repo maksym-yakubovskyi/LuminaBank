@@ -37,7 +37,7 @@ public class CardController {
     @PutMapping("/{cardId}")
     public ResponseEntity<?> setActiveCard(
             @PathVariable Long cardId,
-            @RequestBody Status status) {
+            @RequestParam(required = false) Status status) {
         log.info("PUT /cards/{cardId} - Received request to change active status card with id={}", cardId);
 
         Card card = cardService.setActive(cardId, status);
@@ -49,10 +49,9 @@ public class CardController {
 
     @GetMapping("/{accountId}")
     public ResponseEntity<?> getCardsByAccountId(
-            @PathVariable Long accountId,
-            @RequestBody Status status) {
+            @PathVariable Long accountId) {
         log.info("GET /cards/accountId} - Fetching card with accountId = {}", accountId);
 
-        return ResponseEntity.ok().body(cardService.getCardsByAccountId(accountId,status));
+        return ResponseEntity.ok().body(cardService.getCardsByAccountId(accountId));
     }
 }
