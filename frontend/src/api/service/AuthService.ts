@@ -3,7 +3,7 @@ import type {
     LoginResponse,
     RegisterBusinessRequest,
     RegisterClientRequest
-} from "@/features/auth/types.ts";
+} from "@/features/types/authTypes.ts";
 import {authApi} from "@/api/authApi.ts";
 
 export default class AuthService {
@@ -19,7 +19,7 @@ export default class AuthService {
     }
 
     static async sendVerificationCode(email: string): Promise<void> {
-        await authApi.post("/auth/verificationCode", email)
+        await authApi.post("/auth/verificationCode", {email})
     }
 
     static async registerUser(data: RegisterClientRequest): Promise<void> {

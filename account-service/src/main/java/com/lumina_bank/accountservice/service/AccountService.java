@@ -27,8 +27,8 @@ public class AccountService {
     private final AccountRepository accountRepository;
 
     @Transactional
-    public Account createAccount(AccountCreateDto accountDto) {
-        log.debug("Attempting to create account with userId={}", accountDto.userId());
+    public Account createAccount(AccountCreateDto accountDto,Long userId) {
+        log.debug("Attempting to create account with userId={}", userId);
 
         String iban = generateIban();
         while (accountRepository.existsByIban(iban))
@@ -36,7 +36,7 @@ public class AccountService {
 
         //TODO:додати перевірку чи існує юзер та який у нього тип
         Account account = Account.builder().
-                userId(accountDto.userId()).
+                userId(userId).
                 userType(UserType.INDIVIDUAL).
                 balance(BigDecimal.ZERO).
                 iban(iban).
@@ -52,9 +52,7 @@ public class AccountService {
     public List<AccountResponse> getAccountsByUserId(Long userId) {
         log.debug("Retrieving accounts with userId={}", userId);
 
-        return accountRepository.findAllByUserId(userId)
-                .stream()
-                .filter((Account account) -> account.getStatus() == Status.ACTIVE)
+        return accountRepository.findAllByUserIdAndStatus(userId,Status.ACTIVE).stream()
                 .map(AccountResponse::fromEntity).toList();
     }
 

@@ -1,6 +1,6 @@
 package com.lumina_bank.paymentservice.model;
 
-import com.lumina_bank.paymentservice.enums.Currency;
+import com.lumina_bank.common.enums.payment.Currency;
 import com.lumina_bank.paymentservice.enums.PaymentStatus;
 import com.lumina_bank.paymentservice.enums.PaymentType;
 import jakarta.persistence.*;

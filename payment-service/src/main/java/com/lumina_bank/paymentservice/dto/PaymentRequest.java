@@ -10,8 +10,6 @@ import java.math.BigDecimal;
 
 @Builder
 public record PaymentRequest(
-        @NotNull(message = "User ID is required")
-        Long userId,
 
         @NotNull(message = "From account ID is required")
         Long fromAccountId,

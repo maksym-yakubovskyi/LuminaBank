@@ -28,13 +28,13 @@ public class UserService {
             log.warn("User with email {} already exists", event.email());
             return;
         }
-        if (userRepository.existsByAuthUserIdAndActiveTrue((event.authUserId()))) {
-            log.warn("User with authId {} already exists", event.authUserId());
+        if (userRepository.existsByIdAndActiveTrue((event.authUserId()))) {
+            log.warn("User with id {} already exists", event.authUserId());
             return;
         }
 
         User user = User.builder()
-                .authUserId(event.authUserId())
+                .id(event.authUserId())
                 .email(event.email())
                 .firstName(event.firstName())
                 .lastName(event.lastName())

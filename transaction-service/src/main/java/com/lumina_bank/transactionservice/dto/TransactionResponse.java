@@ -1,6 +1,6 @@
 package com.lumina_bank.transactionservice.dto;
 
-import com.lumina_bank.transactionservice.enums.DirectionTransaction;
+import com.lumina_bank.common.enums.payment.PaymentDirection;
 import com.lumina_bank.transactionservice.model.Transaction;
 import lombok.Builder;
 
@@ -17,7 +17,7 @@ public record TransactionResponse(
 
     public static TransactionResponse fromEntity(Transaction t, Long currentAccountId) {
         String direction = t.getFromAccountId().equals(currentAccountId) ?
-                DirectionTransaction.OUTGOING.name() : DirectionTransaction.INCOMING.name();
+                PaymentDirection.OUTGOING.name() : PaymentDirection.INCOMING.name();
 
         return TransactionResponse.builder()
                 .id(t.getId())

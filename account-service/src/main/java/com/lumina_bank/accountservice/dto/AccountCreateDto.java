@@ -6,8 +6,6 @@ import jakarta.validation.constraints.NotNull;
 
 
 public record AccountCreateDto(
-        @NotNull(message = "User ID is required")
-        Long userId,
         @NotNull(message = "Currency is required")
         Currency currency,
         @NotNull(message = "Account type is required")

@@ -62,7 +62,6 @@ public class UserService {
         );
 
         emailVerificationService.deleteVerificationCode(req.email());
-
         eventPublisher.publishEvent(userRegisteredEventFactory.from(userSaved, req));
 
         log.debug("User registered (DB saved), userId={}, email={}", userSaved.getId(), userSaved.getEmail());

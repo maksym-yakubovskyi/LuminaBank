@@ -1,5 +1,6 @@
 package com.lumina_bank.accountservice.repository;
 
+import com.lumina_bank.accountservice.enums.Status;
 import com.lumina_bank.accountservice.model.Account;
 import com.lumina_bank.accountservice.model.Card;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,5 +12,5 @@ import java.util.List;
 public interface CardRepository extends JpaRepository<Card, Long> {
     boolean existsByCardNumber(String cardNumber);
 
-    List<Card> findAllByAccount(Account account);
+    List<Card> findAllByAccountAndStatus(Account account, Status status);
 }

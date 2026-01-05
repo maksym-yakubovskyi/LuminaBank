@@ -59,14 +59,12 @@ public class CardService {
     }
 
     @Transactional(readOnly = true)
-    public List<CardResponse> getCardsByAccountId(Long accountId, Status status) {
+    public List<CardResponse> getCardsByAccountId(Long accountId) {
         log.debug("Retrieving cards with accountId={}", accountId);
 
         Account account = accountService.getAccountById(accountId);
 
-        return cardRepository.findAllByAccount(account)
-                .stream()
-                .filter((Card card) -> card.getStatus() == status)
+        return cardRepository.findAllByAccountAndStatus(account,Status.ACTIVE).stream()
                 .map(CardResponse::fromEntity).toList();
     }
 

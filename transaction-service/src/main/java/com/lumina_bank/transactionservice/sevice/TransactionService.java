@@ -4,7 +4,7 @@ import com.lumina_bank.common.exception.BusinessException;
 import com.lumina_bank.transactionservice.dto.client.AccountOperationDto;
 import com.lumina_bank.transactionservice.dto.client.AccountResponse;
 import com.lumina_bank.transactionservice.dto.TransactionCreateDto;
-import com.lumina_bank.transactionservice.dto.TransactionResponse;
+//import com.lumina_bank.transactionservice.dto.TransactionResponse;
 import com.lumina_bank.transactionservice.enums.TransactionOperation;
 import com.lumina_bank.transactionservice.enums.TransactionStatus;
 import com.lumina_bank.transactionservice.exception.*;
@@ -15,10 +15,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+//import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.List;
+//import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -58,13 +58,13 @@ public class TransactionService {
         return transaction;
     }
 
-    @Transactional(readOnly = true)
-    public List<TransactionResponse> getAllUsersTransactions(Long accountId) {
-        return transactionRepository.findAllByFromAccountIdOrToAccountId(accountId, accountId)
-                .stream()
-                .map(t -> TransactionResponse.fromEntity(t, accountId))
-                .toList();
-    }
+//    @Transactional(readOnly = true)
+//    public List<TransactionResponse> getAllUsersTransactions(Long accountId) {
+//        return transactionRepository.findAllByFromAccountIdOrToAccountId(accountId, accountId)
+//                .stream()
+//                .map(t -> TransactionResponse.fromEntity(t, accountId))
+//                .toList();
+//    }
 
     private Transaction createPendingTransaction(TransactionCreateDto request) {
         Transaction transaction = Transaction.builder()

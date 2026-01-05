@@ -31,10 +31,10 @@ public class SecurityConfig {
                         s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/auth/register",
+                                "/auth/register/**",
                                 "/auth/login",
                                 "/auth/refresh",
-                                "/auth/sendVerificationCode",
+                                "/auth/verificationCode",
                                 "/.well-known/jwks.json",
                                 "/actuator/**")
                         .permitAll()

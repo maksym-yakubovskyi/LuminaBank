@@ -5,9 +5,9 @@ import App from "@/app/App.tsx";
 import {AuthLayouts} from "@/app/layouts/AuthLayouts.tsx";
 import {publicLoader} from "@/app/router/public.loader.tsx";
 import {MainLayout} from "@/app/layouts/MainLayouts.tsx";
-import {protectedLoader} from "@/app/router/protected.loader.tsx";
 import DashboardPage from "@/pages/dashboard/DashboardPage.tsx";
 import {rootLoader} from "@/app/router/rootLoader.tsx";
+import {protectedLoader} from "@/app/router/protected.loader.tsx";
 
 export const router = createBrowserRouter([
     {

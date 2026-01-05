@@ -4,12 +4,15 @@ import com.lumina_bank.accountservice.dto.AccountCreateDto;
 import com.lumina_bank.accountservice.dto.AccountOperationDto;
 import com.lumina_bank.accountservice.dto.AccountResponse;
 import com.lumina_bank.accountservice.enums.Status;
+import com.lumina_bank.accountservice.exception.JwtMissingException;
 import com.lumina_bank.accountservice.model.Account;
 import com.lumina_bank.accountservice.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -22,10 +25,16 @@ public class AccountController {
     private final AccountService accountService;
 
     @PostMapping
-    public ResponseEntity<?> createAccount(@Valid @RequestBody AccountCreateDto accountDto) {
-        log.info("POST /accounts - Received request to create account : {}", accountDto.userId());
+    public ResponseEntity<?> createAccount(
+            @Valid @RequestBody AccountCreateDto accountDto,
+            @AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) throw new JwtMissingException("JWT token is required");
 
-        Account account = accountService.createAccount(accountDto);
+        Long authUserId = Long.valueOf(jwt.getSubject());
+
+        log.info("POST /accounts - Received request to create account : {}", authUserId);
+
+        Account account = accountService.createAccount(accountDto,authUserId);
 
         log.info("Account created id={}", account.getId());
 
@@ -59,11 +68,14 @@ public class AccountController {
         return ResponseEntity.ok(AccountResponse.fromEntity(updateAccount));
     }
 
-    @GetMapping("/{userId}/user-accounts")
-    public ResponseEntity<?> getUserAccounts(@PathVariable Long userId) {
-        log.info("GET /accounts/{userId}/user-accounts - Fetching user account with userId = {}", userId);
+    @GetMapping("/my")
+    public ResponseEntity<?> getUserAccounts(@AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) throw new JwtMissingException("JWT token is required");
+        Long authUserId = Long.valueOf(jwt.getSubject());
 
-        return ResponseEntity.ok().body(accountService.getAccountsByUserId(userId));
+        log.info("GET /accounts/{userId}/user-accounts - Fetching user account with userId = {}", authUserId);
+
+        return ResponseEntity.ok().body(accountService.getAccountsByUserId(authUserId));
     }
 
     @GetMapping("/{id}")

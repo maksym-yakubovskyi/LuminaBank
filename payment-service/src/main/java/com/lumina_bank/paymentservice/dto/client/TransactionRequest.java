@@ -1,6 +1,6 @@
 package com.lumina_bank.paymentservice.dto.client;
 
-import com.lumina_bank.paymentservice.enums.Currency;
+import com.lumina_bank.common.enums.payment.Currency;
 import lombok.Builder;
 
 import java.math.BigDecimal;

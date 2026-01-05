@@ -1,7 +1,7 @@
-import type {LoginRequest, LoginResponse, User} from "@/features/auth/types.ts";
+import type {LoginRequest, LoginResponse, User} from "@/features/types/authTypes.ts";
 import {createContext, type ReactNode, useContext, useState} from "react";
 import {tokenStorage} from "@/features/auth/tokenStorage.ts";
-import AuthService from "@/api/AuthService.ts";
+import AuthService from "@/api/service/AuthService.ts";
 
 interface AuthContextType{
     user: User | null
@@ -23,7 +23,6 @@ export function AuthProvider({ children }: {children: ReactNode}) {
         setServerError(null);
         try {
             const result: LoginResponse = await AuthService.loginUser(data);
-
             tokenStorage.setToken(result.accessToken);
             tokenStorage.setTokenType(result.tokenType);
 
@@ -59,15 +58,16 @@ export function AuthProvider({ children }: {children: ReactNode}) {
                 id: payload.id,
                 role: payload.role
             })
+            console.log(result);
             return true;
-        } catch {
+        } catch(err: any) {
+            console.log(err);
             tokenStorage.setToken(null);
             tokenStorage.setTokenType(null);
             setUser(null);
             return false;
         }
     }
-
     return (
         <AuthContext.Provider
             value={{

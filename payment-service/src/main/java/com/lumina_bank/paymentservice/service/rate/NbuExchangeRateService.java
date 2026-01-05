@@ -1,7 +1,7 @@
 package com.lumina_bank.paymentservice.service.rate;
 
+import com.lumina_bank.common.enums.payment.Currency;
 import com.lumina_bank.paymentservice.dto.ExchangeRateResponse;
-import com.lumina_bank.paymentservice.enums.Currency;
 import com.lumina_bank.paymentservice.exception.ExchangeRateNotFoundException;
 import com.lumina_bank.paymentservice.exception.ExternalServiceException;
 import com.lumina_bank.paymentservice.model.ExchangeRate;

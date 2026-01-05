@@ -9,5 +9,5 @@ export const tokenStorage = {
     getTokenType: () => tokenType,
     setTokenType: (type: string | null) => {
         tokenType = type;
-    }
+    },
 }

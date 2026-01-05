@@ -1,10 +1,11 @@
 package com.lumina_bank.paymentservice.service.payment;
 
+import com.lumina_bank.common.enums.payment.Currency;
 import com.lumina_bank.common.exception.BusinessException;
 import com.lumina_bank.paymentservice.dto.PaymentRequest;
+import com.lumina_bank.paymentservice.dto.TransactionHistoryItemDto;
 import com.lumina_bank.paymentservice.dto.client.AccountResponse;
 import com.lumina_bank.paymentservice.dto.client.TransactionRequest;
-import com.lumina_bank.paymentservice.enums.Currency;
 import com.lumina_bank.paymentservice.enums.PaymentStatus;
 import com.lumina_bank.paymentservice.exception.*;
 import com.lumina_bank.paymentservice.model.Payment;
@@ -15,6 +16,10 @@ import com.lumina_bank.paymentservice.service.client.TransactionClientService;
 import com.lumina_bank.paymentservice.service.rate.NbuExchangeRateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +29,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
-//TODO: додати ще логування
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -40,13 +44,27 @@ public class PaymentService {
     private static final Duration CANCEL_WINDOW = Duration.ofSeconds(30);// час за який можна скасувати оплату
 
     @Transactional(readOnly = true)
+    public List<TransactionHistoryItemDto> getUserHistory(Long accountId,int count){
+        Pageable pageable = PageRequest.of(
+                0,
+                count,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+        Page<Payment> page = paymentRepository.findByFromAccountIdOrToAccountId(accountId,accountId, pageable);
+
+        return page.getContent().stream()
+                .map(p -> TransactionHistoryItemDto.toHistoryItem(p, accountId))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public Payment getPayment(Long paymentId) {
         return paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found with id: " + paymentId));
     }
 
     @Transactional
-    public Payment makePayment(PaymentRequest paymentRequest) {
+    public Payment makePayment(PaymentRequest paymentRequest,Long userId) {
         if (paymentRequest.fromAccountId().equals(paymentRequest.toAccountId()))
             throw new InvalidPaymentRequestException("Account IDs must not be the same");
 
@@ -56,7 +74,7 @@ public class PaymentService {
 
         // Створення Платежу зі статусом PENDING
         Payment payment = Payment.builder()
-                .userId(paymentRequest.userId())
+                .userId(userId)
                 .fromAccountId(paymentRequest.fromAccountId())
                 .toAccountId(paymentRequest.toAccountId())
                 .amount(paymentRequest.amount())
