@@ -6,4 +6,5 @@ export interface TransactionHistoryItem {
     date: string
     direction: string
     status: string
+    description: string | null
 }

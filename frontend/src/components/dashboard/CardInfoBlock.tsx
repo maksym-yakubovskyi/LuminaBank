@@ -8,9 +8,8 @@ interface Props{
 }
 
 export function CardInfoBlock({card,account}: Props) {
-    if (!card || !account) {
-        return <>Завантаження...</>
-    }
+    if (!card || !account) return <>Завантаження...</>
+
     return (<>
             <Link
                 to="/accounts"

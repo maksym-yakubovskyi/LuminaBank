@@ -73,7 +73,7 @@ public class AccountController {
         if (jwt == null) throw new JwtMissingException("JWT token is required");
         Long authUserId = Long.valueOf(jwt.getSubject());
 
-        log.info("GET /accounts/{userId}/user-accounts - Fetching user account with userId = {}", authUserId);
+        log.info("GET /accounts/my - Fetching user account with userId = {}", authUserId);
 
         return ResponseEntity.ok().body(accountService.getAccountsByUserId(authUserId));
     }

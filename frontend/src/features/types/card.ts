@@ -1,3 +1,5 @@
+import type {CardNetwork, CardType} from "@/features/enum/enum.ts";
+
 export interface Card {
     id: number
     cardNumber: string
@@ -10,4 +12,11 @@ export interface Card {
     limit: number
     createdAt: string
     updatedAt: string
+    accountId: number
+}
+
+export interface CardCreateDto {
+    cardType: CardType
+    cardNetwork: CardNetwork
+    limit: number;
 }

@@ -1,7 +1,7 @@
 package com.lumina_bank.accountservice.dto;
 
 import com.lumina_bank.accountservice.enums.AccountType;
-import com.lumina_bank.accountservice.enums.Currency;
+import com.lumina_bank.common.enums.payment.Currency;
 import jakarta.validation.constraints.NotNull;
 
 

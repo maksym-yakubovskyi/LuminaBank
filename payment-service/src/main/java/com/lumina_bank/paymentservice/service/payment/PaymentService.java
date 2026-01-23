@@ -58,6 +58,13 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
+    public List<TransactionHistoryItemDto> getUserHistory(Long accountId){
+        return paymentRepository.findByFromAccountIdOrToAccountId(accountId,accountId).stream()
+                .map(p -> TransactionHistoryItemDto.toHistoryItem(p,accountId))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public Payment getPayment(Long paymentId) {
         return paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found with id: " + paymentId));

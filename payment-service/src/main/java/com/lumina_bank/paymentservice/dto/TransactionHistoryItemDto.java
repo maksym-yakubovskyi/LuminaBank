@@ -15,7 +15,8 @@ public record TransactionHistoryItemDto(
         String currency,
         LocalDate date,
         String direction,
-        String status
+        String status,
+        String description
 ) {
 
     static public TransactionHistoryItemDto toHistoryItem(Payment p, Long accountId){
@@ -30,6 +31,7 @@ public record TransactionHistoryItemDto(
                 .date(p.getCreatedAt().toLocalDate())
                 .direction(direction)
                 .status(p.getPaymentStatus().name())
+                .description(p.getDescription())
                 .build();
     }
 }

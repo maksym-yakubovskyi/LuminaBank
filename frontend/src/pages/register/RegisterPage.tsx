@@ -4,9 +4,8 @@ import {RegisterFormClient} from "@/components/register/RegisterFormClient.tsx";
 import {Link} from "react-router-dom";
 import {RegisterTypeToggle} from "@/components/register/RegisterTypeToggle.tsx";
 
-
 export default function RegisterPage() {
-    const [isBusiness, setIsBusiness] = useState<boolean>(false);
+    const [isBusiness, setIsBusiness] = useState<boolean>(false)
 
     return (
         <div>

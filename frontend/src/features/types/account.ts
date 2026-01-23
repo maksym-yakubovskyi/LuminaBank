@@ -1,3 +1,5 @@
+import type {AccountType, Currency} from "@/features/enum/enum.ts";
+
 export interface Account {
     id: number
     balance: number
@@ -7,4 +9,9 @@ export interface Account {
     type: string
     createdAt: string
     updatedAt: string
+}
+
+export interface AccountCreateDto {
+    currency: Currency
+    type: AccountType
 }

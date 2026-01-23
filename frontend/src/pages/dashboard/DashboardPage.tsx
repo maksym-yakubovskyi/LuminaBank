@@ -9,28 +9,28 @@ import {TransactionHistoryBlock} from "@/components/dashboard/TransactionHistory
 import type {Account} from "@/features/types/account.ts";
 
 export default function DashboardPage() {
-    const [card, setCard] = useState<Card | null>(null);
-    const [account, setAccount] = useState<Account | null>(null);
-    const [history, setHistory] = useState<TransactionHistoryItem[] | null>(null);
+    const [card, setCard] = useState<Card | null>(null)
+    const [account, setAccount] = useState<Account | null>(null)
+    const [history, setHistory] = useState<TransactionHistoryItem[] | null>(null)
 
     useEffect(() => {
         async function loadDashboard() {
-            const accounts = await AccountService.getMyAccounts();
-            const acc = accounts[0];
-            if (!acc) return;
+            const accounts = await AccountService.getMyAccounts()
+            const acc = accounts[0]
+            if (!acc) return
 
-            setAccount(acc);
+            setAccount(acc)
 
-            const cards = await CardService.getCardsByAccount(acc.id);
-            setCard(cards[0] ?? null);
+            const cards = await CardService.getCardsByAccount(acc.id)
+            setCard(cards[0] ?? null)
 
             const history =
-                await TransactionHistoryService.getTransactionHistory(acc.id);
-            setHistory(history);
+                await TransactionHistoryService.getTransactionHistory(acc.id)
+            setHistory(history)
         }
 
         loadDashboard().catch(console.error);
-    }, []);
+    }, [])
 
 
     return (

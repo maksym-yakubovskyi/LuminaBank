@@ -64,7 +64,7 @@ public class CardService {
 
         Account account = accountService.getAccountById(accountId);
 
-        return cardRepository.findAllByAccountAndStatus(account,Status.ACTIVE).stream()
+        return cardRepository.findAllByAccount(account).stream()
                 .map(CardResponse::fromEntity).toList();
     }
 

@@ -3,13 +3,13 @@ import {LoginForm} from "@/components/login/LoginForm.tsx";
 import {useAuth} from "@/features/auth/auth.context.tsx";
 
 export default function LoginPage() {
-    const {login, serverError} = useAuth();
-    const navigate = useNavigate();
+    const {login, serverError} = useAuth()
+    const navigate = useNavigate()
 
     const handleSubmit =  async (data: any)=>{
-        const success = await login(data);
-        if(success)navigate("/dashboard");
-    };
+        const success = await login(data)
+        if(success)navigate("/dashboard")
+    }
 
     return (
         <div>

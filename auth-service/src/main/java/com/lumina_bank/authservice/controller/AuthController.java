@@ -5,9 +5,12 @@ import com.lumina_bank.authservice.model.User;
 import com.lumina_bank.authservice.service.AuthService;
 import com.lumina_bank.authservice.service.EmailVerificationService;
 import com.lumina_bank.authservice.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.time.Duration;
 
 @RestController
 @RequestMapping("/auth")
@@ -28,14 +32,30 @@ public class AuthController {
     private final EmailVerificationService emailVerificationService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req) {
+    public ResponseEntity<?> login(
+            @Valid @RequestBody LoginRequest req,
+            HttpServletResponse response) {
         log.info("POST /auth/login - Login request received for email: {}", req.email());
 
-        TokensResponse tokensResponse = authService.login(req);
+        TokensWithRefresh tokens = authService.login(req);
+
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", tokens.refreshToken())
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(Duration.ofDays(7))
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         log.info("User successfully authenticated for email: {}", req.email());
-
-        return ResponseEntity.ok(tokensResponse);
+        return ResponseEntity.ok(
+                TokensResponse.builder()
+                        .accessToken(tokens.accessToken())
+                        .tokenType(tokens.tokenType())
+                        .expiresIn(tokens.expiresIn())
+                        .build());
     }
 
     @PostMapping("/register/user")
@@ -61,7 +81,9 @@ public class AuthController {
 //    }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<?> logout(
+            @AuthenticationPrincipal Jwt jwt,
+            HttpServletResponse response) {
         Long userId = Long.valueOf(jwt.getSubject());
         String sid = jwt.getClaim("sid");
 
@@ -69,18 +91,40 @@ public class AuthController {
 
         authService.logout(userId, sid);
 
+        ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .path("/auth/refresh")
+                .maxAge(0)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
+
         log.info("User successfully logged out for userId={}, sessionId={}", userId, sid);
 
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/logout/all")
-    public ResponseEntity<?> logoutAll(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<?> logoutAll(
+            @AuthenticationPrincipal Jwt jwt,
+            HttpServletResponse response) {
         Long userId = Long.valueOf(jwt.getSubject());
 
         log.info("POST /auth/logout/all - Logout all sessions request received for userId={}", userId);
 
         authService.logoutAll(userId);
+
+        ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .path("/auth/refresh")
+                .maxAge(0)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
 
         log.info("User successfully logged out all sessions for userId={}", userId);
 

@@ -52,4 +52,13 @@ public class PaymentController {
 
         return ResponseEntity.ok(paymentService.getUserHistory(accountId,limit));
     }
+
+    @GetMapping("/history/{accountId}/all")
+    public ResponseEntity<?> getAllHistory(
+            @PathVariable Long accountId
+    ){
+        log.info("GET /payments/history/{accountId}/all - Get all history");
+
+        return ResponseEntity.ok(paymentService.getUserHistory(accountId));
+    }
 }
