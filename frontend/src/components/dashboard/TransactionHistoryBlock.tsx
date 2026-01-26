@@ -28,7 +28,6 @@ export function TransactionHistoryBlock({ history }: Props) {
                         >
                             <div style={{ display: "flex", justifyContent: "space-between" }}>
                                 <div>
-                                    <strong>{item.type}</strong>
                                     <div style={{ fontSize: "0.9em", color: "#555" }}>
                                         {item.date}
                                     </div>

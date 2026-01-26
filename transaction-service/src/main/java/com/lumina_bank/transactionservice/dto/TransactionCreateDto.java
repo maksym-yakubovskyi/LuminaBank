@@ -7,13 +7,13 @@ import java.math.BigDecimal;
 
 public record TransactionCreateDto(
 
-        @NotNull(message = "Sender account ID is required")
-        @Positive(message = "Sender account ID must be positive")
-        Long fromAccountId,
+        @NotNull(message = "Sender card number is required")
+        @Positive(message = "Sender card number must be positive")
+        String fromCardNumber,
 
-        @NotNull(message = "Receiver account ID is required")
-        @Positive(message = "Receiver account ID must be positive")
-        Long toAccountId,
+        @NotNull(message = "Receiver card number is required")
+        @Positive(message = "Receiver card number must be positive")
+        String toCardNumber,
 
         @NotNull(message = "Transaction amount is required")
         @DecimalMin(value = "0.01", message = "Transaction amount must be greater than 0.00")

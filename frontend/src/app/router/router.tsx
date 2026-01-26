@@ -10,6 +10,7 @@ import TransactionHistoryPage from "@/pages/transaction_history/TransactionHisto
 import AccountsPage from "@/pages/account/AccountsPage.tsx";
 import UserProfilePage from "@/pages/profile/UserProfilePage.tsx";
 import {PublicRoute} from "@/app/router/PublicRouter.tsx";
+import PaymentsPage from "@/pages/payment/PaymentsPage.tsx";
 
 export const router = createBrowserRouter([
     {
@@ -88,6 +89,14 @@ export const router = createBrowserRouter([
                             </ProtectedRoute>
                         ),
                     },
+                    {
+                        path: "payment",
+                        element: (
+                            <ProtectedRoute>
+                                <PaymentsPage />
+                            </ProtectedRoute>
+                        )
+                    }
                 ]
             },
             {

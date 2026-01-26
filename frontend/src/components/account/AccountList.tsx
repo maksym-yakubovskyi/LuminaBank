@@ -1,8 +1,9 @@
 import type {Card} from "@/features/types/card.ts";
 import {Link} from "react-router-dom";
+import {Status} from "@/features/enum/enum.ts";
 
 interface Props {
-    cards: Card[] | null;
+    cards: Card[] | null
 }
 
 export default function AccountList({ cards }: Props) {
@@ -50,7 +51,7 @@ export default function AccountList({ cards }: Props) {
                                     style={{
                                         fontSize: "0.8em",
                                         color:
-                                            card.status === "ACTIVE"
+                                            card.status === Status.ACTIVE
                                                 ? "green"
                                                 : "gray",
                                     }}

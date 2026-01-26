@@ -7,6 +7,7 @@ import com.lumina_bank.userservice.exception.UserAlreadyExistsException;
 import com.lumina_bank.userservice.exception.UserNotFoundException;
 import com.lumina_bank.userservice.model.Address;
 import com.lumina_bank.userservice.model.User;
+import com.lumina_bank.userservice.repository.BusinessUserRepository;
 import com.lumina_bank.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final BusinessUserRepository businessUserRepository;
 
     @Transactional
     public void createUser(UserRegisteredEvent event) {
@@ -28,7 +30,8 @@ public class UserService {
             log.warn("User with email {} already exists", event.email());
             return;
         }
-        if (userRepository.existsByIdAndActiveTrue((event.authUserId()))) {
+        if (userRepository.existsByIdAndActiveTrue((event.authUserId()))
+                || businessUserRepository.existsByIdAndActiveTrue((event.authUserId()))) {
             log.warn("User with id {} already exists", event.authUserId());
             return;
         }
@@ -101,34 +104,4 @@ public class UserService {
         userRepository.save(user);
     }
 
-//    @Transactional
-//    public User createUser(UserCreateDto userDto) {
-//        log.debug("Attempting to create user with email={}", userDto.email());
-//
-//        if (userRepository.existsByEmailAndActiveTrue(userDto.email())) {
-//            throw new UserAlreadyExistsException("Email already exists");
-//        }
-//
-//        Address address = Address.builder().
-//                street(userDto.street()).
-//                city(userDto.city()).
-//                country(userDto.country()).
-//                houseNumber(userDto.houseNumber()).
-//                zipCode(userDto.zipCode()).
-//                build();
-//
-//        User user = User.builder().
-//                email(userDto.email()).
-//                password(userDto.password()).
-//                firstName(userDto.firstName()).
-//                lastName(userDto.lastName()).
-//                phoneNumber(userDto.phoneNumber()).
-//                birthDate(userDto.birthDate()).
-//                address(address).
-//                role(Role.USER).
-//                active(Boolean.TRUE).
-//                build();
-//
-//        return userRepository.save(user);
-//    }
 }

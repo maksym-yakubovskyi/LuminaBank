@@ -1,6 +1,5 @@
 export interface TransactionHistoryItem {
     paymentId: number
-    type: string
     amount: number
     currency: string
     date: string

@@ -11,7 +11,6 @@ export default function TransactionBlock({transaction}: Props) {
         <>
             <h3>Деталі транзакції</h3>
 
-            <p><strong>Тип:</strong> {transaction.type}</p>
             <p><strong>Сума:</strong> {transaction.amount} {transaction.currency}</p>
             <p><strong>Дата:</strong> {transaction.date}</p>
             <p><strong>Напрям:</strong> {transaction.direction}</p>

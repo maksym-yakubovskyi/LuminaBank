@@ -1,5 +1,6 @@
 package com.lumina_bank.userservice.controller;
 
+import com.lumina_bank.common.exception.JwtMissingException;
 import com.lumina_bank.userservice.dto.UserResponse;
 import com.lumina_bank.userservice.dto.UserUpdateDto;
 import com.lumina_bank.userservice.model.User;
@@ -19,11 +20,12 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
 
-    @GetMapping("/me")
+    @GetMapping("/my")
     public ResponseEntity<?> getUser(@AuthenticationPrincipal Jwt jwt) {
-        Long userId = Long.valueOf(jwt.getSubject());
+        log.info("GET /users/{id} - Fetching user");
 
-        log.info("GET /users/{id} - Fetching user with id={}", userId);
+        if (jwt == null) throw new JwtMissingException("JWT token is required");
+        Long userId = Long.valueOf(jwt.getSubject());
 
         User user = userService.getUserById(userId);
 
@@ -36,9 +38,10 @@ public class UserController {
     public ResponseEntity<?> updateUser(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody UserUpdateDto userDto) {
-        Long userId = Long.valueOf(jwt.getSubject());
+        log.info("PUT /users/me - Received request to update user");
 
-        log.info("PUT /users/me - Received request to update user with id={}", userId);
+        if (jwt == null) throw new JwtMissingException("JWT token is required");
+        Long userId = Long.valueOf(jwt.getSubject());
 
         User user = userService.updateUser(userId, userDto);
 
@@ -49,9 +52,10 @@ public class UserController {
 
     @DeleteMapping("/me")
     public ResponseEntity<?> deleteUser(@AuthenticationPrincipal Jwt jwt) {
-        Long userId = Long.valueOf(jwt.getSubject());
+        log.info("DELETE /users/me - Deleting user");
 
-        log.info("DELETE /users/me - Deleting user with id={}", userId);
+        if (jwt == null) throw new JwtMissingException("JWT token is required");
+        Long userId = Long.valueOf(jwt.getSubject());
 
         userService.deleteUser(userId);
 

@@ -2,15 +2,17 @@ package com.lumina_bank.accountservice.service;
 
 import com.lumina_bank.accountservice.dto.AccountCreateDto;
 import com.lumina_bank.accountservice.dto.AccountResponse;
+import com.lumina_bank.accountservice.dto.MerchantCardResponse;
+import com.lumina_bank.accountservice.dto.client.UserCheckResponse;
+import com.lumina_bank.accountservice.enums.AccountType;
 import com.lumina_bank.accountservice.enums.CountryBankCode;
 import com.lumina_bank.accountservice.enums.Status;
-import com.lumina_bank.accountservice.enums.UserType;
-import com.lumina_bank.accountservice.exception.AccountLockedException;
-import com.lumina_bank.accountservice.exception.AccountNotFoundException;
-import com.lumina_bank.accountservice.exception.InsufficientBalanceException;
-import com.lumina_bank.accountservice.exception.InvalidAmountException;
+import com.lumina_bank.accountservice.exception.*;
 import com.lumina_bank.accountservice.model.Account;
+import com.lumina_bank.accountservice.model.Card;
 import com.lumina_bank.accountservice.repository.AccountRepository;
+import com.lumina_bank.accountservice.repository.CardRepository;
+import com.lumina_bank.accountservice.service.client.UserServiceClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,19 +27,22 @@ import java.util.Random;
 @Slf4j
 public class AccountService {
     private final AccountRepository accountRepository;
+    private final CardRepository cardRepository;
+    private final UserServiceClient userServiceClient;
 
     @Transactional
     public Account createAccount(AccountCreateDto accountDto,Long userId) {
         log.debug("Attempting to create account with userId={}", userId);
 
+        UserCheckResponse userCheck = checkUser(userId);
+
         String iban = generateIban();
         while (accountRepository.existsByIban(iban))
             iban = generateIban();
 
-        //TODO:додати перевірку чи існує юзер та який у нього тип
         Account account = Account.builder().
                 userId(userId).
-                userType(UserType.INDIVIDUAL).
+                userType(userCheck.userType()).
                 balance(BigDecimal.ZERO).
                 iban(iban).
                 currency(accountDto.currency()).
@@ -46,6 +51,18 @@ public class AccountService {
                 build();
 
         return accountRepository.save(account);
+    }
+
+    public MerchantCardResponse getMerchantCardNumber(Long providerId) {
+        Account merchantAccount = accountRepository
+                .findByUserIdAndType(providerId, AccountType.MERCHANT)
+                .orElseThrow(() -> new AccountNotFoundException("Merchant account not found for providerId=" + providerId));
+
+        Card merchantCard = cardRepository
+                .findFirstByAccountAndStatus(merchantAccount, Status.ACTIVE)
+                .orElseThrow(() -> new CardNotFoundException("Active merchant card not found for providerId=" + providerId));
+
+        return new MerchantCardResponse(merchantCard.getCardNumber());
     }
 
     @Transactional(readOnly = true)
@@ -57,14 +74,18 @@ public class AccountService {
     }
 
     @Transactional
-    public Account deposit(Long id, BigDecimal amount) {
-        log.debug("Deposit with id={}", id);
-
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+    public Account deposit(String cardNumber, BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0)
             throw new InvalidAmountException("Amount must be greater than zero");
+
+        Card card = cardRepository.findByCardNumberWithAccount(cardNumber)
+                .orElseThrow(() -> new CardNotFoundException("Card not found: " + cardNumber));
+
+        if (card.getStatus() != Status.ACTIVE) {
+            throw new AccountLockedException("Card is not active");
         }
 
-        Account account = getAccountById(id);
+        Account account = card.getAccount();
 
         if (account.getStatus() != Status.ACTIVE) {
             throw new AccountLockedException("Account is not active");
@@ -75,14 +96,21 @@ public class AccountService {
     }
 
     @Transactional
-    public Account withdraw(Long id, BigDecimal amount) {
-        log.debug("Withdraw with id={}", id);
-
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+    public Account withdraw(String cardNumber, BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0)
             throw new InvalidAmountException("Amount must be greater than zero");
+
+        Card card = cardRepository.findByCardNumberWithAccount(cardNumber)
+                .orElseThrow(() -> new CardNotFoundException("Card not found: " + cardNumber));
+
+        if (card.getStatus() != Status.ACTIVE) {
+            throw new AccountLockedException("Card is not active");
+        }
+        if (card.getLimit() != null && amount.compareTo(card.getLimit()) > 0) {
+            throw new InvalidAmountException("Amount exceeds card limit");
         }
 
-        Account account = getAccountById(id);
+        Account account = card.getAccount();
 
         if (account.getStatus() != Status.ACTIVE) {
             throw new AccountLockedException("Account is not active");
@@ -104,16 +132,8 @@ public class AccountService {
                 .orElseThrow(() -> new AccountNotFoundException("Account with id " + accountId + " not found"));
     }
 
-    @Transactional(readOnly = true)
-    public Account getAccountByIban(String iban) {
-        log.debug("Retrieving account with iban={}", iban);
-
-        return accountRepository.findByIban(iban)
-                .orElseThrow(() -> new AccountNotFoundException("Account with iban " + iban + " not found"));
-    }
-
     @Transactional
-    public Account setActive(Long accountId, Status status) {
+    public Account setStatus(Long accountId, Status status) {
         log.debug("Attempting to change account status accountId={}", accountId);
 
         Account account = getAccountById(accountId);
@@ -126,6 +146,14 @@ public class AccountService {
         return accountRepository.save(account);
     }
 
+    @Transactional(readOnly = true)
+    public AccountResponse getAccountByCardNumber(String cardNumber) {
+        Account account = cardRepository.findAccountByCardNumber(cardNumber)
+                .orElseThrow(() -> new CardNotFoundException("Card not found: " + cardNumber));
+
+        return AccountResponse.fromEntity(account);
+    }
+
     private String generateIban() {
         Random random = new Random();
         int controlDigit = random.nextInt(90) + 10;
@@ -135,5 +163,38 @@ public class AccountService {
             accountNumber.append(random.nextInt(10));
         }
         return CountryBankCode.UA.name() + controlDigit + CountryBankCode.UA.getBankCode() + accountNumber;
+    }
+
+    private UserCheckResponse checkUser(Long userId) {
+        try{
+            var response = userServiceClient.checkUser(userId);
+
+            if (response == null) {
+                log.warn("Null response from account service ");
+                throw new ExternalServiceException("Null response from account service");
+            }
+            if (response.getStatusCode().is2xxSuccessful()) {
+                UserCheckResponse body = response.getBody();
+                if (body != null && body.userType() != null) {
+                    if (!body.exists()) {
+                        throw new ExternalServiceException("User not found id=" + userId);
+                    }
+                    if (!body.active()) {
+                        throw new ExternalServiceException("User is inactive id=" + userId);
+                    }
+                    return body;
+                } else {
+                    log.warn("Empty or invalid account response body");
+                    throw  new ExternalServiceException("Empty or invalid account response body");
+                }
+            } else {
+                log.warn("Account service returned non-2xx  status={}, body={}",
+                        response.getStatusCode(), response.getBody());
+                throw new ExternalServiceException("Account service error: " + response.getStatusCode());
+            }
+        }catch (Exception e) {
+            log.warn("Failed to fetch account currency : {}", e.getMessage(), e);
+            throw new ExternalServiceException("Failed to get account currency", e);
+        }
     }
 }

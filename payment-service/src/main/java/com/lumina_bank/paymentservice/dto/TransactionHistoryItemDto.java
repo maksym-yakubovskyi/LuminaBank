@@ -10,7 +10,6 @@ import java.time.LocalDate;
 @Builder
 public record TransactionHistoryItemDto(
         Long paymentId,
-        String type,
         BigDecimal amount,
         String currency,
         LocalDate date,
@@ -25,7 +24,6 @@ public record TransactionHistoryItemDto(
 
         return TransactionHistoryItemDto.builder()
                 .paymentId(p.getId())
-                .type(p.getPaymentType().name())
                 .amount(p.getAmount())
                 .currency(p.getFromCurrency().name())
                 .date(p.getCreatedAt().toLocalDate())

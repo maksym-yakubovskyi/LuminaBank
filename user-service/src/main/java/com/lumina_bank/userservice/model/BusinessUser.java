@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 public class BusinessUser {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @Column(unique = true, nullable = false)

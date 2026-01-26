@@ -5,6 +5,16 @@ export const UserType = {
 
 export type UserType = typeof UserType[keyof typeof UserType]
 
+export const BusinessCategory = {
+    COMMUNAL: "COMMUNAL",
+    MOBILE: "MOBILE",
+    INTERNET: "INTERNET",
+    CREDIT: "CREDIT",
+    OTHER: "OTHER",
+} as const
+
+export type BusinessCategoryType = typeof BusinessCategory[keyof typeof BusinessCategory]
+
 export const AccountType = {
     CREDIT: "CREDIT",
     DEBIT: "DEBIT",
@@ -44,3 +54,31 @@ export const CardNetwork = {
 } as const
 
 export type CardNetwork = typeof CardNetwork[keyof typeof CardNetwork]
+
+export const PaymentTemplateType = {
+    SERVICE: "SERVICE",
+    TRANSFER: "TRANSFER",
+} as const
+
+export type PaymentTemplateType = typeof PaymentTemplateType[keyof typeof PaymentTemplateType]
+
+export const RecurrenceType = {
+    NONE: "NONE",
+    DAILY: "DAILY",
+    WEKKLY: "WEEKLY",
+    MONTHLY: "MONTHLY",
+} as const
+
+export type RecurrenceType = typeof RecurrenceType[keyof typeof RecurrenceType]
+
+export const WeekDay = {
+    MON: "MON",
+    TUE: "TUE",
+    WED: "WED",
+    THU: "THU",
+    FRI: "FRI",
+    SAT: "SAT",
+    SUN: "SUN",
+} as const
+
+export type WeekDay = typeof WeekDay[keyof typeof WeekDay]

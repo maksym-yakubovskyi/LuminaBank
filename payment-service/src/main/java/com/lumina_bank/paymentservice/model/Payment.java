@@ -2,7 +2,6 @@ package com.lumina_bank.paymentservice.model;
 
 import com.lumina_bank.common.enums.payment.Currency;
 import com.lumina_bank.paymentservice.enums.PaymentStatus;
-import com.lumina_bank.paymentservice.enums.PaymentType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -31,8 +30,11 @@ public class Payment {
     private Long transactionId;
 
     @Column(nullable = false)
-    private Long fromAccountId;
+    private String fromCardNumber;
     @Column(nullable = false)
+    private String toCardNumber;
+
+    private Long fromAccountId;
     private Long toAccountId;
 
     @Enumerated(EnumType.STRING)
@@ -54,10 +56,6 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentStatus paymentStatus;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private PaymentType paymentType;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "template_id")

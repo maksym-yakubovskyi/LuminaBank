@@ -10,8 +10,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import java.net.URI;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.*;
+import com.lumina_bank.common.exception.JwtMissingException;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/cards")
@@ -53,5 +57,15 @@ public class CardController {
         log.info("GET /cards/accountId} - Fetching card with accountId = {}", accountId);
 
         return ResponseEntity.ok().body(cardService.getCardsByAccountId(accountId));
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyCards(@AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) throw new JwtMissingException("JWT token is required");
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        log.info("GET /cards/my - Fetching cards for userId={}", userId);
+
+        return ResponseEntity.ok(cardService.getCardsByUserId(userId));
     }
 }

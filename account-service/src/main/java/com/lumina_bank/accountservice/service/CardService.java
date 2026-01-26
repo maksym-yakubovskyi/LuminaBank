@@ -76,6 +76,14 @@ public class CardService {
                 .orElseThrow(() -> new CardNotFoundException("Card with id " + cardId + " not found"));
     }
 
+    @Transactional(readOnly = true)
+    public List<CardResponse> getCardsByUserId(Long userId) {
+        List<Card> cards = cardRepository.findAllByAccount_UserId(userId);
+
+        return cards.stream()
+                .map(CardResponse::fromEntity)
+                .toList();
+    }
 
     private String generateCardNumber() {
         Random random = new Random();
@@ -91,5 +99,4 @@ public class CardService {
         // Формуємо число від 0 до 999, і завжди отримуємо 3 символи (з ведучими нулями)
         return String.format("%03d", random.nextInt(1000));
     }
-
 }

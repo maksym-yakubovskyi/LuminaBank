@@ -9,25 +9,31 @@ import java.math.BigDecimal;
 public record PaymentTemplateResponse(
         Long id,
         Long userId,
+        String type,
         String name,
         String description,
-        Long fromAccountId,
-        Long toAccountId,
+        String fromCardNumber,
+        String toCardNumber,
         BigDecimal amount,
         Boolean isRecurring,
-        String recurrenceCron
+        String nextExecutionTime
 ) {
-public static PaymentTemplateResponse fromEntity(PaymentTemplate paymentTemplate) {
-    return PaymentTemplateResponse.builder()
-            .id(paymentTemplate.getId())
-            .userId(paymentTemplate.getUserId())
-            .name(paymentTemplate.getName())
-            .description(paymentTemplate.getDescription())
-            .fromAccountId(paymentTemplate.getFromAccountId())
-            .toAccountId(paymentTemplate.getToAccountId())
-            .amount(paymentTemplate.getAmount())
-            .isRecurring(paymentTemplate.getIsRecurring())
-            .recurrenceCron(paymentTemplate.getRecurrenceCron())
-            .build();
-}
+    public static PaymentTemplateResponse fromEntity(PaymentTemplate paymentTemplate) {
+        return PaymentTemplateResponse.builder()
+                .id(paymentTemplate.getId())
+                .userId(paymentTemplate.getUserId())
+                .type(paymentTemplate.getType().name())
+                .name(paymentTemplate.getName())
+                .description(paymentTemplate.getDescription())
+                .fromCardNumber(paymentTemplate.getFromCardNumber())
+                .toCardNumber(paymentTemplate.getToCardNumber())
+                .amount(paymentTemplate.getAmount())
+                .isRecurring(paymentTemplate.getIsRecurring())
+                .nextExecutionTime(
+                        paymentTemplate.getNextExecutionTime() != null
+                                ? paymentTemplate.getNextExecutionTime().toString()
+                                : null
+                )
+                .build();
+    }
 }

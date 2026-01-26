@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-//TODO: додати логування
 @Service
 @RequiredArgsConstructor
 public class PaymentTransactionService {
@@ -34,13 +33,27 @@ public class PaymentTransactionService {
     public Payment createPendingPayment(PaymentTemplate paymentTemplate) {
         Payment payment = Payment.builder()
                 .userId(paymentTemplate.getUserId())
-                .fromAccountId(paymentTemplate.getFromAccountId())
-                .toAccountId(paymentTemplate.getToAccountId())
+                .fromCardNumber(paymentTemplate.getFromCardNumber())
+                .toCardNumber(paymentTemplate.getToCardNumber())
                 .amount(paymentTemplate.getAmount())
                 .description(paymentTemplate.getDescription())
                 .template(paymentTemplate)
                 .paymentStatus(PaymentStatus.PENDING)
-                .paymentType(paymentTemplate.getPaymentType())
+                .build();
+
+        return paymentRepository.save(payment);
+    }
+
+    @Transactional
+    public Payment createPendingPaymentService(PaymentTemplate paymentTemplate, String providerCardNumber, String finalDescription) {
+        Payment payment = Payment.builder()
+                .userId(paymentTemplate.getUserId())
+                .fromCardNumber(paymentTemplate.getFromCardNumber())
+                .toCardNumber(providerCardNumber)
+                .amount(paymentTemplate.getAmount())
+                .description(paymentTemplate.getDescription())
+                .template(paymentTemplate)
+                .paymentStatus(PaymentStatus.PENDING)
                 .build();
 
         return paymentRepository.save(payment);

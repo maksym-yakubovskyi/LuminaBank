@@ -2,7 +2,6 @@ package com.lumina_bank.authservice.service;
 
 import com.lumina_bank.authservice.dto.CreatedRefreshToken;
 import com.lumina_bank.authservice.dto.LoginRequest;
-import com.lumina_bank.authservice.dto.TokensResponse;
 import com.lumina_bank.authservice.dto.TokensWithRefresh;
 import com.lumina_bank.authservice.security.util.JwtProperties;
 import com.lumina_bank.authservice.security.model.UserDetailsImpl;

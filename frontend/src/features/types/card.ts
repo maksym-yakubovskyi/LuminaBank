@@ -1,4 +1,4 @@
-import type {CardNetwork, CardType} from "@/features/enum/enum.ts";
+import type {CardNetwork, CardType, Status} from "@/features/enum/enum.ts";
 
 export interface Card {
     id: number
@@ -8,7 +8,7 @@ export interface Card {
     cardType: string
     cardNetwork: string
     accountType: string
-    status: string
+    status: Status
     limit: number
     createdAt: string
     updatedAt: string

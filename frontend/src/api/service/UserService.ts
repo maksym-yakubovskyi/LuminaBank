@@ -4,7 +4,7 @@ import {api} from "@/api/api.ts"
 export default class UserService {
 
     static async getProfile(): Promise<UserProfile> {
-        const response = await api.get("/users/me")
+        const response = await api.get("/users/my")
         return response.data
     }
 
