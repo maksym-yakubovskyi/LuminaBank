@@ -9,8 +9,10 @@ import java.util.List;
 
 @Repository
 public interface BusinessUserRepository extends JpaRepository<BusinessUser,Long> {
-    boolean existsByIdAndActiveTrue(Long aLong);
+    boolean existsByIdAndActiveTrue(Long authUserId);
     List<BusinessUser> findAllByActiveTrue();
 
     List<BusinessUser> findAllByActiveTrueAndCategory(BusinessCategory category);
+
+    boolean existsByEmailAndActiveTrue(String email);
 }

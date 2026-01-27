@@ -60,7 +60,7 @@ public class AuthController {
 
     @PostMapping("/register/user")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterUserRequest req) {
-        log.info("POST /auth/register - Register request received for email: {}", req.email());
+        log.info("POST /auth/register/user - Register request received for email: {}", req.email());
 
         User user = userService.registerUser(req);
 
@@ -69,16 +69,16 @@ public class AuthController {
         return ResponseEntity.created(URI.create("/auth/register/user")).build();
     }
 
-//    @PostMapping("/register/user/business")
-//    public ResponseEntity<?> register(@Valid @RequestBody RegisterBusinessUserRequest req) {
-//        log.info("POST /auth/register - Register request received for email: {}", req.email());
-//
-//        User user = userService.registerUser(req);
-//
-//        log.info("User successfully registered for email: {}, userId={}", user.getEmail(), user.getId());
-//
-//        return ResponseEntity.created(URI.create("/auth/register")).build();
-//    }
+    @PostMapping("/register/user/business")
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterBusinessUserRequest req) {
+        log.info("POST /auth/register/user/business - Register request received for email: {}", req.email());
+
+        User user = userService.registerUser(req);
+
+        log.info("Business user successfully registered for email: {}, userId={}", user.getEmail(), user.getId());
+
+        return ResponseEntity.created(URI.create("/auth/register")).build();
+    }
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(

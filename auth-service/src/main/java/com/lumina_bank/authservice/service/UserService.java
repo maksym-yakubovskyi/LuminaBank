@@ -1,5 +1,6 @@
 package com.lumina_bank.authservice.service;
 
+import com.lumina_bank.authservice.dto.RegisterBusinessUserRequest;
 import com.lumina_bank.authservice.dto.RegisterUserRequest;
 import com.lumina_bank.authservice.exception.*;
 import com.lumina_bank.authservice.model.User;
@@ -65,6 +66,30 @@ public class UserService {
         eventPublisher.publishEvent(userRegisteredEventFactory.from(userSaved, req));
 
         log.debug("User registered (DB saved), userId={}, email={}", userSaved.getId(), userSaved.getEmail());
+
+        return userSaved;
+    }
+
+    @Transactional
+    public User registerUser(RegisterBusinessUserRequest req) {
+        log.debug("Attempt to register new b user with email={}", req.email());
+
+        emailVerificationService.validateVerificationCode(req.email(), req.verificationCode());
+
+        User userSaved = userRepository.save(
+                User.builder()
+                        .email(req.email())
+                        .passwordHash(passwordEncoder.encode(req.password()))
+                        .role(Role.USER)
+                        .enabled(Boolean.TRUE)
+                        .locked(Boolean.FALSE)
+                        .build()
+        );
+
+        emailVerificationService.deleteVerificationCode(req.email());
+        eventPublisher.publishEvent(userRegisteredEventFactory.from(userSaved, req));
+
+        log.debug("B User registered (DB saved), userId={}, email={}", userSaved.getId(), userSaved.getEmail());
 
         return userSaved;
     }

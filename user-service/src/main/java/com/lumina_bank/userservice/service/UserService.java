@@ -1,13 +1,12 @@
 package com.lumina_bank.userservice.service;
 
-import com.lumina_bank.common.dto.event.user_events.UserRegisteredEvent;
+import com.lumina_bank.common.dto.event.user_events.IndividualUserRegisteredEvent;
 import com.lumina_bank.common.enums.user.Role;
 import com.lumina_bank.userservice.dto.UserUpdateDto;
 import com.lumina_bank.userservice.exception.UserAlreadyExistsException;
 import com.lumina_bank.userservice.exception.UserNotFoundException;
 import com.lumina_bank.userservice.model.Address;
 import com.lumina_bank.userservice.model.User;
-import com.lumina_bank.userservice.repository.BusinessUserRepository;
 import com.lumina_bank.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,19 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final BusinessUserRepository businessUserRepository;
+    private final UserCheckService userCheckService;
 
     @Transactional
-    public void createUser(UserRegisteredEvent event) {
+    public void createUser(IndividualUserRegisteredEvent event) {
         log.debug("Attempting to create user with id={}", event.authUserId());
 
-        if (userRepository.existsByEmailAndActiveTrue(event.email())) {
-            log.warn("User with email {} already exists", event.email());
-            return;
-        }
-        if (userRepository.existsByIdAndActiveTrue((event.authUserId()))
-                || businessUserRepository.existsByIdAndActiveTrue((event.authUserId()))) {
-            log.warn("User with id {} already exists", event.authUserId());
+        if (userCheckService.checkUserExistsByEmailAndId(event.authUserId(),event.email())) {
+            log.warn("User already exists");
             return;
         }
 
@@ -103,5 +97,4 @@ public class UserService {
         user.setActive(false);
         userRepository.save(user);
     }
-
 }
