@@ -4,6 +4,7 @@ import UserService from "@/api/service/UserService.ts";
 import {Button} from "@/components/button/Button.tsx";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod"
+import {extractErrorMessage} from "@/api/apiError.ts";
 
 const userEditSchema = z.object({
     firstName: z.string().nonempty("Ім'я обов'язкове")
@@ -83,8 +84,14 @@ export function UserEditForm({user, onUpdate}: Props) {
             country: data.country,
         }
 
-        const updatedUser = await UserService.updateProfile(dto);
-        onUpdate(updatedUser);
+        try{
+            const updatedUser = await UserService.updateProfile(dto)
+            onUpdate(updatedUser)
+        }catch (err: any) {
+            console.log(err)
+            const message = extractErrorMessage(err)
+            alert("Помилка отримання" + message)
+        }
     }
 
     return (

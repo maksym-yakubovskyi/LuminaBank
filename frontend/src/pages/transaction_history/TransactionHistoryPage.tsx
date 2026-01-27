@@ -5,6 +5,7 @@ import type {TransactionHistoryItem} from "@/features/types/transactionHistoryIt
 import {TransactionHistoryBlock} from "@/components/dashboard/TransactionHistoryBlock.tsx";
 import TransactionBlock from "@/components/transaction_history/TransactionBlock.tsx";
 import {useParams} from "react-router-dom";
+import {extractErrorMessage} from "@/api/apiError.ts";
 
 export default function TransactionHistoryPage(){
     const { paymentId } = useParams<{ paymentId: string }>()
@@ -16,13 +17,18 @@ export default function TransactionHistoryPage(){
 
     useEffect(() => {
         async function loadData(){
-            const accounts = await AccountService.getMyAccounts()
-            const acc = accounts[0]
-            if (!acc) return
+            try{
+                const accounts = await AccountService.getMyAccounts()
+                const acc = accounts[0]
+                if (!acc) return
 
-            const history =
-                await TransactionHistoryService.getAllTransactionHistory(acc.id)
-            setHistory(history)
+                const history =
+                    await TransactionHistoryService.getAllTransactionHistory(acc.id)
+                setHistory(history)
+            }catch (err: any) {
+                const message = extractErrorMessage(err)
+                alert("Помилка отримання" + message)
+            }
         }
 
         loadData().catch(console.error)

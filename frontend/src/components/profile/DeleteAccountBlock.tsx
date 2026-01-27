@@ -1,6 +1,7 @@
 import {useAuth} from "@/features/auth/auth.context.tsx";
 import UserService from "@/api/service/UserService.ts";
 import {Button} from "@/components/button/Button.tsx";
+import {extractErrorMessage} from "@/api/apiError.ts";
 
 export function DeleteAccountBlock() {
     const { logout } = useAuth()
@@ -10,8 +11,14 @@ export function DeleteAccountBlock() {
             "Ви впевнені, що хочете видалити акаунт?\nЦю дію неможливо скасувати."
         )
         if (!confirmed) return
-        await UserService.deleteProfile()
-        await logout()
+        try{
+            await UserService.deleteProfile()
+            await logout()
+        }catch (err: any) {
+            console.log(err)
+            const message = extractErrorMessage(err)
+            alert("Помилка видалення " + message)
+        }
     }
 
     return (

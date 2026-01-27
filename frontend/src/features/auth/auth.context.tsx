@@ -2,6 +2,7 @@ import type {LoginRequest, LoginResponse, User} from "@/features/types/authTypes
 import {createContext, type ReactNode, useContext, useEffect, useState} from "react";
 import {tokenStorage} from "@/features/auth/tokenStorage.ts";
 import AuthService from "@/api/service/AuthService.ts";
+import {extractErrorMessage} from "@/api/apiError.ts";
 
 interface AuthContextType{
     user: User | null
@@ -23,11 +24,23 @@ export function AuthProvider({ children }: {children: ReactNode}) {
     const [initialized, setInitialized] = useState(false)
 
     useEffect(() => {
-        async function init() {
-            await refresh();
-            setInitialized(true)
+        let mounted = true
+
+        const init = async () => {
+            try {
+                await refresh()
+            } finally {
+                if (mounted) {
+                    setInitialized(true)
+                }
+            }
         }
-        init().catch(console.error)
+
+        void init()
+
+        return () => {
+            mounted = false
+        }
     }, [])
 
     const decodeToken = (token: string) => {
@@ -47,6 +60,12 @@ export function AuthProvider({ children }: {children: ReactNode}) {
         tokenStorage.setTokenType(null)
         setUser(null)
     }
+    const handleAuthError = (message: string) => {
+        setServerError(message)
+        clearToken()
+        setUser(null)
+        return false
+    }
 
     const login = async (data: LoginRequest) => {
         setServerError(null)
@@ -56,10 +75,7 @@ export function AuthProvider({ children }: {children: ReactNode}) {
 
             const payload = decodeToken(result.accessToken)
             if (!payload) {
-                setServerError("Не валідний токен")
-                clearToken()
-                setUser(null)
-                return false
+                return handleAuthError("Не валідний токен")
             }
 
             setUser({
@@ -70,8 +86,9 @@ export function AuthProvider({ children }: {children: ReactNode}) {
             return true
         } catch (err: any) {
             console.log(err)
-            if (err.response?.status === 401) setServerError("Невірний email або пароль")
-            else setServerError("Помилка сервера")
+            const message = extractErrorMessage(err)
+            setServerError(message)
+            clearToken()
             return false
         }
     }
@@ -83,7 +100,8 @@ export function AuthProvider({ children }: {children: ReactNode}) {
             clearToken()
         }catch (err: any) {
             console.log(err)
-            setServerError("Помилка сервера")
+            const message = extractErrorMessage(err)
+            setServerError(message)
         }
     }
 
@@ -94,7 +112,8 @@ export function AuthProvider({ children }: {children: ReactNode}) {
             clearToken()
         }catch (err: any) {
             console.log(err)
-            setServerError("Помилка сервера")
+            const message = extractErrorMessage(err)
+            setServerError(message)
         }
     }
 
@@ -105,10 +124,7 @@ export function AuthProvider({ children }: {children: ReactNode}) {
 
             const payload = decodeToken(result.accessToken)
             if (!payload) {
-                setServerError("Не валідний токен")
-                clearToken()
-                setUser(null)
-                return false
+                return handleAuthError("Не валідний токен")
             }
 
             setUser({
@@ -118,9 +134,9 @@ export function AuthProvider({ children }: {children: ReactNode}) {
             return true
         } catch(err: any) {
             console.log(err)
-            tokenStorage.setToken(null)
-            tokenStorage.setTokenType(null)
-            setUser(null)
+            const message = extractErrorMessage(err)
+            setServerError(message)
+            clearToken()
             return false
         }
     }

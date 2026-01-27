@@ -7,6 +7,7 @@ import type {TransactionHistoryItem} from "@/features/types/transactionHistoryIt
 import TransactionHistoryService from "@/api/service/TransactionHistoryService.ts";
 import {TransactionHistoryBlock} from "@/components/dashboard/TransactionHistoryBlock.tsx";
 import type {Account} from "@/features/types/account.ts";
+import {extractErrorMessage} from "@/api/apiError.ts";
 
 export default function DashboardPage() {
     const [card, setCard] = useState<Card | null>(null)
@@ -34,6 +35,9 @@ export default function DashboardPage() {
 
                 const history = await TransactionHistoryService.getTransactionHistory(acc.id)
                 setHistory(history)
+            }catch (err: any) {
+                const message = extractErrorMessage(err)
+                alert("Помилка отримання" + message)
             } finally {
                 setLoading(false)
             }
@@ -41,7 +45,6 @@ export default function DashboardPage() {
 
         loadDashboard().catch(console.error);
     }, [])
-
 
     return (
         <>

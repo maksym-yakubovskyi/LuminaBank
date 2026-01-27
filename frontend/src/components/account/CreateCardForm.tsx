@@ -6,6 +6,7 @@ import AccountService from "@/api/service/AccountService.ts";
 import CardService from "@/api/service/CardService.ts";
 import {Button} from "@/components/button/Button.tsx";
 import {AccountType, CardNetwork, CardType, Currency} from "@/features/enum/enum.ts";
+import {extractErrorMessage} from "@/api/apiError.ts";
 
 const createCardSchema = z.object({
     cardType: z.enum([CardType.PHYSICAL, CardType.VIRTUAL], {
@@ -63,21 +64,25 @@ export function CreateCardForm({ account, onCancel }: Props) {
 
     const onSubmit = async (data: FormInputs) => {
         let accountId = account?.id
+        try {
+            if (!accountId) {
+                const createdAccount = await AccountService.createAccount({
+                    currency: data.currency,
+                    type: data.accountType,
+                })
+                accountId = createdAccount.id
+            }
 
-        if (!accountId) {
-            const createdAccount = await AccountService.createAccount({
-                currency: data.currency,
-                type: data.accountType,
+            await CardService.createCard(accountId!, {
+                cardType: data.cardType,
+                cardNetwork: data.cardNetwork,
+                limit: data.limit,
             })
-            accountId = createdAccount.id
+        }catch (err: any) {
+            console.error(err);
+            const message = extractErrorMessage(err)
+            alert("Помилка відправки форми" + message)
         }
-
-        await CardService.createCard(accountId!, {
-            cardType: data.cardType,
-            cardNetwork: data.cardNetwork,
-            limit: data.limit,
-        })
-
         onCancel()
     }
 

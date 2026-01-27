@@ -6,6 +6,7 @@ import {Button} from "@/components/button/Button.tsx"
 import {useState} from "react"
 import {UserType} from "@/features/enum/enum.ts"
 import {useNavigate} from "react-router-dom";
+import {extractErrorMessage} from "@/api/apiError.ts";
 
 const clientShema = z.object({
     email: z.email({message: "Невірний email"}),
@@ -31,7 +32,6 @@ const clientShema = z.object({
 type ClientFromInputs = z.infer<typeof clientShema>
 
 export function RegisterFormClient() {
-    const [serverError, setServerError] = useState<string | null>(null)
     const [codeSent, setCodeSent] = useState(false)
     const navigate = useNavigate()
 
@@ -45,12 +45,12 @@ export function RegisterFormClient() {
             setCodeSent(true)
         }catch(err: any){
             console.log(err)
-            alert("Помилка відправки коду")
+            const message = extractErrorMessage(err)
+            alert("Помилка відправки коду" + message)
         }
     }
 
     const onSubmit = async (data: ClientFromInputs) => {
-        setServerError(null)
         try {
             await AuthService.registerUser({
                 email: data.email,
@@ -65,8 +65,9 @@ export function RegisterFormClient() {
             alert("Реєстрація пройшла успішно!");
             navigate("/login")
         } catch (err: any) {
-            console.error(err);
-            alert("Помилка реєстрації: " + (err.response?.data?.message ?? "Сервер недоступний"));
+            console.error(err)
+            const message = extractErrorMessage(err)
+            alert("Помилка реєстрації: " + message)
         }
     }
 
@@ -74,7 +75,6 @@ export function RegisterFormClient() {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
-            {serverError && <p style={{ color: "red" }}>{serverError}</p>}
             <div>
                 <label>Email</label>
                 <input type="email" {...register("email")}/>

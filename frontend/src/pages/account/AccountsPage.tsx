@@ -8,6 +8,7 @@ import AccountInfo from "@/components/account/AccountInfo.tsx";
 import type {Account} from "@/features/types/account.ts";
 import {Button} from "@/components/button/Button.tsx";
 import {CreateCardForm} from "@/components/account/CreateCardForm.tsx";
+import {extractErrorMessage} from "@/api/apiError.ts";
 
 export default function AccountsPage() {
     const [cards, setCards] = useState<Card[]>([])
@@ -18,13 +19,18 @@ export default function AccountsPage() {
 
     useEffect(() => {
         async function loadData(){
-            const accounts = await AccountService.getMyAccounts()
-            const acc = accounts[0]
-            if (!acc) return
-            setAccount(acc)
+            try{
+                const accounts = await AccountService.getMyAccounts()
+                const acc = accounts[0]
+                if (!acc) return
+                setAccount(acc)
 
-            const cards = await CardService.getCardsByAccount(acc.id)
-            setCards(cards)
+                const cards = await CardService.getCardsByAccount(acc.id)
+                setCards(cards)
+            }catch (err: any) {
+                const message = extractErrorMessage(err)
+                alert("Помилка отримання" + message)
+            }
         }
 
         loadData().catch(console.error)

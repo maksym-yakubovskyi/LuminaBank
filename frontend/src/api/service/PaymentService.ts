@@ -32,12 +32,7 @@ export default class PaymentService {
         return response.data
     }
 
-    static async deletePaymentTemplate(id: number): Promise<boolean> {
-        try{
-            const response = await api.delete(`/payments/payment_templates/${id}`);
-            return response.status === 204;
-        }catch(error){
-            return false;
-        }
+    static async deletePaymentTemplate(id: number): Promise<void> {
+        await api.delete(`/payments/payment_templates/${id}`);
     }
 }

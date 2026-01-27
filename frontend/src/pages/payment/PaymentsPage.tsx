@@ -8,6 +8,7 @@ import PaymentService from "@/api/service/PaymentService.ts";
 import type {TemplateItem} from "@/features/types/template.ts";
 import {PaymentTemplatesBlock} from "@/components/payment/PaymentTemplatesBlock.tsx";
 import {PaymentTemplateType, RecurrenceType} from "@/features/enum/enum.ts";
+import {extractErrorMessage} from "@/api/apiError.ts";
 
 export default function PaymentsPage() {
     const [mode, setMode] = useState<"transfer" | "service">("transfer")
@@ -16,11 +17,16 @@ export default function PaymentsPage() {
 
     useEffect(() => {
         async function loadData(){
-            const cards = await CardService.getMyCards()
-            setCards(cards)
+            try{
+                const cards = await CardService.getMyCards()
+                setCards(cards)
 
-            const templates = await PaymentService.getMyPaymentTemplates()
-            setTemplates(templates)
+                const templates = await PaymentService.getMyPaymentTemplates()
+                setTemplates(templates)
+            }catch (err: any) {
+                const message = extractErrorMessage(err)
+                alert("Помилка отримання" + message)
+            }
         }
         loadData().catch(console.error)
     }, [])
@@ -53,8 +59,10 @@ export default function PaymentsPage() {
                 amount: data.amount,
                 description: data.description ?? "",
             })
-        } catch (e: any) {
-            console.error(e)
+        } catch (err: any) {
+            console.error(err)
+            const message = extractErrorMessage(err)
+            alert("Помилка відправки" + message)
         }
     }
 
@@ -88,8 +96,10 @@ export default function PaymentsPage() {
                 amount: data.amount,
                 description: data.description ?? "",
             })
-        } catch (e: any) {
-            console.error(e)
+        } catch (err: any) {
+            console.error(err)
+            const message = extractErrorMessage(err)
+            alert("Помилка відправки" + message)
         }
     }
 

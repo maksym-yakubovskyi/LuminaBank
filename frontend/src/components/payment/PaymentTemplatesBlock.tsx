@@ -1,6 +1,7 @@
 import type {TemplateItem} from "@/features/types/template.ts";
 import PaymentService from "@/api/service/PaymentService.ts";
 import {PaymentTemplateType} from "@/features/enum/enum.ts";
+import {extractErrorMessage} from "@/api/apiError.ts";
 
 interface Props {
 templates: TemplateItem[]
@@ -11,13 +12,25 @@ export function PaymentTemplatesBlock ({templates,onDeleted}:Props){
     if (!templates) return <>Завантаження...</>
     if (templates.length === 0) return <>Список шаблонів порожній</>
 
-    async function deletePaymentTemplate(id: number){
-        const res = await PaymentService.deletePaymentTemplate(id)
-        if(res) onDeleted(id)
+    async function deletePaymentTemplate(id: number) {
+        try {
+            await PaymentService.deletePaymentTemplate(id)
+            onDeleted(id)
+        } catch (err) {
+            console.error(err)
+            const message = extractErrorMessage(err)
+            alert("Помилка видалення: " + message)
+        }
     }
 
     async function makeTemplatePayment(id: number){
-        await PaymentService.makeTemplatePayment(id)
+        try{
+            await PaymentService.makeTemplatePayment(id)
+        } catch (err: any) {
+            console.error(err)
+            const message = extractErrorMessage(err)
+            alert("Помилка відправки" + message)
+        }
     }
 
     return (
