@@ -7,8 +7,8 @@ import java.math.BigDecimal;
 
 @Builder
 public record TransactionRequest (
-        Long fromAccountId,
-        Long toAccountId,
+        String fromCardNumber,
+        String toCardNumber,
         Currency fromCurrency,
         Currency toCurrency,
         BigDecimal amount,

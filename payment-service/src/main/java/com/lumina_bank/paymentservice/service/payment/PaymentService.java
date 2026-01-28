@@ -1,8 +1,8 @@
 package com.lumina_bank.paymentservice.service.payment;
 
-import com.lumina_bank.common.enums.payment.Currency;
 import com.lumina_bank.common.exception.BusinessException;
 import com.lumina_bank.paymentservice.dto.PaymentRequest;
+import com.lumina_bank.paymentservice.dto.ServicePaymentRequest;
 import com.lumina_bank.paymentservice.dto.TransactionHistoryItemDto;
 import com.lumina_bank.paymentservice.dto.client.AccountResponse;
 import com.lumina_bank.paymentservice.dto.client.TransactionRequest;
@@ -11,6 +11,7 @@ import com.lumina_bank.paymentservice.exception.*;
 import com.lumina_bank.paymentservice.model.Payment;
 import com.lumina_bank.paymentservice.model.PaymentTemplate;
 import com.lumina_bank.paymentservice.repository.PaymentRepository;
+import com.lumina_bank.paymentservice.repository.PaymentTemplateRepository;
 import com.lumina_bank.paymentservice.service.client.AccountClientService;
 import com.lumina_bank.paymentservice.service.client.TransactionClientService;
 import com.lumina_bank.paymentservice.service.rate.NbuExchangeRateService;
@@ -37,7 +38,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final TransactionClientService transactionClientService;
     private final AccountClientService accountClientService;
-    private final PaymentTemplateService paymentTemplateService;
+    private final PaymentTemplateRepository paymentTemplateRepository;
     private final PaymentTransactionService paymentTransactionService;
     private final NbuExchangeRateService nbuExchangeRateService;
 
@@ -58,30 +59,47 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
+    public List<TransactionHistoryItemDto> getUserHistory(Long accountId){
+        return paymentRepository.findByFromAccountIdOrToAccountId(accountId,accountId).stream()
+                .map(p -> TransactionHistoryItemDto.toHistoryItem(p,accountId))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public Payment getPayment(Long paymentId) {
         return paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found with id: " + paymentId));
     }
 
+
+    public void makeTemplatePayment(Long templateId) {
+        PaymentTemplate template = paymentTemplateRepository.findByIdAndIsActiveTrue(templateId)
+                .orElseThrow(() -> new PaymentTemplateNotFoundException("Payment template with id " + templateId + " not found"));
+
+        makePayment(template);
+    }
+
     @Transactional
     public Payment makePayment(PaymentRequest paymentRequest,Long userId) {
-        if (paymentRequest.fromAccountId().equals(paymentRequest.toAccountId()))
-            throw new InvalidPaymentRequestException("Account IDs must not be the same");
+        if (paymentRequest.fromCardNumber().equals(paymentRequest.toCardNumber()))
+            throw new InvalidPaymentRequestException("Card numbers must not be the same");
 
-        PaymentTemplate template = paymentRequest.templateId() != null
-                ? paymentTemplateService.getPaymentTemplateById(paymentRequest.templateId())
-                : null;
+        PaymentTemplate template = null;
+        if (paymentRequest.templateId() != null) {
+            template = paymentTemplateRepository
+                    .findByIdAndIsActiveTrue(paymentRequest.templateId())
+                    .orElse(null);
+        }
 
         // Створення Платежу зі статусом PENDING
         Payment payment = Payment.builder()
                 .userId(userId)
-                .fromAccountId(paymentRequest.fromAccountId())
-                .toAccountId(paymentRequest.toAccountId())
+                .fromCardNumber(paymentRequest.fromCardNumber())
+                .toCardNumber(paymentRequest.toCardNumber())
                 .amount(paymentRequest.amount())
                 .description(paymentRequest.description())
                 .paymentStatus(PaymentStatus.PENDING)
                 .template(template)
-                .paymentType(paymentRequest.paymentType())
                 .build();
 
         payment = paymentRepository.save(payment);
@@ -92,6 +110,35 @@ public class PaymentService {
     public void makePayment(PaymentTemplate paymentTemplate) {
         Payment payment = paymentTransactionService.createPendingPayment(paymentTemplate);
         executePayment(payment);
+    }
+
+    @Transactional
+    public Payment makeServicePayment(ServicePaymentRequest request, Long userId) {
+        String providerCardNumber = getProviderCardNumber(request.providerId());
+
+        if (request.fromCardNumber().equals(providerCardNumber)) {
+            throw new InvalidPaymentRequestException("Card numbers must not be the same");
+        }
+
+        String finalDescription = buildServiceDescription(
+                request.description(),
+                request.payerReference()
+        );
+
+        Payment payment = Payment.builder()
+                .userId(userId)
+                .fromCardNumber(request.fromCardNumber())
+                .toCardNumber(providerCardNumber)
+                .amount(request.amount())
+                .description(finalDescription)
+                .paymentStatus(PaymentStatus.PENDING)
+                .build();
+
+        payment = paymentRepository.save(payment);
+
+        log.debug("Service payment saved with id={} status={}", payment.getId(), payment.getPaymentStatus());
+
+        return payment;
     }
 
     @Transactional
@@ -137,8 +184,8 @@ public class PaymentService {
     public void executePayment(Payment payment) {
         paymentTransactionService.markProcessing(payment);
 
-        Currency from = getAccountCurrency(payment.getFromAccountId());
-        Currency to = getAccountCurrency(payment.getToAccountId());
+        AccountResponse from = getAccount(payment.getFromCardNumber());
+        AccountResponse to = getAccount(payment.getToCardNumber());
 
         if (from == null || to == null) {
             log.warn("Failed to fetch account currency: from={}, to={}", from, to);
@@ -148,21 +195,23 @@ public class PaymentService {
             throw new ExternalServiceException("Unable to fetch account currency");
         }
 
-        BigDecimal rate = nbuExchangeRateService.getRate(from, to);
+        BigDecimal rate = nbuExchangeRateService.getRate(from.currency(), to.currency());
         BigDecimal convertedAmount = payment.getAmount().multiply(rate);
 
-        payment.setFromCurrency(from);
-        payment.setToCurrency(to);
+        payment.setFromAccountId(from.id());
+        payment.setToAccountId(to.id());
+        payment.setFromCurrency(from.currency());
+        payment.setToCurrency(to.currency());
         payment.setConvertedAmount(convertedAmount);
         payment.setExchangeRate(rate);
 
         try {
             var response = transactionClientService.makeTransaction(
                     TransactionRequest.builder()
-                            .fromAccountId(payment.getFromAccountId())
-                            .fromCurrency(from)
-                            .toCurrency(to)
-                            .toAccountId(payment.getToAccountId())
+                            .fromCardNumber(payment.getFromCardNumber())
+                            .fromCurrency(from.currency())
+                            .toCurrency(to.currency())
+                            .toCardNumber(payment.getToCardNumber())
                             .amount(payment.getAmount()) // у валюті відправника
                             .convertedAmount(convertedAmount) // у валюті отримувача
                             .exchangeRate(rate)
@@ -200,31 +249,60 @@ public class PaymentService {
         }
     }
 
-    private Currency getAccountCurrency(Long accountId) {
+    private AccountResponse getAccount(String cardNumber) {
         try {
-            var response = accountClientService.getAccount(accountId);
+            var response = accountClientService.getAccountByCardNumber(cardNumber);
 
             if (response == null) {
-                log.warn("Null response from account service for accountId={}", accountId);
-                throw new ExternalServiceException("Null response from account service");
+                log.warn("Null response from account service ");
+                return null;
             }
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 AccountResponse body = response.getBody();
                 if (body != null && body.currency() != null) {
-                    return Currency.valueOf(body.currency());
+                    return body;
                 } else {
-                    log.warn("Empty or invalid account response body for accountId={}", accountId);
-                    throw new ExternalServiceException("Invalid account response");
+                    log.warn("Empty or invalid account response body");
+                    return null;
                 }
             } else {
-                log.warn("Account service returned non-2xx for accountId={}, status={}, body={}",
-                        accountId, response.getStatusCode(), response.getBody());
-                throw new ExternalServiceException("Account service error: " + response.getStatusCode());
+                log.warn("Account service returned non-2xx  status={}, body={}",
+                        response.getStatusCode(), response.getBody());
+                return null;
             }
         } catch (Exception e) {
-            log.warn("Failed to fetch account currency for accountId={}: {}", accountId, e.getMessage(), e);
+            log.warn("Failed to fetch account currency : {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    public String getProviderCardNumber(Long providerId) {
+        try {
+            var response = accountClientService.getMerchantCardNumber(providerId);
+
+            if (response == null || !response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                throw new ExternalServiceException("Cannot fetch provider merchant card number");
+            }
+
+            String cardNumber = response.getBody().cardNumber();
+
+            if (cardNumber == null || cardNumber.isBlank()) {
+                throw new ExternalServiceException("Provider merchant card number is empty");
+            }
+
+            return cardNumber;
+        } catch (Exception e) {
+            log.warn("Failed to fetch account currency : {}", e.getMessage(), e);
             throw new ExternalServiceException("Failed to get account currency", e);
         }
+    }
+
+    public String buildServiceDescription(String description, String payerReference) {
+        String base = (description == null || description.isBlank())
+                ? "Service payment"
+                : description;
+
+        return base + " | Ref: " + payerReference;
     }
 }

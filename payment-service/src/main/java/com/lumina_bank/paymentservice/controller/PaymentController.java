@@ -2,7 +2,8 @@ package com.lumina_bank.paymentservice.controller;
 
 import com.lumina_bank.paymentservice.dto.PaymentRequest;
 import com.lumina_bank.paymentservice.dto.PaymentResponse;
-import com.lumina_bank.paymentservice.exception.JwtMissingException;
+import com.lumina_bank.paymentservice.dto.ServicePaymentRequest;
+import com.lumina_bank.common.exception.JwtMissingException;
 import com.lumina_bank.paymentservice.model.Payment;
 import com.lumina_bank.paymentservice.service.payment.PaymentService;
 import jakarta.validation.Valid;
@@ -37,6 +38,33 @@ public class PaymentController {
         return ResponseEntity.ok(PaymentResponse.fromEntity(payment));
     }
 
+    @PostMapping("/service")
+    public ResponseEntity<?> makePaymentService(
+            @Valid @RequestBody ServicePaymentRequest request,
+            @AuthenticationPrincipal Jwt jwt){
+        log.info("POST /payments/service - Making Service Payment");
+
+        if (jwt == null) throw new JwtMissingException("JWT token is required");
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        Payment payment = paymentService.makeServicePayment(request, userId);
+
+        log.info("Service payment created with id={}", payment.getId());
+
+        return ResponseEntity.ok(PaymentResponse.fromEntity(payment));
+    }
+
+    @PostMapping("/template/{templateId}")
+    public ResponseEntity<?> makePaymentTemplate(@PathVariable Long templateId){
+        log.info("POST /payments/template/{templateId} - Making Payment Template");
+
+        paymentService.makeTemplatePayment(templateId);
+
+        log.info("Payment by template created");
+
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/{paymentId}/cancel")
     public ResponseEntity<?> cancelPayment(@PathVariable Long paymentId){
         log.info("DELETE /payments/{paymentId} - Cancel Payment");
@@ -51,5 +79,14 @@ public class PaymentController {
         log.info("GET /payments/history/{accountId}/limit/{limit} - Get history limit={}",limit);
 
         return ResponseEntity.ok(paymentService.getUserHistory(accountId,limit));
+    }
+
+    @GetMapping("/history/{accountId}/all")
+    public ResponseEntity<?> getAllHistory(
+            @PathVariable Long accountId
+    ){
+        log.info("GET /payments/history/{accountId}/all - Get all history");
+
+        return ResponseEntity.ok(paymentService.getUserHistory(accountId));
     }
 }

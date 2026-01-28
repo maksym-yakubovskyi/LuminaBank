@@ -4,7 +4,6 @@ import com.lumina_bank.common.exception.BusinessException;
 import com.lumina_bank.transactionservice.dto.client.AccountOperationDto;
 import com.lumina_bank.transactionservice.dto.client.AccountResponse;
 import com.lumina_bank.transactionservice.dto.TransactionCreateDto;
-//import com.lumina_bank.transactionservice.dto.TransactionResponse;
 import com.lumina_bank.transactionservice.enums.TransactionOperation;
 import com.lumina_bank.transactionservice.enums.TransactionStatus;
 import com.lumina_bank.transactionservice.exception.*;
@@ -15,10 +14,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-//import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-//import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,8 +25,8 @@ public class TransactionService {
     private final AccountClientService accountClientService;
 
     public Transaction makeTransaction(TransactionCreateDto request) {
-        if (request.fromAccountId().equals(request.toAccountId()))
-            throw new SameAccountTransactionException("Sender and receiver accounts cannot be the same");
+        if (request.fromCardNumber().equals(request.toCardNumber()))
+            throw new SameAccountTransactionException("Sender and receiver cards cannot be the same");
 
         Transaction transaction = createPendingTransaction(request);
 
@@ -58,18 +55,10 @@ public class TransactionService {
         return transaction;
     }
 
-//    @Transactional(readOnly = true)
-//    public List<TransactionResponse> getAllUsersTransactions(Long accountId) {
-//        return transactionRepository.findAllByFromAccountIdOrToAccountId(accountId, accountId)
-//                .stream()
-//                .map(t -> TransactionResponse.fromEntity(t, accountId))
-//                .toList();
-//    }
-
     private Transaction createPendingTransaction(TransactionCreateDto request) {
         Transaction transaction = Transaction.builder()
-                .fromAccountId(request.fromAccountId())
-                .toAccountId(request.toAccountId())
+                .fromCardNumber(request.fromCardNumber())
+                .toCardNumber(request.toCardNumber())
                 .amount(request.amount())
                 .transactionStatus(TransactionStatus.PENDING)
                 .description(request.description())
@@ -78,32 +67,32 @@ public class TransactionService {
     }
 
     private void performTransaction(TransactionCreateDto request) {
-        log.debug("Perform transaction: withdraw from accountId={}, amount={}", request.fromAccountId(), request.amount());
-        callExternalTransaction(TransactionOperation.WITHDRAW, request.fromAccountId(),request.amount());
+        log.debug("Perform transaction: withdraw  amount={}",  request.amount());
+        callExternalTransaction(TransactionOperation.WITHDRAW, request.fromCardNumber(),request.amount());
 
         try{
-            log.debug("Depositing converted amount={}, to accountId={}", request.amount(), request.toAccountId());
-            callExternalTransaction(TransactionOperation.DEPOSIT, request.toAccountId(),request.convertedAmount());
+            log.debug("Depositing converted amount={}", request.amount());
+            callExternalTransaction(TransactionOperation.DEPOSIT, request.toCardNumber(),request.convertedAmount());
         }catch(Exception e){
-            callExternalTransaction(TransactionOperation.DEPOSIT, request.fromAccountId(),request.amount());
-            log.warn("Deposit failed for accountId={}, with error={}",request.toAccountId(), e.getMessage());
+            callExternalTransaction(TransactionOperation.DEPOSIT, request.fromCardNumber(),request.amount());
+            log.warn("Deposit failed with error={}" , e.getMessage());
             throw new ExternalServiceException("Deposit failed, transaction rolled back", e);
         }
     }
 
-    private void callExternalTransaction(TransactionOperation operation, Long accountId, BigDecimal amount) {
-        log.debug("Calling external service for {} operation: accountId={}, amount={}", operation, accountId, amount);
+    private void callExternalTransaction(TransactionOperation operation, String cardNumber, BigDecimal amount) {
+        log.debug("Calling external service for {} operation", operation);
 
         ResponseEntity<AccountResponse> response;
-        AccountOperationDto dto = AccountOperationDto.builder().amount(amount).build();
+        AccountOperationDto dto = AccountOperationDto.builder().amount(amount).cardNumber(cardNumber).build();
 
         switch (operation) {
-            case WITHDRAW -> response = accountClientService.withdraw(accountId, dto);
-            case DEPOSIT -> response = accountClientService.deposit(accountId, dto);
+            case WITHDRAW -> response = accountClientService.withdraw(dto);
+            case DEPOSIT -> response = accountClientService.deposit(dto);
             default -> throw new UnknownOperationException("Unknown operation: " + operation);
         }
         if (response == null) {
-            log.warn("{} operation returned null response for accountId={}", operation, accountId);
+            log.warn("{} operation returned null response", operation);
             throw new ExternalServiceException("Null response from account service");
         }
         if (!response.getStatusCode().is2xxSuccessful()) {
@@ -113,5 +102,4 @@ public class TransactionService {
                     operation, response.getStatusCode(), response.getBody()));
         }
     }
-
 }

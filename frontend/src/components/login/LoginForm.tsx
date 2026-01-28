@@ -10,19 +10,19 @@ const loginShema = z.object({
         .nonempty("Пароль обов'язковий")
         .min(6, "Пароль мінімум 6 символів")
         .max(32, "Пароль максимум 32 символи"),
-});
+})
 
-type LoginFormInputs = z.infer<typeof loginShema>;
+type LoginFormInputs = z.infer<typeof loginShema>
 
 interface Props {
-    onSubmit: (data: LoginFormInputs) => void;
-    serverError: string | null;
+    onSubmit: (data: LoginFormInputs) => void
+    serverError: string | null
 }
 
 export function LoginForm({onSubmit,serverError}: Props) {
     const {register, handleSubmit, formState: {errors, isSubmitting}} = useForm<LoginFormInputs>({
         resolver: zodResolver(loginShema),
-    });
+    })
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>

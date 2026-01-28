@@ -28,15 +28,7 @@ public class TransactionController {
         log.info("Transaction created id = {}",transaction.getId());
 
         return ResponseEntity.created(URI.create("/transactions/" + transaction.getId()))
-                .body(TransactionResponse.fromEntity(transaction, transaction.getFromAccountId()));
+                .body(TransactionResponse.builder().id(transaction.getId()).build());
 
     }
-
-//    @GetMapping("/{accountId}")
-//    public ResponseEntity<?> getTransactions(@PathVariable Long accountId) {
-//        log.info("GET /transactions/{accountId} - Fetching transactions with accountId={}", accountId);
-//
-//        return ResponseEntity.ok(transactionService.getAllUsersTransactions(accountId));
-//    }
-
 }

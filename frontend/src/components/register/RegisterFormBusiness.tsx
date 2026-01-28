@@ -4,8 +4,9 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import AuthService from "@/api/service/AuthService.ts";
 import {Button} from "@/components/button/Button.tsx";
 import {useState} from "react";
-import {UserType} from "@/features/enum/enum.ts";
+import {BusinessCategory, UserType} from "@/features/enum/enum.ts";
 import {useNavigate} from "react-router-dom";
+import {extractErrorMessage} from "@/api/apiError.ts";
 
 const businessShema = z.object({
     email: z.email({message: "Невірний email"}),
@@ -22,6 +23,10 @@ const businessShema = z.object({
         .string()
         .nonempty("Номер телефону обов'язковий")
         .regex(/^\+?\d{10,15}$/, "Невірний формат телефону"),
+    category: z.enum([BusinessCategory.COMMUNAL, BusinessCategory.MOBILE,
+        BusinessCategory.INTERNET, BusinessCategory.CREDIT ,BusinessCategory.OTHER], {
+        message: "Оберіть категорію",
+    }),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Паролі не співпадають",
     path: ["confirmPassword"],
@@ -30,7 +35,6 @@ const businessShema = z.object({
 type BusinessFromInputs = z.infer<typeof businessShema>
 
 export function RegisterFormBusiness() {
-    const [serverError, setServerError] = useState<string | null>(null);
     const [codeSent, setCodeSent] = useState(false)
     const navigate = useNavigate()
 
@@ -49,7 +53,6 @@ export function RegisterFormBusiness() {
     }
 
     const onSubmit = async (data: BusinessFromInputs) => {
-        setServerError(null)
         try {
             await AuthService.registerBusinessUser({
                 email: data.email,
@@ -57,6 +60,7 @@ export function RegisterFormBusiness() {
                 verificationCode: data.code,
                 phoneNumber: data.phone,
                 companyName: data.companyName,
+                categoty: data.category,
                 adrpou: data.adrpou,
                 userType: UserType.BUSINESS_USER
             })
@@ -64,7 +68,8 @@ export function RegisterFormBusiness() {
             navigate("/login")
         } catch (err: any) {
             console.error(err);
-            alert("Помилка реєстрації: " + (err.response?.data?.message ?? "Сервер недоступний"));
+            const message = extractErrorMessage(err)
+            alert("Помилка реєстрації" + message)
         }
     }
 
@@ -72,7 +77,6 @@ export function RegisterFormBusiness() {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
-            {serverError && <p style={{ color: "red" }}>{serverError}</p>}
             <div>
                 <label>Email</label>
                 <input type="email" {...register("email")}/>
@@ -105,6 +109,19 @@ export function RegisterFormBusiness() {
                 <label>ЄДРПОУ</label>
                 <input {...register("adrpou")} />
                 {errors.adrpou && <p style={{ color: "red" }}>{errors.adrpou.message}</p>}
+            </div>
+
+            <div >
+                <label>Категорія</label>
+                <select {...register("category")} style={{ display: "block", width: "100%" }}>
+                    <option value="MOBILE">Мобільний зв’язок</option>
+                    <option value="COMMUNAL">Комунальні</option>
+                    <option value="INTERNET">Інтернет</option>
+                    <option value="CREDIT">Кредити</option>
+                    <option value="OTHER">Інше</option>
+                </select>
+
+                {errors.category && <p style={{ color: "red" }}>{errors.category.message}</p>}
             </div>
 
             <div>

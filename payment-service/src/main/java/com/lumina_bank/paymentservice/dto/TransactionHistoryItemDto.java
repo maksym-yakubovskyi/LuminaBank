@@ -10,12 +10,12 @@ import java.time.LocalDate;
 @Builder
 public record TransactionHistoryItemDto(
         Long paymentId,
-        String type,
         BigDecimal amount,
         String currency,
         LocalDate date,
         String direction,
-        String status
+        String status,
+        String description
 ) {
 
     static public TransactionHistoryItemDto toHistoryItem(Payment p, Long accountId){
@@ -24,12 +24,12 @@ public record TransactionHistoryItemDto(
 
         return TransactionHistoryItemDto.builder()
                 .paymentId(p.getId())
-                .type(p.getPaymentType().name())
                 .amount(p.getAmount())
                 .currency(p.getFromCurrency().name())
                 .date(p.getCreatedAt().toLocalDate())
                 .direction(direction)
                 .status(p.getPaymentStatus().name())
+                .description(p.getDescription())
                 .build();
     }
 }

@@ -1,6 +1,5 @@
 package com.lumina_bank.userservice.dto;
 
-import com.lumina_bank.common.enums.user.Role;
 import com.lumina_bank.userservice.model.Address;
 import com.lumina_bank.userservice.model.User;
 import lombok.Builder;
@@ -16,18 +15,18 @@ public record UserResponse(
         String phoneNumber,
         LocalDate birthDate,
         Address address,
-        Role role
+        String role
 ) {
     public static UserResponse fromEntity(User user) {
-        return UserResponse.builder().
-                id(user.getId()).
-                firstName(user.getFirstName()).
-                lastName(user.getLastName()).
-                email(user.getEmail()).
-                phoneNumber(user.getPhoneNumber()).
-                birthDate(user.getBirthDate()).
-                address(user.getAddress()).
-                role(user.getRole()).
-                build();
+        return UserResponse.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .birthDate(user.getBirthDate())
+                .address(user.getAddress())
+                .role(user.getRole().name())
+                .build();
     }
 }

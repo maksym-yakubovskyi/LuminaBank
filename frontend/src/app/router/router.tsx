@@ -1,20 +1,20 @@
-import {createBrowserRouter} from "react-router-dom";
+import {createBrowserRouter, Navigate} from "react-router-dom";
 import LoginPage from "@/pages/login/LoginPage.tsx";
 import RegisterPage from "@/pages/register/RegisterPage.tsx";
 import App from "@/app/App.tsx";
 import {AuthLayouts} from "@/app/layouts/AuthLayouts.tsx";
-import {publicLoader} from "@/app/router/public.loader.tsx";
 import {MainLayout} from "@/app/layouts/MainLayouts.tsx";
 import DashboardPage from "@/pages/dashboard/DashboardPage.tsx";
-import {rootLoader} from "@/app/router/rootLoader.tsx";
-import {protectedLoader} from "@/app/router/protected.loader.tsx";
+import {ProtectedRoute} from "@/app/router/ProtectedRoute.tsx";
+import TransactionHistoryPage from "@/pages/transaction_history/TransactionHistoryPage.tsx";
+import AccountsPage from "@/pages/account/AccountsPage.tsx";
+import UserProfilePage from "@/pages/profile/UserProfilePage.tsx";
+import {PublicRoute} from "@/app/router/PublicRouter.tsx";
+import PaymentsPage from "@/pages/payment/PaymentsPage.tsx";
 
 export const router = createBrowserRouter([
     {
         path: "/",
-        loader: rootLoader
-    },
-    {
         element: <App />,
         children: [
             {
@@ -22,13 +22,19 @@ export const router = createBrowserRouter([
                 children: [
                     {
                         path: "login",
-                        loader: publicLoader,
-                        element: <LoginPage/>,
+                        element:(
+                        <PublicRoute>
+                            <LoginPage/>
+                        </PublicRoute>
+                        ),
                     },
                     {
                         path: "register",
-                        loader: publicLoader,
-                        element: <RegisterPage/>,
+                        element:(
+                            <PublicRoute>
+                                <RegisterPage/>
+                            </PublicRoute>
+                        ),
                     }
                 ]
             },
@@ -37,10 +43,65 @@ export const router = createBrowserRouter([
                 children: [
                     {
                         path: "dashboard",
-                        loader: protectedLoader,
-                        element:<DashboardPage/>,
+                        element: (
+                            <ProtectedRoute>
+                                <DashboardPage />
+                            </ProtectedRoute>
+                        )
                     },
+                    {
+                        path: "transactions",
+                        element: (
+                            <ProtectedRoute>
+                                <TransactionHistoryPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: "transactions/:paymentId",
+                        element: (
+                            <ProtectedRoute>
+                                <TransactionHistoryPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: "accounts",
+                        element: (
+                            <ProtectedRoute>
+                                <AccountsPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: "accounts/:cardId",
+                        element: (
+                            <ProtectedRoute>
+                                <AccountsPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: "profile",
+                        element: (
+                            <ProtectedRoute>
+                                <UserProfilePage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: "payment",
+                        element: (
+                            <ProtectedRoute>
+                                <PaymentsPage />
+                            </ProtectedRoute>
+                        )
+                    }
                 ]
+            },
+            {
+                index:true,
+                element:<Navigate to="/dashboard" replace/>
             }
         ]
     },

@@ -2,7 +2,7 @@ package com.lumina_bank.authservice.service;
 
 import com.lumina_bank.authservice.dto.CreatedRefreshToken;
 import com.lumina_bank.authservice.dto.LoginRequest;
-import com.lumina_bank.authservice.dto.TokensResponse;
+import com.lumina_bank.authservice.dto.TokensWithRefresh;
 import com.lumina_bank.authservice.security.util.JwtProperties;
 import com.lumina_bank.authservice.security.model.UserDetailsImpl;
 import com.lumina_bank.authservice.security.service.JwtTokenService;
@@ -26,7 +26,7 @@ public class AuthService {
     private final JwtProperties jwtProperties;
     private final RefreshTokenService refreshTokenService;
 
-    public TokensResponse login(LoginRequest req) {
+    public TokensWithRefresh login(LoginRequest req) {
         log.debug("Authentication attempt for email:{}", req.email());
 
         var authentication = authenticationManager.authenticate(
@@ -57,7 +57,7 @@ public class AuthService {
 
         log.debug("Access token created for userId={}, sessionId={}", userId, created.sessionId());
 
-        return TokensResponse.builder()
+        return TokensWithRefresh.builder()
                 .accessToken(accessToken)
                 .refreshToken(created.refreshToken())
                 .tokenType(jwtProperties.tokenType())

@@ -1,7 +1,8 @@
 import type {LoginRequest, LoginResponse, User} from "@/features/types/authTypes.ts";
-import {createContext, type ReactNode, useContext, useState} from "react";
+import {createContext, type ReactNode, useContext, useEffect, useState} from "react";
 import {tokenStorage} from "@/features/auth/tokenStorage.ts";
 import AuthService from "@/api/service/AuthService.ts";
+import {extractErrorMessage} from "@/api/apiError.ts";
 
 interface AuthContextType{
     user: User | null
@@ -9,63 +10,134 @@ interface AuthContextType{
     serverError: string | null
     login: (data: LoginRequest) => Promise<boolean>
     logout: () => Promise<void>
+    logoutAll: () => Promise<void>
     refresh: () => Promise<boolean>
     setServerError: (msg: string | null) => void
+    initialized: boolean
 }
 
-const AuthContext = createContext<AuthContextType>(null!);
+const AuthContext = createContext<AuthContextType>(null!)
 
 export function AuthProvider({ children }: {children: ReactNode}) {
     const [user, setUser] = useState<User | null>(null)
     const [serverError, setServerError] = useState<string | null>(null)
+    const [initialized, setInitialized] = useState(false)
+
+    useEffect(() => {
+        let mounted = true
+
+        const init = async () => {
+            try {
+                await refresh()
+            } finally {
+                if (mounted) {
+                    setInitialized(true)
+                }
+            }
+        }
+
+        void init()
+
+        return () => {
+            mounted = false
+        }
+    }, [])
+
+    const decodeToken = (token: string) => {
+        try {
+            return JSON.parse(atob(token.split(".")[1]))
+        } catch {
+            return null
+        }
+    }
+
+    const applyToken = (result: LoginResponse) => {
+        tokenStorage.setToken(result.accessToken);
+        tokenStorage.setTokenType(result.tokenType);
+    }
+    const clearToken = () => {
+        tokenStorage.setToken(null)
+        tokenStorage.setTokenType(null)
+        setUser(null)
+    }
+    const handleAuthError = (message: string) => {
+        setServerError(message)
+        clearToken()
+        setUser(null)
+        return false
+    }
 
     const login = async (data: LoginRequest) => {
-        setServerError(null);
+        setServerError(null)
         try {
-            const result: LoginResponse = await AuthService.loginUser(data);
-            tokenStorage.setToken(result.accessToken);
-            tokenStorage.setTokenType(result.tokenType);
+            const result: LoginResponse = await AuthService.loginUser(data)
+            applyToken(result)
 
-            const payload = JSON.parse(atob(result.accessToken.split(".")[1]))
+            const payload = decodeToken(result.accessToken)
+            if (!payload) {
+                return handleAuthError("Не валідний токен")
+            }
+
             setUser({
                 id: payload.sub,
                 role: payload.role
             })
 
-            console.log(result);
-            return true;
+            return true
         } catch (err: any) {
-            console.log(err);
-            if (err.response?.status === 401) setServerError("Невірний email або пароль");
-            else setServerError("Помилка сервера");
-            return false;
+            console.log(err)
+            const message = extractErrorMessage(err)
+            setServerError(message)
+            clearToken()
+            return false
         }
     }
 
     const logout = async (): Promise<void> => {
-        tokenStorage.setToken(null)
-        tokenStorage.setTokenType(null)
-        setUser(null)
+        setServerError(null)
+        try{
+            await AuthService.logout()
+            clearToken()
+        }catch (err: any) {
+            console.log(err)
+            const message = extractErrorMessage(err)
+            setServerError(message)
+        }
+    }
+
+    const logoutAll = async (): Promise<void> => {
+        setServerError(null)
+        try{
+            await AuthService.logoutAll()
+            clearToken()
+        }catch (err: any) {
+            console.log(err)
+            const message = extractErrorMessage(err)
+            setServerError(message)
+        }
     }
 
     const refresh = async (): Promise<boolean> => {
         try {
-            const result: LoginResponse = await AuthService.refreshToken();
-            tokenStorage.setToken(result.accessToken);
-            tokenStorage.setTokenType(result.tokenType);
-            const payload = JSON.parse(atob(result.accessToken.split(".")[1]))
+            const result: LoginResponse = await AuthService.refreshToken()
+            applyToken(result)
+
+            const payload = decodeToken(result.accessToken)
+            if (!payload) {
+                return handleAuthError("Не валідний токен")
+            }
+
             setUser({
-                id: payload.id,
+                id: payload.sub,
                 role: payload.role
             })
-            console.log(result);
-            return true;
+            return true
         } catch(err: any) {
-            console.log(err);
-            tokenStorage.setToken(null);
-            tokenStorage.setTokenType(null);
-            setUser(null);
-            return false;
+            console.log(err)
+            const message = extractErrorMessage(err)
+            setServerError(message)
+            clearToken()
+            return false
         }
     }
     return (
@@ -76,8 +148,10 @@ export function AuthProvider({ children }: {children: ReactNode}) {
                 serverError,
                 login,
                 logout,
+                logoutAll,
                 refresh,
-                setServerError
+                setServerError,
+                initialized,
             }}
         >
             {children}
@@ -85,5 +159,4 @@ export function AuthProvider({ children }: {children: ReactNode}) {
     )
 }
 
-export const useAuth = () => AuthContext && useContext(AuthContext);
-
+export const useAuth = () => useContext(AuthContext)

@@ -4,7 +4,7 @@ import com.lumina_bank.accountservice.dto.AccountCreateDto;
 import com.lumina_bank.accountservice.dto.AccountOperationDto;
 import com.lumina_bank.accountservice.dto.AccountResponse;
 import com.lumina_bank.accountservice.enums.Status;
-import com.lumina_bank.accountservice.exception.JwtMissingException;
+import com.lumina_bank.common.exception.JwtMissingException;
 import com.lumina_bank.accountservice.model.Account;
 import com.lumina_bank.accountservice.service.AccountService;
 import jakarta.validation.Valid;
@@ -28,11 +28,10 @@ public class AccountController {
     public ResponseEntity<?> createAccount(
             @Valid @RequestBody AccountCreateDto accountDto,
             @AuthenticationPrincipal Jwt jwt) {
+        log.info("POST /accounts - Received request to create account");
+
         if (jwt == null) throw new JwtMissingException("JWT token is required");
-
         Long authUserId = Long.valueOf(jwt.getSubject());
-
-        log.info("POST /accounts - Received request to create account : {}", authUserId);
 
         Account account = accountService.createAccount(accountDto,authUserId);
 
@@ -42,26 +41,24 @@ public class AccountController {
                 .body(AccountResponse.fromEntity(account));
     }
 
-    @PutMapping("/{accountId}/deposit")
+    @PutMapping("/deposit")
     public ResponseEntity<?> deposit(
-            @PathVariable Long accountId,
             @Valid @RequestBody AccountOperationDto accountDto) {
-        log.info("PUT /accounts/{accountId}/deposit - Received request to deposit to accountId = {}", accountId);
+        log.info("PUT /accounts/{accountId}/deposit - Received request to deposit ");
 
-        Account updateAccount = accountService.deposit(accountId, accountDto.amount());
+        Account updateAccount = accountService.deposit(accountDto.cardNumber(),accountDto.amount());
 
         log.info("Deposit - Account updated id={}", updateAccount.getId());
 
         return ResponseEntity.ok(AccountResponse.fromEntity(updateAccount));
     }
 
-    @PutMapping("/{accountId}/withdraw")
+    @PutMapping("/withdraw")
     public ResponseEntity<?> withdraw(
-            @PathVariable Long accountId,
             @Valid @RequestBody AccountOperationDto accountDto) {
-        log.info("PUT /accounts/{accountId}/withdraw - Received request to withdraw from accountId = {}", accountId);
+        log.info("PUT /accounts/{accountId}/withdraw - Received request to withdraw");
 
-        Account updateAccount = accountService.withdraw(accountId, accountDto.amount());
+        Account updateAccount = accountService.withdraw(accountDto.cardNumber(), accountDto.amount());
 
         log.info("Withdraw - Account updated id={}", updateAccount.getId());
 
@@ -70,28 +67,35 @@ public class AccountController {
 
     @GetMapping("/my")
     public ResponseEntity<?> getUserAccounts(@AuthenticationPrincipal Jwt jwt) {
+        log.info("GET /accounts/my - Fetching user account");
+
         if (jwt == null) throw new JwtMissingException("JWT token is required");
         Long authUserId = Long.valueOf(jwt.getSubject());
-
-        log.info("GET /accounts/{userId}/user-accounts - Fetching user account with userId = {}", authUserId);
 
         return ResponseEntity.ok().body(accountService.getAccountsByUserId(authUserId));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getAccount(@PathVariable Long id) {
-        log.info("GET /accounts/id} - Fetching account with id = {}", id);
+    @GetMapping("/by-card/{cardNumber}")
+    public ResponseEntity<?> getAccount(@PathVariable String cardNumber) {
+        log.info("GET /accounts/by-card/{cardNumber} - Fetching account by card number");
 
-        return ResponseEntity.ok().body(accountService.getAccountById(id));
+        return ResponseEntity.ok().body(accountService.getAccountByCardNumber(cardNumber));
     }
 
-    @PatchMapping("/{accountId}")
-    public ResponseEntity<?> setActiveAccount(
+    @GetMapping("/merchant/card-number/{providerId}")
+    public ResponseEntity<?> getMerchantCardNumber(@PathVariable Long providerId) {
+        log.info("GET /accounts/merchant/card-number/{} - Fetching merchant card", providerId);
+
+        return ResponseEntity.ok(accountService.getMerchantCardNumber(providerId));
+    }
+
+    @PutMapping("/{accountId}")
+    public ResponseEntity<?> setStatusAccount(
             @PathVariable Long accountId,
             @RequestBody Status status) {
         log.info("PUT /accounts/{accountId} - Received request to change active status account with id={}", accountId);
 
-        Account account = accountService.setActive(accountId, status);
+        Account account = accountService.setStatus(accountId, status);
 
         log.info("Active status account updated id={},status={}", account.getId(),status);
 

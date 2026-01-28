@@ -5,12 +5,14 @@ import type {Account} from "@/features/types/account.ts";
 interface Props{
     card: Card | null
     account: Account | null
+    loading: boolean
 }
 
-export function CardInfoBlock({card,account}: Props) {
-    if (!card || !account) {
-        return <>Завантаження...</>
-    }
+export function CardInfoBlock({card,account,loading }: Props) {
+    if (loading) return <>Завантаження...</>
+    if (!account) return <>У вас немає рахунків. Створіть рахунок </>
+    if (!card) return <>У вас немає картки для цього рахунку </>
+
     return (<>
             <Link
                 to="/accounts"

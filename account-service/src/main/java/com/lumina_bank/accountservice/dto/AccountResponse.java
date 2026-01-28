@@ -1,6 +1,7 @@
 package com.lumina_bank.accountservice.dto;
 
 import com.lumina_bank.accountservice.model.Account;
+import com.lumina_bank.common.enums.payment.Currency;
 import lombok.Builder;
 
 import java.math.BigDecimal;
@@ -11,7 +12,7 @@ public record AccountResponse(
         Long id,
         BigDecimal balance,
         String iban,
-        String  currency,
+        Currency currency,
         String status,
         String type,
         LocalDateTime createdAt,
@@ -22,7 +23,7 @@ public record AccountResponse(
                 id(account.getId()).
                 balance(account.getBalance()).
                 iban(account.getIban()).
-                currency(account.getCurrency().name()).
+                currency(account.getCurrency()).
                 status(account.getStatus().name()).
                 type(account.getType().name()).
                 createdAt(account.getCreatedAt()).

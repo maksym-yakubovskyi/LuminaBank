@@ -25,9 +25,9 @@ public class Transaction {
     private Long id;
 
     @Column(nullable = false)
-    private Long fromAccountId;
+    private String fromCardNumber;
     @Column(nullable = false)
-    private Long toAccountId;
+    private String toCardNumber;
     @Column(nullable = false,precision = 15, scale = 2)
     private BigDecimal amount;
     private String description;

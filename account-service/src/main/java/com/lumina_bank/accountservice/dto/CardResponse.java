@@ -20,7 +20,8 @@ public record CardResponse(
         String status,
         BigDecimal limit,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        Long accountId
 ) {
     public static CardResponse fromEntity(Card card) {
         return CardResponse.builder().
@@ -34,6 +35,7 @@ public record CardResponse(
                 limit(card.getLimit()).
                 createdAt(card.getCreatedAt()).
                 updatedAt(card.getUpdatedAt()).
+                accountId(card.getAccount().getId()).
                 build();
     }
 }

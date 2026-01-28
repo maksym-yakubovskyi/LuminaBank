@@ -1,8 +1,7 @@
 package com.lumina_bank.authservice.security.service;
 
 import com.lumina_bank.authservice.dto.CreatedRefreshToken;
-import com.lumina_bank.authservice.dto.RefreshRequest;
-import com.lumina_bank.authservice.dto.TokensResponse;
+import com.lumina_bank.authservice.dto.TokensWithRefresh;
 import com.lumina_bank.authservice.exception.RefreshTokenExpiredException;
 import com.lumina_bank.authservice.exception.RevokedTokenException;
 import com.lumina_bank.authservice.exception.TokenNotFoundException;
@@ -98,10 +97,10 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public TokensResponse refreshToken(RefreshRequest req) {
+    public TokensWithRefresh refreshToken(String rawToken) {
         log.debug("Refresh token attempt");
 
-        RefreshToken old = validateAndConsumeRefreshToken(req.refreshToken());
+        RefreshToken old = validateAndConsumeRefreshToken(rawToken);
         User user = userService.getUserById(old.getUser().getId());
 
         String newAccessToken = jwtTokenService.generateAccessToken(
@@ -114,7 +113,7 @@ public class RefreshTokenService {
 
         log.debug("Refresh token rotated successfully, userId={}, sessionId={}", user.getId(), old.getSessionId());
 
-        return TokensResponse.builder()
+        return TokensWithRefresh.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(rotated.refreshToken())
                 .tokenType(jwtProperties.tokenType())

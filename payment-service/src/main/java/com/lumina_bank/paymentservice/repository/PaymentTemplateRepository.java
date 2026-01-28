@@ -13,4 +13,6 @@ public interface PaymentTemplateRepository extends JpaRepository<PaymentTemplate
     List<PaymentTemplate> findByIsRecurringTrueAndIsActiveTrueAndNextExecutionTimeBefore(LocalDateTime time);
 
     Optional<PaymentTemplate> findByIdAndIsActiveTrue(Long paymentTemplateId);
+
+    List<PaymentTemplate> findAllByUserIdAndIsActiveTrue(Long userId);
 }

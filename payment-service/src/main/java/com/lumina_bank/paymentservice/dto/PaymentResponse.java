@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 @Builder
 public record PaymentResponse(
         Long id,
-        Long fromAccountId,
-        Long toAccountId,
+        String fromCardNumber,
+        String toCardNumber,
         BigDecimal amount,
         String description,
         String status,
@@ -20,8 +20,8 @@ public record PaymentResponse(
     public static PaymentResponse fromEntity(Payment payment) {
         return PaymentResponse.builder()
                 .id(payment.getId())
-                .fromAccountId(payment.getFromAccountId())
-                .toAccountId(payment.getToAccountId())
+                .fromCardNumber(payment.getFromCardNumber())
+                .toCardNumber(payment.getToCardNumber())
                 .amount(payment.getAmount())
                 .description(payment.getDescription())
                 .status(payment.getPaymentStatus().name())

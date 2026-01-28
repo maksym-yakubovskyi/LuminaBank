@@ -14,4 +14,6 @@ public interface PaymentRepository extends JpaRepository<Payment,Long> {
     List<Payment> findAllByPaymentStatusAndCreatedAtBefore(PaymentStatus paymentStatus, LocalDateTime minus);
 
     Page<Payment> findByFromAccountIdOrToAccountId(Long fromId, Long toId, Pageable pageable);
+
+    List<Payment> findByFromAccountIdOrToAccountId(Long accountId, Long accountId1);
 }

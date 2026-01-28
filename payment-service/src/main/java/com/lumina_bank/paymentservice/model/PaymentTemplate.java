@@ -1,6 +1,6 @@
 package com.lumina_bank.paymentservice.model;
 
-import com.lumina_bank.paymentservice.enums.PaymentType;
+import com.lumina_bank.paymentservice.enums.PaymentTemplateType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,25 +23,27 @@ public class PaymentTemplate {
     @Column(nullable = false)
     private Long userId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PaymentTemplateType type;
+
     @Column(nullable = false)
     private String name;
-    @Column(nullable = false)
+
     private String description;
 
     @Column(nullable = false)
-    private Long fromAccountId;
+    private String fromCardNumber;
+
     @Column(nullable = false)
-    private Long toAccountId;
+    private String toCardNumber;
 
     @Column(nullable = false)
     private BigDecimal amount;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private PaymentType paymentType;
-
     @Column(nullable = false)
     private Boolean isRecurring;
+
     private String recurrenceCron;
 
     private LocalDateTime nextExecutionTime;

@@ -7,31 +7,44 @@ import type {TransactionHistoryItem} from "@/features/types/transactionHistoryIt
 import TransactionHistoryService from "@/api/service/TransactionHistoryService.ts";
 import {TransactionHistoryBlock} from "@/components/dashboard/TransactionHistoryBlock.tsx";
 import type {Account} from "@/features/types/account.ts";
+import {extractErrorMessage} from "@/api/apiError.ts";
 
 export default function DashboardPage() {
-    const [card, setCard] = useState<Card | null>(null);
-    const [account, setAccount] = useState<Account | null>(null);
-    const [history, setHistory] = useState<TransactionHistoryItem[] | null>(null);
+    const [card, setCard] = useState<Card | null>(null)
+    const [account, setAccount] = useState<Account | null>(null)
+    const [history, setHistory] = useState<TransactionHistoryItem[] | null>(null)
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         async function loadDashboard() {
-            const accounts = await AccountService.getMyAccounts();
-            const acc = accounts[0];
-            if (!acc) return;
+            try {
+                const accounts = await AccountService.getMyAccounts()
+                const acc = accounts[0]
 
-            setAccount(acc);
+                if (!acc) {
+                    setAccount(null)
+                    setCard(null)
+                    setHistory([])
+                    return
+                }
 
-            const cards = await CardService.getCardsByAccount(acc.id);
-            setCard(cards[0] ?? null);
+                setAccount(acc)
 
-            const history =
-                await TransactionHistoryService.getTransactionHistory(acc.id);
-            setHistory(history);
+                const cards = await CardService.getCardsByAccount(acc.id)
+                setCard(cards[0] ?? null)
+
+                const history = await TransactionHistoryService.getTransactionHistory(acc.id)
+                setHistory(history)
+            }catch (err: any) {
+                const message = extractErrorMessage(err)
+                alert("Помилка отримання" + message)
+            } finally {
+                setLoading(false)
+            }
         }
 
         loadDashboard().catch(console.error);
-    }, []);
-
+    }, [])
 
     return (
         <>
@@ -41,7 +54,7 @@ export default function DashboardPage() {
                     padding: "16px",
                 }}
             >
-                <CardInfoBlock card={card} account={account} />
+                <CardInfoBlock card={card} account={account} loading={loading} />
                 <TransactionHistoryBlock history={history}/>
             </section>
 

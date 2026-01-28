@@ -1,5 +1,6 @@
 package com.lumina_bank.userservice.controller;
 
+import com.lumina_bank.common.exception.JwtMissingException;
 import com.lumina_bank.userservice.dto.UserResponse;
 import com.lumina_bank.userservice.dto.UserUpdateDto;
 import com.lumina_bank.userservice.model.User;
@@ -8,6 +9,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,49 +20,46 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
 
-//    @PostMapping
-//    public ResponseEntity<?> createUser(@Valid @RequestBody UserCreateDto userDto) {
-//        log.info("POST /users - Received request to create user : {}", userDto.email());
-//
-//        User user = userService.createUser(userDto);
-//
-//        log.info("User created id={}", user.getId());
-//
-//        return ResponseEntity.created(URI.create("/users/" + user.getId()))
-//                .body(UserResponse.fromEntity(user));
-//    }
+    @GetMapping("/my")
+    public ResponseEntity<?> getUser(@AuthenticationPrincipal Jwt jwt) {
+        log.info("GET /users/{id} - Fetching user");
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getUser(@PathVariable Long id) {
-        log.info("GET /users/{id} - Fetching user with id={}", id);
+        if (jwt == null) throw new JwtMissingException("JWT token is required");
+        Long userId = Long.valueOf(jwt.getSubject());
 
-        User user = userService.getUserById(id);
+        User user = userService.getUserById(userId);
 
         log.info("User fetched id={}", user.getId());
 
         return ResponseEntity.ok().body(UserResponse.fromEntity(user));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/me")
     public ResponseEntity<?> updateUser(
-            @PathVariable Long id,
+            @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody UserUpdateDto userDto) {
-        log.info("PUT /users/{id} - Received request to update user with id={}", id);
+        log.info("PUT /users/me - Received request to update user");
 
-        User user = userService.updateUser(id, userDto);
+        if (jwt == null) throw new JwtMissingException("JWT token is required");
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        User user = userService.updateUser(userId, userDto);
 
         log.info("User updated id={}", user.getId());
 
         return ResponseEntity.ok().body(UserResponse.fromEntity(user));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
-        log.info("DELETE /users/{id} - Deleting user with id={}", id);
+    @DeleteMapping("/me")
+    public ResponseEntity<?> deleteUser(@AuthenticationPrincipal Jwt jwt) {
+        log.info("DELETE /users/me - Deleting user");
 
-        userService.deleteUser(id);
+        if (jwt == null) throw new JwtMissingException("JWT token is required");
+        Long userId = Long.valueOf(jwt.getSubject());
 
-        log.info("User deleted id={} (soft delete)", id);
+        userService.deleteUser(userId);
+
+        log.info("User deleted id={} (soft delete)", userId);
         return ResponseEntity.noContent().build();
     }
 }
