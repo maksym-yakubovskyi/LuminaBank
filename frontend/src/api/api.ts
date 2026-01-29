@@ -41,6 +41,7 @@ api.interceptors.response.use(
             } catch {
                 tokenStorage.setToken(null)
                 tokenStorage.setTokenType(null)
+                window.location.href = "/login"
             }
         }
         return Promise.reject(error)

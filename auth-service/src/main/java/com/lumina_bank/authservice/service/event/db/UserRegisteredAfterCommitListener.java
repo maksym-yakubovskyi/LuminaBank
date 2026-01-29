@@ -1,5 +1,6 @@
-package com.lumina_bank.authservice.service.event;
+package com.lumina_bank.authservice.service.event.db;
 
+import com.lumina_bank.authservice.service.event.UserEventsPublisher;
 import com.lumina_bank.common.dto.event.user_events.UserRegisteredEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

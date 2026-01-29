@@ -15,8 +15,10 @@ import com.lumina_bank.paymentservice.repository.PaymentTemplateRepository;
 import com.lumina_bank.paymentservice.service.client.AccountClientService;
 import com.lumina_bank.paymentservice.service.client.TransactionClientService;
 import com.lumina_bank.paymentservice.service.rate.NbuExchangeRateService;
+import com.lumina_bank.paymentservice.service.util.PaymentCreatedEventFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +43,8 @@ public class PaymentService {
     private final PaymentTemplateRepository paymentTemplateRepository;
     private final PaymentTransactionService paymentTransactionService;
     private final NbuExchangeRateService nbuExchangeRateService;
+    private final ApplicationEventPublisher eventPublisher;
+    private final PaymentCreatedEventFactory paymentCreatedEventFactory;
 
     private static final Duration CANCEL_WINDOW = Duration.ofSeconds(30);// час за який можна скасувати оплату
 
@@ -98,12 +102,15 @@ public class PaymentService {
                 .toCardNumber(paymentRequest.toCardNumber())
                 .amount(paymentRequest.amount())
                 .description(paymentRequest.description())
-                .paymentStatus(PaymentStatus.PENDING)
+                .paymentStatus(PaymentStatus.RISK_PENDING)
                 .template(template)
                 .build();
 
         payment = paymentRepository.save(payment);
+
         log.debug("Payment saved with id={} and status={}", payment.getId(), payment.getPaymentStatus());
+
+        eventPublisher.publishEvent(paymentCreatedEventFactory.from(payment));
         return payment;
     }
 
@@ -131,13 +138,14 @@ public class PaymentService {
                 .toCardNumber(providerCardNumber)
                 .amount(request.amount())
                 .description(finalDescription)
-                .paymentStatus(PaymentStatus.PENDING)
+                .paymentStatus(PaymentStatus.RISK_PENDING)
                 .build();
 
         payment = paymentRepository.save(payment);
 
         log.debug("Service payment saved with id={} status={}", payment.getId(), payment.getPaymentStatus());
 
+        eventPublisher.publishEvent(paymentCreatedEventFactory.from(payment));
         return payment;
     }
 

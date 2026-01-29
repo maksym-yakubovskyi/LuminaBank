@@ -23,6 +23,33 @@ public class PaymentTransactionService {
     }
 
     @Transactional
+    public void markBlocking(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId).orElse(null);
+        if (payment == null) return;
+        if (!payment.getPaymentStatus().equals(PaymentStatus.RISK_PENDING)) return;
+        payment.setPaymentStatus(PaymentStatus.BLOCKED);
+        paymentRepository.save(payment);
+    }
+
+    @Transactional
+    public void markFlagged(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId).orElse(null);
+        if (payment == null) return;
+        if (!payment.getPaymentStatus().equals(PaymentStatus.RISK_PENDING)) return;
+        payment.setPaymentStatus(PaymentStatus.FLAGGED);
+        paymentRepository.save(payment);
+    }
+
+    @Transactional
+    public void markPending(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId).orElse(null);
+        if (payment == null) return;
+        if (!payment.getPaymentStatus().equals(PaymentStatus.RISK_PENDING)) return;
+        payment.setPaymentStatus(PaymentStatus.PENDING);
+        paymentRepository.save(payment);
+    }
+
+    @Transactional
     public void updatePaymentStatus(Payment payment, PaymentStatus paymentStatus) {
         payment.setPaymentStatus(paymentStatus);
         payment.setCompletedAt(LocalDateTime.now());
@@ -44,18 +71,4 @@ public class PaymentTransactionService {
         return paymentRepository.save(payment);
     }
 
-    @Transactional
-    public Payment createPendingPaymentService(PaymentTemplate paymentTemplate, String providerCardNumber, String finalDescription) {
-        Payment payment = Payment.builder()
-                .userId(paymentTemplate.getUserId())
-                .fromCardNumber(paymentTemplate.getFromCardNumber())
-                .toCardNumber(providerCardNumber)
-                .amount(paymentTemplate.getAmount())
-                .description(paymentTemplate.getDescription())
-                .template(paymentTemplate)
-                .paymentStatus(PaymentStatus.PENDING)
-                .build();
-
-        return paymentRepository.save(payment);
-    }
 }
