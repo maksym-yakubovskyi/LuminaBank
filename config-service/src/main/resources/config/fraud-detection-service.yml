@@ -1,9 +1,9 @@
 server:
-  port: 8084
+  port: 8086
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/payment-service-DB
+    url: jdbc:postgresql://localhost:5432/fraud-detection-service-DB
     username: postgres
     password: max228488
     driver-class-name: org.postgresql.Driver
@@ -14,26 +14,18 @@ spring:
   cloud:
     stream:
       bindings:
-        paymentCreated-out-0:
+        paymentCreatedEventConsumer-in-0:
           destination: payments-created
+          group: fraud-detection-service
           content-type: application/json
 
-        paymentRiskResultConsumer-in-0:
+        paymentRiskResult-out-0:
           destination: payments-risk-assessed
-          group: payment-service
           content-type: application/json
 
       kafka:
         binder:
           brokers: localhost:9092
-
-    openfeign:
-      client:
-        config:
-          default:
-            connectTimeout: 5000
-            readTimeout: 10000
-            loggerLevel: basic
 
 eureka:
   instance:
