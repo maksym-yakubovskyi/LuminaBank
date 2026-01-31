@@ -2,7 +2,7 @@ package com.lumina_bank.userservice.service;
 
 import com.lumina_bank.common.dto.event.user_events.BusinessUserRegisteredEvent;
 import com.lumina_bank.userservice.dto.BusinessUserProviderResponse;
-import com.lumina_bank.userservice.enums.BusinessCategory;
+import com.lumina_bank.common.enums.user.BusinessCategory;
 import com.lumina_bank.userservice.model.BusinessUser;
 import com.lumina_bank.userservice.repository.BusinessUserRepository;
 import lombok.RequiredArgsConstructor;

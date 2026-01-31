@@ -1,5 +1,6 @@
 package com.lumina_bank.transactionservice.sevice;
 
+import com.lumina_bank.common.enums.payment.PaymentDirection;
 import com.lumina_bank.common.exception.BusinessException;
 import com.lumina_bank.transactionservice.dto.client.AccountOperationDto;
 import com.lumina_bank.transactionservice.dto.client.AccountResponse;
@@ -16,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -24,58 +27,104 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountClientService accountClientService;
 
-    public Transaction makeTransaction(TransactionCreateDto request) {
+    public List<Transaction> makeTransaction(TransactionCreateDto request) {
         if (request.fromCardNumber().equals(request.toCardNumber()))
             throw new SameAccountTransactionException("Sender and receiver cards cannot be the same");
 
-        Transaction transaction = createPendingTransaction(request);
+        UUID transferId = UUID.randomUUID();
 
-        log.debug("Created transaction with id={}, status={}", transaction.getId(),transaction.getTransactionStatus());
+        Transaction out = createOutgoing(request, transferId);
+        Transaction in = createIncoming(request, transferId);
+
+        log.debug("Created transaction with id={},{}, status={},{}",
+                out.getId(),in.getId(),out.getTransactionStatus(),in.getTransactionStatus());
 
         try{
-            performTransaction(request);
-            transaction.setTransactionStatus(TransactionStatus.SUCCESS);
-            log.info("Transaction successfully: id={}, status={}", transaction.getId(),transaction.getTransactionStatus());
+            performExternalTransfer(request);
+
+            out.setTransactionStatus(TransactionStatus.SUCCESS);
+            in.setTransactionStatus(TransactionStatus.SUCCESS);
+
+            log.info("Transaction successfully: id={},{}, status={},{}",
+                    out.getId(),in.getId(),out.getTransactionStatus(),in.getTransactionStatus());
         }catch (BusinessException e){
-            transaction.setTransactionStatus(TransactionStatus.FAILURE);
-            log.warn("Business error during transaction id={}: {}",transaction.getId(),e.getMessage());
+            out.setTransactionStatus(TransactionStatus.FAILURE);
+            in.setTransactionStatus(TransactionStatus.FAILURE);
+
+            log.warn("Business error during transaction id={},{}: {}",out.getId(),in.getId(),e.getMessage());
             throw e;
         }catch(Exception e){
-            transaction.setTransactionStatus(TransactionStatus.FAILURE);
-            log.error("Unexpected error during transaction id={}", transaction.getId(), e);
+            out.setTransactionStatus(TransactionStatus.FAILURE);
+            in.setTransactionStatus(TransactionStatus.FAILURE);
+
+            log.warn("Unexpected error during transaction id={},{}: {}",out.getId(),in.getId(),e.getMessage());
             throw new ExternalServiceException("Transaction failed due to external service error", e);
         }finally {
-            transaction.setFromCurrency(request.fromCurrency());
-            transaction.setToCurrency(request.toCurrency());
-            transaction.setConvertedAmount(request.convertedAmount());
-            transaction.setExchangeRate(request.exchangeRate());
-            transactionRepository.save(transaction);
-            log.debug("Transaction saved to DB: id={}, status={}", transaction.getId(),transaction.getTransactionStatus());
+
+            transactionRepository.save(out);
+            transactionRepository.save(in);
+
+            log.debug("Transaction saved to DB: id={},{}, status={},{}",
+                    out.getId(),in.getId(),out.getTransactionStatus(),in.getTransactionStatus());
         }
-        return transaction;
+
+        return List.of(out, in);
     }
 
-    private Transaction createPendingTransaction(TransactionCreateDto request) {
-        Transaction transaction = Transaction.builder()
-                .fromCardNumber(request.fromCardNumber())
-                .toCardNumber(request.toCardNumber())
+    private Transaction createOutgoing(TransactionCreateDto request, UUID transferId) {
+        return Transaction.builder()
+                .transferId(transferId)
+                .userId(request.userId())
+                .cardNumber(request.fromCardNumber())
+                .currency(request.fromCurrency())
                 .amount(request.amount())
+                .exchangeRate(request.exchangeRate())
+                .direction(PaymentDirection.OUTGOING)
                 .transactionStatus(TransactionStatus.PENDING)
+                .category(request.category())
                 .description(request.description())
                 .build();
-        return transactionRepository.save(transaction);
     }
 
-    private void performTransaction(TransactionCreateDto request) {
+    private Transaction createIncoming(TransactionCreateDto request, UUID transferId) {
+        return Transaction.builder()
+                .transferId(transferId)
+                .userId(request.toAccountOwnerId())
+                .cardNumber(request.toCardNumber())
+                .currency(request.toCurrency())
+                .amount(request.convertedAmount())
+                .exchangeRate(request.exchangeRate())
+                .direction(PaymentDirection.INCOMING)
+                .transactionStatus(TransactionStatus.PENDING)
+                .category(request.category())
+                .description(request.description())
+                .build();
+    }
+
+    private void performExternalTransfer(TransactionCreateDto request) {
         log.debug("Perform transaction: withdraw  amount={}",  request.amount());
-        callExternalTransaction(TransactionOperation.WITHDRAW, request.fromCardNumber(),request.amount());
+
+        callExternalTransaction(
+                TransactionOperation.WITHDRAW,
+                request.fromCardNumber(),
+                request.amount());
 
         try{
             log.debug("Depositing converted amount={}", request.amount());
-            callExternalTransaction(TransactionOperation.DEPOSIT, request.toCardNumber(),request.convertedAmount());
+
+            callExternalTransaction(
+                    TransactionOperation.DEPOSIT,
+                    request.toCardNumber(),
+                    request.convertedAmount());
+
         }catch(Exception e){
-            callExternalTransaction(TransactionOperation.DEPOSIT, request.fromCardNumber(),request.amount());
+            callExternalTransaction(
+                    TransactionOperation.DEPOSIT,
+                    request.fromCardNumber(),
+                    request.amount());
+
             log.warn("Deposit failed with error={}" , e.getMessage());
+
             throw new ExternalServiceException("Deposit failed, transaction rolled back", e);
         }
     }

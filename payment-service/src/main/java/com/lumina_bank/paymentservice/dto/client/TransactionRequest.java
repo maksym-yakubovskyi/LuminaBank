@@ -4,9 +4,12 @@ import com.lumina_bank.common.enums.payment.Currency;
 import lombok.Builder;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Builder
 public record TransactionRequest (
+        Long userId,
+        Long toAccountOwnerId,
         String fromCardNumber,
         String toCardNumber,
         Currency fromCurrency,
@@ -14,6 +17,7 @@ public record TransactionRequest (
         BigDecimal amount,
         BigDecimal convertedAmount,
         BigDecimal exchangeRate,
-        String description
+        String description,
+        String category
 ) {
 }

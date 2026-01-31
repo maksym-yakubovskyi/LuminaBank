@@ -1,6 +1,6 @@
 package com.lumina_bank.userservice.controller;
 
-import com.lumina_bank.userservice.enums.BusinessCategory;
+import com.lumina_bank.common.enums.user.BusinessCategory;
 import com.lumina_bank.userservice.service.BusinessUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,6 +1,6 @@
 package com.lumina_bank.userservice.model;
 
-import com.lumina_bank.userservice.enums.BusinessCategory;
+import com.lumina_bank.common.enums.user.BusinessCategory;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;

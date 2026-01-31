@@ -13,6 +13,7 @@ export default class PaymentService {
     static async makePaymentService(data: {
         fromCardNumber: string
         providerId: number
+        category: string
         payerReference: string
         amount: number
         description?: string }): Promise<void> {

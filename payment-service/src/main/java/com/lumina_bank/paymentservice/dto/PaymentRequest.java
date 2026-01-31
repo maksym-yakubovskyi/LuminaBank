@@ -24,8 +24,6 @@ public record PaymentRequest(
         BigDecimal amount,
 
         @Size(max = 255, message = "Description must be less than 255 characters")
-        String description,
-
-        Long templateId
+        String description
 ) {
 }

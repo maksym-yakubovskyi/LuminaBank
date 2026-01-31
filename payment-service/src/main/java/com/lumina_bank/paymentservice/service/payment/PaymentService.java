@@ -75,7 +75,6 @@ public class PaymentService {
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found with id: " + paymentId));
     }
 
-
     public void makeTemplatePayment(Long templateId) {
         PaymentTemplate template = paymentTemplateRepository.findByIdAndIsActiveTrue(templateId)
                 .orElseThrow(() -> new PaymentTemplateNotFoundException("Payment template with id " + templateId + " not found"));
@@ -88,13 +87,6 @@ public class PaymentService {
         if (paymentRequest.fromCardNumber().equals(paymentRequest.toCardNumber()))
             throw new InvalidPaymentRequestException("Card numbers must not be the same");
 
-        PaymentTemplate template = null;
-        if (paymentRequest.templateId() != null) {
-            template = paymentTemplateRepository
-                    .findByIdAndIsActiveTrue(paymentRequest.templateId())
-                    .orElse(null);
-        }
-
         // Створення Платежу зі статусом PENDING
         Payment payment = Payment.builder()
                 .userId(userId)
@@ -103,7 +95,7 @@ public class PaymentService {
                 .amount(paymentRequest.amount())
                 .description(paymentRequest.description())
                 .paymentStatus(PaymentStatus.RISK_PENDING)
-                .template(template)
+                .category("TRANSFER")
                 .build();
 
         payment = paymentRepository.save(payment);
@@ -139,6 +131,7 @@ public class PaymentService {
                 .amount(request.amount())
                 .description(finalDescription)
                 .paymentStatus(PaymentStatus.RISK_PENDING)
+                .category(request.category())
                 .build();
 
         payment = paymentRepository.save(payment);
@@ -198,7 +191,7 @@ public class PaymentService {
         if (from == null || to == null) {
             log.warn("Failed to fetch account currency: from={}, to={}", from, to);
 
-            paymentTransactionService.updatePaymentStatus(payment, PaymentStatus.FAILED);
+            paymentTransactionService.markFailed(payment);
 
             throw new ExternalServiceException("Unable to fetch account currency");
         }
@@ -206,6 +199,7 @@ public class PaymentService {
         BigDecimal rate = nbuExchangeRateService.getRate(from.currency(), to.currency());
         BigDecimal convertedAmount = payment.getAmount().multiply(rate);
 
+        payment.setToAccountOwnerId(to.userId());
         payment.setFromAccountId(from.id());
         payment.setToAccountId(to.id());
         payment.setFromCurrency(from.currency());
@@ -216,14 +210,17 @@ public class PaymentService {
         try {
             var response = transactionClientService.makeTransaction(
                     TransactionRequest.builder()
+                            .userId(payment.getUserId())
+                            .toAccountOwnerId(payment.getToAccountOwnerId())
                             .fromCardNumber(payment.getFromCardNumber())
+                            .toCardNumber(payment.getToCardNumber())
                             .fromCurrency(from.currency())
                             .toCurrency(to.currency())
-                            .toCardNumber(payment.getToCardNumber())
                             .amount(payment.getAmount()) // у валюті відправника
                             .convertedAmount(convertedAmount) // у валюті отримувача
                             .exchangeRate(rate)
                             .description(payment.getDescription())
+                            .category(payment.getCategory())
                             .build()
             );
 
@@ -233,10 +230,12 @@ public class PaymentService {
             }
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                payment.setTransactionId(response.getBody().id());
-                paymentTransactionService.updatePaymentStatus(payment, PaymentStatus.SUCCESS);
+                payment.setOutTransactionId(response.getBody().outcomingTransactionId());
+                payment.setInTransactionId(response.getBody().incomingTransactionId());
+
+                paymentTransactionService.markSuccess(payment);
             } else {
-                paymentTransactionService.updatePaymentStatus(payment, PaymentStatus.FAILED);
+                paymentTransactionService.markFailed(payment);
 
                 log.warn("Payment id={} failed, status={} body={}",
                         payment.getId(), response.getStatusCode(), response.getBody());
@@ -247,12 +246,12 @@ public class PaymentService {
         } catch (BusinessException e) {
             log.warn("Business exception during payment id={}: {}", payment.getId(), e.getMessage());
 
-            paymentTransactionService.updatePaymentStatus(payment, PaymentStatus.FAILED);
+            paymentTransactionService.markFailed(payment);
             throw e;
         } catch (Exception e) {
             log.warn("Error executing payment id={}: {}", payment.getId(), e.getMessage());
 
-            paymentTransactionService.updatePaymentStatus(payment, PaymentStatus.FAILED);
+            paymentTransactionService.markFailed(payment);
             throw new ExternalServiceException("Payment execution failed", e);
         }
     }

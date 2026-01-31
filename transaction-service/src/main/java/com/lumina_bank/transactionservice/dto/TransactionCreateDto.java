@@ -4,6 +4,7 @@ import com.lumina_bank.common.enums.payment.Currency;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 public record TransactionCreateDto(
 
@@ -26,6 +27,9 @@ public record TransactionCreateDto(
         Currency fromCurrency,
         Currency toCurrency,
         BigDecimal convertedAmount,
-        BigDecimal exchangeRate
+        BigDecimal exchangeRate,
+        Long userId,
+        Long toAccountOwnerId,
+        String category
 ) {
 }
