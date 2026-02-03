@@ -4,7 +4,6 @@ import com.lumina_bank.common.enums.payment.Currency;
 import lombok.Builder;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 
 @Builder
 public record TransactionRequest (

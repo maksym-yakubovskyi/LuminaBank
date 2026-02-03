@@ -51,6 +51,13 @@ spring:
               filters:
                 - StripPrefix=1
 
+            - id: analytics-service
+              uri: lb://analytics-service
+              predicates:
+                - Path=/api/analytics/**
+              filters:
+                - StripPrefix=1
+
 eureka:
   instance:
     hostname: localhost

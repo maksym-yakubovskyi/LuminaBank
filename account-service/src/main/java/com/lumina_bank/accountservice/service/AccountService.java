@@ -53,6 +53,7 @@ public class AccountService {
         return accountRepository.save(account);
     }
 
+    @Transactional(readOnly = true)
     public MerchantCardResponse getMerchantCardNumber(Long providerId) {
         Account merchantAccount = accountRepository
                 .findByUserIdAndType(providerId, AccountType.MERCHANT)
@@ -170,8 +171,8 @@ public class AccountService {
             var response = userServiceClient.checkUser(userId);
 
             if (response == null) {
-                log.warn("Null response from account service ");
-                throw new ExternalServiceException("Null response from account service");
+                log.warn("Null response from user service ");
+                throw new ExternalServiceException("Null response from user service");
             }
             if (response.getStatusCode().is2xxSuccessful()) {
                 UserCheckResponse body = response.getBody();
@@ -184,17 +185,17 @@ public class AccountService {
                     }
                     return body;
                 } else {
-                    log.warn("Empty or invalid account response body");
-                    throw  new ExternalServiceException("Empty or invalid account response body");
+                    log.warn("Empty or invalid user response body");
+                    throw  new ExternalServiceException("Empty or invalid user response body");
                 }
             } else {
-                log.warn("Account service returned non-2xx  status={}, body={}",
+                log.warn("User service returned non-2xx  status={}, body={}",
                         response.getStatusCode(), response.getBody());
-                throw new ExternalServiceException("Account service error: " + response.getStatusCode());
+                throw new ExternalServiceException("User service error: " + response.getStatusCode());
             }
         }catch (Exception e) {
-            log.warn("Failed to fetch account currency : {}", e.getMessage(), e);
-            throw new ExternalServiceException("Failed to get account currency", e);
+            log.warn("Failed to fetch user : {}", e.getMessage(), e);
+            throw new ExternalServiceException("Failed to get user", e);
         }
     }
 }

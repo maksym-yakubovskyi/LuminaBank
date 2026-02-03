@@ -12,10 +12,24 @@ spring:
       ddl-auto: update
     show-sql: true
   cloud:
+    function:
+      definition: paymentRiskResultConsumer
     stream:
       bindings:
         paymentCreated-out-0:
           destination: payments-created
+          content-type: application/json
+
+        paymentCompleted-out-0:
+          destination: payments-completed
+          content-type: application/json
+
+        paymentFlagged-out-0:
+          destination: payments-flagged
+          content-type: application/json
+
+        paymentBlocked-out-0:
+          destination: payments-blocked
           content-type: application/json
 
         paymentRiskResultConsumer-in-0:

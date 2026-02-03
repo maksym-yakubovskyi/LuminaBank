@@ -4,7 +4,6 @@ import com.lumina_bank.common.enums.payment.Currency;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 
 public record TransactionCreateDto(
 

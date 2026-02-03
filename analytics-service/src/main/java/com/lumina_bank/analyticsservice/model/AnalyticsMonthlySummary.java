@@ -3,7 +3,6 @@ package com.lumina_bank.analyticsservice.model;
 import com.lumina_bank.analyticsservice.model.embedded.MonthlySummaryId;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 
@@ -23,5 +22,4 @@ public class AnalyticsMonthlySummary {
     private BigDecimal cashFlow;
 
     private Long transactionCount;
-    private Long flaggedCount;
 }

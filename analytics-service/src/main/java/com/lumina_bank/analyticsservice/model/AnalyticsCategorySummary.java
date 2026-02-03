@@ -3,7 +3,6 @@ package com.lumina_bank.analyticsservice.model;
 import com.lumina_bank.analyticsservice.model.embedded.CategorySummaryId;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 

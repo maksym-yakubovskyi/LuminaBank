@@ -3,7 +3,6 @@ package com.lumina_bank.analyticsservice.model;
 import com.lumina_bank.analyticsservice.model.embedded.RiskSummaryId;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(name = "analytics_risk_summary")

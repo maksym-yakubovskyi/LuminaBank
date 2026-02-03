@@ -3,7 +3,6 @@ package com.lumina_bank.paymentservice.service.payment;
 import com.lumina_bank.common.dto.event.payment_events.PaymentBlockedEvent;
 import com.lumina_bank.common.dto.event.payment_events.PaymentCompletedEvent;
 import com.lumina_bank.common.dto.event.payment_events.PaymentFlaggedEvent;
-import com.lumina_bank.common.enums.payment.RiskLevel;
 import com.lumina_bank.paymentservice.enums.PaymentStatus;
 import com.lumina_bank.paymentservice.model.Payment;
 import com.lumina_bank.paymentservice.model.PaymentTemplate;
@@ -62,7 +61,7 @@ public class PaymentTransactionService {
     }
 
     @Transactional
-    public void markBlocking(Long paymentId, int riskScore, RiskLevel  riskLevel) {
+    public void markBlocking(Long paymentId, int riskScore) {
         Payment payment = paymentRepository.findById(paymentId).orElse(null);
         if (payment == null) return;
         if (!payment.getPaymentStatus().equals(PaymentStatus.RISK_PENDING)) return;
@@ -73,9 +72,7 @@ public class PaymentTransactionService {
                 new PaymentBlockedEvent(
                         payment.getId(),
                         payment.getUserId(),
-                        payment.getFromAccountId(),
                         payment.getAmount(),
-                        payment.getFromCurrency().name(),
                         payment.getCategory(),
                         riskScore,
                         Instant.now()
@@ -84,7 +81,7 @@ public class PaymentTransactionService {
     }
 
     @Transactional
-    public void markFlagged(Long paymentId,int riskScore, RiskLevel  riskLevel) {
+    public void markFlagged(Long paymentId,int riskScore) {
         Payment payment = paymentRepository.findById(paymentId).orElse(null);
         if (payment == null) return;
         if (!payment.getPaymentStatus().equals(PaymentStatus.RISK_PENDING)) return;
@@ -95,9 +92,7 @@ public class PaymentTransactionService {
                 new PaymentFlaggedEvent(
                         payment.getId(),
                         payment.getUserId(),
-                        payment.getFromAccountId(),
                         payment.getAmount(),
-                        payment.getFromCurrency().name(),
                         payment.getCategory(),
                         riskScore,
                         Instant.now()

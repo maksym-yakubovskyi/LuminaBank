@@ -3,15 +3,19 @@ server:
 
 spring:
   cloud:
+    function:
+      definition: emailVerificationRequestedConsumer
     stream:
       bindings:
         emailVerificationRequestedConsumer-in-0:
           destination: email-verification-events
           group: notification-service
           content-type: application/json
+
       kafka:
         binder:
           brokers: localhost:9092
+
   mail:
     host: smtp.gmail.com
     port: 587

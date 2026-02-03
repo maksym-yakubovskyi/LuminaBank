@@ -49,7 +49,7 @@ public class CardService {
     }
 
     @Transactional
-    public Card setActive(Long cardId, Status status) {
+    public Card setStatus(Long cardId, Status status) {
         log.debug("Attempting to change card status cardId={}", cardId);
 
         Card card = getCardById(cardId);

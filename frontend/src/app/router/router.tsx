@@ -11,6 +11,7 @@ import AccountsPage from "@/pages/account/AccountsPage.tsx";
 import UserProfilePage from "@/pages/profile/UserProfilePage.tsx";
 import {PublicRoute} from "@/app/router/PublicRouter.tsx";
 import PaymentsPage from "@/pages/payment/PaymentsPage.tsx";
+import AnalyticsPage from "@/pages/analytics/AnalyticsPage.tsx";
 
 export const router = createBrowserRouter([
     {
@@ -94,6 +95,14 @@ export const router = createBrowserRouter([
                         element: (
                             <ProtectedRoute>
                                 <PaymentsPage />
+                            </ProtectedRoute>
+                        )
+                    },
+                    {
+                        path: "analytics",
+                        element: (
+                            <ProtectedRoute>
+                                <AnalyticsPage />
                             </ProtectedRoute>
                         )
                     }

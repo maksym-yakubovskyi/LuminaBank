@@ -11,6 +11,7 @@ import java.time.YearMonth;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@EqualsAndHashCode
 public class MonthlySummaryId {
     private YearMonth yearMonth;
     private Long userId;

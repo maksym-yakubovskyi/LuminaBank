@@ -24,6 +24,7 @@ public class AnalyticsEventsConsumerConfig {
                 log.warn("Received null PaymentCompletedEvent");
                 return;
             }
+            log.info("Received PaymentCompletedEvent");
             analyticsService.handlePaymentCompleted(event);
 
         };
@@ -36,6 +37,7 @@ public class AnalyticsEventsConsumerConfig {
                 log.warn("Received null PaymentFlaggedEvent");
                 return;
             }
+            log.info("Received PaymentFlaggedEvent");
             analyticsService.handlePaymentFlagged(event);
         };
     }
@@ -47,6 +49,7 @@ public class AnalyticsEventsConsumerConfig {
                 log.warn("Received null PaymentBlockedEvent");
                 return;
             }
+            log.info("Received PaymentBlockedEvent");
             analyticsService.handlePaymentBlocked(event);
         };
     }

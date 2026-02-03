@@ -11,6 +11,37 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+  cloud:
+    function:
+      definition: paymentCompletedConsumer;paymentFlaggedConsumer;paymentBlockedConsumer
+    stream:
+      bindings:
+        paymentCompletedConsumer-in-0:
+          destination: payments-completed
+          group: payment-service
+          content-type: application/json
+
+        paymentFlaggedConsumer-in-0:
+          destination: payments-flagged
+          group: payment-service
+          content-type: application/json
+
+        paymentBlockedConsumer-in-0:
+          destination: payments-blocked
+          group: payment-service
+          content-type: application/json
+
+      kafka:
+        binder:
+          brokers: localhost:9092
+
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 5000
+            readTimeout: 10000
+            loggerLevel: basic
 
 eureka:
   instance:

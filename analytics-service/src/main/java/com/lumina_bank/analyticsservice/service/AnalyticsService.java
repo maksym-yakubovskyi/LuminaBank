@@ -1,25 +1,33 @@
 package com.lumina_bank.analyticsservice.service;
 
+import com.lumina_bank.analyticsservice.dto.AnalyticsCategoryResponse;
+import com.lumina_bank.analyticsservice.dto.AnalyticsMonthlyOverviewResponse;
+import com.lumina_bank.analyticsservice.dto.AnalyticsTopRecipientResponse;
 import com.lumina_bank.analyticsservice.model.*;
 import com.lumina_bank.analyticsservice.model.embedded.CategorySummaryId;
 import com.lumina_bank.analyticsservice.model.embedded.DailySummaryId;
 import com.lumina_bank.analyticsservice.model.embedded.MonthlySummaryId;
 import com.lumina_bank.analyticsservice.model.embedded.RiskSummaryId;
 import com.lumina_bank.analyticsservice.repository.*;
+import com.lumina_bank.analyticsservice.service.client.UserServiceClient;
 import com.lumina_bank.common.dto.event.payment_events.PaymentBlockedEvent;
 import com.lumina_bank.common.dto.event.payment_events.PaymentCompletedEvent;
 import com.lumina_bank.common.dto.event.payment_events.PaymentFlaggedEvent;
 import com.lumina_bank.common.enums.payment.PaymentDirection;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +39,8 @@ public class AnalyticsService {
     private final AnalyticsMonthlySummaryRepository monthlyRepo;
     private final AnalyticsRiskSummaryRepository riskRepo;
     private final AnalyticsTopRecipientsRepository topRecipientsRepo;
+
+    private final UserServiceClient  userServiceClient;
 
     @Transactional
     public void handlePaymentCompleted(PaymentCompletedEvent e) {
@@ -51,6 +61,138 @@ public class AnalyticsService {
     public void handlePaymentBlocked(PaymentBlockedEvent e) {
         saveBlockedRawEvent(e);
         updateRiskSummary(e.initiatorUserId(), e.riskScore(), e.blockedAt());
+    }
+
+    @Transactional(readOnly = true)
+    public AnalyticsMonthlyOverviewResponse getMonthlyOverview(Long userId, Long accountId, YearMonth month) {
+        MonthlySummaryId id = MonthlySummaryId.builder()
+                .yearMonth(month)
+                .userId(userId)
+                .accountId(accountId)
+                .build();
+
+        AnalyticsMonthlySummary summary = monthlyRepo.findById(id)
+                .orElse(AnalyticsMonthlySummary.builder()
+                        .id(id)
+                        .totalIncome(BigDecimal.ZERO)
+                        .totalExpense(BigDecimal.ZERO)
+                        .cashFlow(BigDecimal.ZERO)
+                        .transactionCount(0L)
+                        .build()
+                );
+
+        return AnalyticsMonthlyOverviewResponse.builder()
+                .month(month)
+                .totalIncome(summary.getTotalIncome())
+                .totalExpense(summary.getTotalExpense())
+                .cashFlow(summary.getCashFlow())
+                .transactionCount(summary.getTransactionCount())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AnalyticsCategoryResponse> getCategoryExpenses(Long userId, YearMonth month) {
+        LocalDate from = month.atDay(1);
+        LocalDate to = month.atEndOfMonth();
+
+        List<AnalyticsCategorySummary> summaries =
+                categorySummaryRepo.findAllByIdUserIdAndIdDateBetween(userId, from, to);
+
+        if (summaries.isEmpty()) {
+            return List.of();
+        }
+
+        BigDecimal totalExpense = summaries.stream()
+                .map(AnalyticsCategorySummary::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalExpense.compareTo(BigDecimal.ZERO) == 0) {
+            return List.of();
+        }
+
+        return summaries.stream()
+                .collect(Collectors.groupingBy(
+                        s->s.getId().getCategory(),
+                        Collectors.reducing(
+                                BigDecimal.ZERO,
+                                AnalyticsCategorySummary::getTotalAmount,
+                                BigDecimal::add
+                        )
+                ))
+                .entrySet()
+                .stream()
+                .map(
+                        entry->{
+                            BigDecimal amount = entry.getValue();
+
+                            int percent = amount
+                                    .multiply(BigDecimal.valueOf(100))
+                                    .divide(totalExpense,0, RoundingMode.HALF_UP)
+                                    .intValue();
+
+                            return AnalyticsCategoryResponse.builder()
+                                    .category(entry.getKey())
+                                    .totalAmount(amount)
+                                    .percentage(percent)
+                                    .build();
+                        }
+                )
+                .sorted((a,b)-> b.totalAmount().compareTo(a.totalAmount()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AnalyticsTopRecipientResponse> getTopRecipients(Long userId){
+
+        List<AnalyticsTopRecipients> recipients =
+                topRecipientsRepo.findTop5ByUserIdOrderByTotalAmountDesc(userId);
+
+        if (recipients.isEmpty()) {
+            return List.of();
+        }
+
+        return recipients.stream()
+                .map(r -> AnalyticsTopRecipientResponse.builder()
+                        .recipientId(r.getRecipientId())
+                        .displayName(resolveRecipientName(r.getRecipientId()))
+                        .totalAmount(r.getTotalAmount())
+                        .transactionCount(r.getTransactionCount())
+                        .build()
+                )
+                .toList();
+    }
+
+    private String resolveRecipientName(Long recipientId){
+        try{
+            var bResponse = userServiceClient
+                    .getBusinessUserNameById(recipientId);
+
+            if(bResponse.getStatusCode().is2xxSuccessful()
+                && bResponse.getBody()!=null
+                && !bResponse.getBody().isBlank()){
+                return bResponse.getBody();
+            }
+        }catch (FeignException.NotFound e){
+            // не бізнес-користувач
+            log.warn("Business User service unavailable, recipientId={}", recipientId);
+        }
+
+        try {
+            var userResponse =
+                    userServiceClient.getUserNameById(recipientId);
+
+            if (userResponse.getStatusCode().is2xxSuccessful()
+                    && userResponse.getBody() != null
+                    && !userResponse.getBody().isBlank()) {
+
+                return userResponse.getBody();
+            }
+        } catch (FeignException.NotFound e) {
+            // не звичайний користувач
+            log.warn("User service unavailable, recipientId={}", recipientId);
+        }
+
+        return "Recipient #" + recipientId;
     }
 
     private void saveRawEvent(PaymentCompletedEvent event) {
@@ -92,11 +234,9 @@ public class AnalyticsService {
                 AnalyticsTransactionEvent.builder()
                         .paymentId(e.paymentId())
                         .userId(e.initiatorUserId())
-                        .accountId(e.fromAccountId())
                         .direction(PaymentDirection.OUTGOING.name())
                         .category(e.category())
                         .amount(e.amount())
-                        .currency(e.fromCurrency())
                         .riskScore(e.riskScore())
                         .status("FLAGGED")
                         .processedAt(e.flaggedAt())
@@ -109,11 +249,9 @@ public class AnalyticsService {
                 AnalyticsTransactionEvent.builder()
                         .paymentId(e.paymentId())
                         .userId(e.initiatorUserId())
-                        .accountId(e.fromAccountId())
                         .direction(PaymentDirection.OUTGOING.name())
                         .category(e.category())
                         .amount(e.amount())
-                        .currency(e.fromCurrency())
                         .riskScore(e.riskScore())
                         .status("BLOCKED")
                         .processedAt(e.blockedAt())
@@ -194,7 +332,6 @@ public class AnalyticsService {
                         BigDecimal.ZERO,
                         BigDecimal.ZERO,
                         BigDecimal.ZERO,
-                        0L,
                         0L));
 
         MonthlySummaryId inId = MonthlySummaryId.builder()
@@ -208,7 +345,6 @@ public class AnalyticsService {
                         BigDecimal.ZERO,
                         BigDecimal.ZERO,
                         BigDecimal.ZERO,
-                        0L,
                         0L));
 
         outSummary.setTotalExpense(outSummary.getTotalExpense().add(event.amount()));

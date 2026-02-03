@@ -13,8 +13,7 @@ import {BusinessCategory, Status} from "@/features/enum/enum.ts";
 const servicePaymentSchema = z.object({
     fromCardNumber: z.string().nonempty("Оберіть карту для списання"),
 
-    category: z.enum([BusinessCategory.COMMUNAL, BusinessCategory.MOBILE,
-        BusinessCategory.INTERNET, BusinessCategory.CREDIT ,BusinessCategory.OTHER], {
+    category: z.enum(BusinessCategory, {
         message: "Оберіть категорію",
     }),
 
