@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Builder
 public record AccountResponse(
         Long id,
+        Long userId,
         BigDecimal balance,
         String iban,
         Currency currency,
@@ -19,15 +20,16 @@ public record AccountResponse(
         LocalDateTime updatedAt
 ) {
     public static AccountResponse fromEntity(Account account) {
-        return AccountResponse.builder().
-                id(account.getId()).
-                balance(account.getBalance()).
-                iban(account.getIban()).
-                currency(account.getCurrency()).
-                status(account.getStatus().name()).
-                type(account.getType().name()).
-                createdAt(account.getCreatedAt()).
-                updatedAt(account.getUpdatedAt()).
-                build();
+        return AccountResponse.builder()
+                .id(account.getId())
+                .userId(account.getUserId())
+                .balance(account.getBalance())
+                .iban(account.getIban())
+                .currency(account.getCurrency())
+                .status(account.getStatus().name())
+                .type(account.getType().name())
+                .createdAt(account.getCreatedAt())
+                .updatedAt(account.getUpdatedAt())
+                .build();
     }
 }

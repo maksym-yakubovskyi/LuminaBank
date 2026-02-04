@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/transactions")
@@ -23,12 +24,13 @@ public class TransactionController {
     public ResponseEntity<?> makeTransaction(@Valid @RequestBody TransactionCreateDto request) {
         log.info("POST /transactions/transfer - Making Transaction");
 
-        Transaction transaction = transactionService.makeTransaction(request);
+        List<Transaction> transactions = transactionService.makeTransaction(request);
+        Long outTransactionId = transactions.get(0).getId();
+        Long inTransactionId = transactions.get(1).getId();
 
-        log.info("Transaction created id = {}",transaction.getId());
+        log.info("Transaction created id = {},{}",outTransactionId,inTransactionId);
 
-        return ResponseEntity.created(URI.create("/transactions/" + transaction.getId()))
-                .body(TransactionResponse.builder().id(transaction.getId()).build());
+        return ResponseEntity.created(URI.create("/transactions/")).body(new TransactionResponse(outTransactionId, inTransactionId));
 
     }
 }

@@ -39,7 +39,7 @@ export function CardInfoBlock({card,account,loading }: Props) {
                 <div style={{marginTop: "12px"}}>
                     <p>{card.cardType}</p>
                     <p><strong>Номер:</strong> {card.cardNumber}</p>
-                    <p><strong>Баланс:</strong> {account.balance}</p>
+                    <p><strong>Баланс:</strong> {account.balance} {account.currency}</p>
                     <p>{card.expirationDate} </p>
                     <strong>{card.cardNetwork}</strong>
                 </div>

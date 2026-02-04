@@ -94,6 +94,7 @@ export default function PaymentsPage() {
                 providerId: data.providerId,
                 payerReference: data.payerReference,
                 amount: data.amount,
+                category: data.category,
                 description: data.description ?? "",
             })
         } catch (err: any) {

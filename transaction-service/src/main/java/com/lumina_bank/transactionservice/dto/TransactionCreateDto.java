@@ -26,6 +26,9 @@ public record TransactionCreateDto(
         Currency fromCurrency,
         Currency toCurrency,
         BigDecimal convertedAmount,
-        BigDecimal exchangeRate
+        BigDecimal exchangeRate,
+        Long userId,
+        Long toAccountOwnerId,
+        String category
 ) {
 }

@@ -22,7 +22,7 @@ public class UserController {
 
     @GetMapping("/my")
     public ResponseEntity<?> getUser(@AuthenticationPrincipal Jwt jwt) {
-        log.info("GET /users/{id} - Fetching user");
+        log.info("GET /users/my - Fetching user");
 
         if (jwt == null) throw new JwtMissingException("JWT token is required");
         Long userId = Long.valueOf(jwt.getSubject());
@@ -61,5 +61,12 @@ public class UserController {
 
         log.info("User deleted id={} (soft delete)", userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/name/{id}")
+    public ResponseEntity<?> getUserNameById(@PathVariable Long id){
+        log.info("GET /users/name/{id} - Fetching user with id={}", id);
+
+        return ResponseEntity.ok(userService.getUserNameById(id));
     }
 }

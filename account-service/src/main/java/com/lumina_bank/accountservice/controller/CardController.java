@@ -39,14 +39,14 @@ public class CardController {
     }
 
     @PutMapping("/{cardId}")
-    public ResponseEntity<?> setActiveCard(
+    public ResponseEntity<?> setStatusCard(
             @PathVariable Long cardId,
-            @RequestParam(required = false) Status status) {
-        log.info("PUT /cards/{cardId} - Received request to change active status card with id={}", cardId);
+            @RequestBody Status status) {
+        log.info("PUT /cards/{cardId} - Received request to change status card with id={}", cardId);
 
-        Card card = cardService.setActive(cardId, status);
+        Card card = cardService.setStatus(cardId, status);
 
-        log.info("Active status card updated id={}, status={}", card.getId(),status);
+        log.info("Status card updated id={}, status={}", card.getId(),status);
 
         return ResponseEntity.ok().body(CardResponse.fromEntity(card));
     }

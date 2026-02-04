@@ -44,7 +44,7 @@ public class AccountController {
     @PutMapping("/deposit")
     public ResponseEntity<?> deposit(
             @Valid @RequestBody AccountOperationDto accountDto) {
-        log.info("PUT /accounts/{accountId}/deposit - Received request to deposit ");
+        log.info("PUT /accounts/deposit - Received request to deposit ");
 
         Account updateAccount = accountService.deposit(accountDto.cardNumber(),accountDto.amount());
 
@@ -56,7 +56,7 @@ public class AccountController {
     @PutMapping("/withdraw")
     public ResponseEntity<?> withdraw(
             @Valid @RequestBody AccountOperationDto accountDto) {
-        log.info("PUT /accounts/{accountId}/withdraw - Received request to withdraw");
+        log.info("PUT /accounts/withdraw - Received request to withdraw");
 
         Account updateAccount = accountService.withdraw(accountDto.cardNumber(), accountDto.amount());
 
@@ -84,7 +84,7 @@ public class AccountController {
 
     @GetMapping("/merchant/card-number/{providerId}")
     public ResponseEntity<?> getMerchantCardNumber(@PathVariable Long providerId) {
-        log.info("GET /accounts/merchant/card-number/{} - Fetching merchant card", providerId);
+        log.info("GET /accounts/merchant/card-number/{providerId} - Fetching merchant card, providerId={}", providerId);
 
         return ResponseEntity.ok(accountService.getMerchantCardNumber(providerId));
     }
@@ -93,11 +93,11 @@ public class AccountController {
     public ResponseEntity<?> setStatusAccount(
             @PathVariable Long accountId,
             @RequestBody Status status) {
-        log.info("PUT /accounts/{accountId} - Received request to change active status account with id={}", accountId);
+        log.info("PUT /accounts/{accountId} - Received request to change status account with id={}", accountId);
 
         Account account = accountService.setStatus(accountId, status);
 
-        log.info("Active status account updated id={},status={}", account.getId(),status);
+        log.info("Status account updated id={},status={}", account.getId(),status);
 
         return ResponseEntity.ok(AccountResponse.fromEntity(account));
     }

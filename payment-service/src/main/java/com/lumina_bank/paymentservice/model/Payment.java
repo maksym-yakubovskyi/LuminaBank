@@ -26,8 +26,10 @@ public class Payment {
 
     @Column(nullable = false)
     private Long userId;
+    private Long toAccountOwnerId;
 
-    private Long transactionId;
+    private Long outTransactionId;
+    private Long inTransactionId;
 
     @Column(nullable = false)
     private String fromCardNumber;
@@ -56,6 +58,9 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentStatus paymentStatus;
+
+    @Column(nullable = false)
+    private String category;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "template_id")

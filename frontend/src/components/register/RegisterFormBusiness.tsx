@@ -23,8 +23,7 @@ const businessShema = z.object({
         .string()
         .nonempty("Номер телефону обов'язковий")
         .regex(/^\+?\d{10,15}$/, "Невірний формат телефону"),
-    category: z.enum([BusinessCategory.COMMUNAL, BusinessCategory.MOBILE,
-        BusinessCategory.INTERNET, BusinessCategory.CREDIT ,BusinessCategory.OTHER], {
+    category: z.enum(BusinessCategory, {
         message: "Оберіть категорію",
     }),
 }).refine((data) => data.password === data.confirmPassword, {

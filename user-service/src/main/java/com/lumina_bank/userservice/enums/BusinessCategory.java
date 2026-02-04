@@ -4,6 +4,12 @@ public enum BusinessCategory {
     COMMUNAL,
     MOBILE,
     INTERNET,
-    CREDIT,
+    FOOD,
+    SHOPPING,
+    SUBSCRIPTIONS,
+    TRANSPORT,
+    MEDICINE,
+    GAMING,
+    SPORT,
     OTHER
 }

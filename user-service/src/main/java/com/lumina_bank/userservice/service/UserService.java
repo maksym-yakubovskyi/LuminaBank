@@ -97,4 +97,12 @@ public class UserService {
         user.setActive(false);
         userRepository.save(user);
     }
+
+    @Transactional(readOnly = true)
+    public String  getUserNameById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User with id " + id + " not found"));
+
+        return user.getFirstName() + " " + user.getLastName();
+    }
 }

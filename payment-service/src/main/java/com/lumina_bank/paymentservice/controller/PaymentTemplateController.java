@@ -27,7 +27,7 @@ public class PaymentTemplateController {
     public ResponseEntity<?> createPaymentTemplate (
             @Valid @RequestBody PaymentTemplateRequest request,
             @AuthenticationPrincipal Jwt jwt) {
-        log.info("POST /payment_templates - Create PaymentTemplate");
+        log.info("POST /payments/payment_templates - Create PaymentTemplate");
 
         if (jwt == null) throw new JwtMissingException("JWT token is required");
         Long userId = Long.valueOf(jwt.getSubject());
@@ -42,7 +42,7 @@ public class PaymentTemplateController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePaymentTemplate (@PathVariable Long id) {
-        log.info("DELETE /payment_templates - Delete PaymentTemplate with id={}", id);
+        log.info("DELETE /payments/payment_templates - Delete PaymentTemplate with id={}", id);
 
         paymentTemplateService.deletePaymentTemplate(id);
 
@@ -53,7 +53,7 @@ public class PaymentTemplateController {
 
     @GetMapping("/my")
     public ResponseEntity<?> getMyPaymentTemplates(@AuthenticationPrincipal Jwt jwt) {
-        log.info("GET /payment_templates/my - Get My PaymentTemplates");
+        log.info("GET /payments/payment_templates/my - Get My PaymentTemplates");
 
         if (jwt == null) throw new JwtMissingException("JWT token is required");
         Long userId = Long.valueOf(jwt.getSubject());

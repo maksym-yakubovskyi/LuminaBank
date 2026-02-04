@@ -12,6 +12,8 @@ spring:
       ddl-auto: update
     show-sql: true
   cloud:
+    function:
+      definition: paymentCreatedEventConsumer
     stream:
       bindings:
         paymentCreatedEventConsumer-in-0:

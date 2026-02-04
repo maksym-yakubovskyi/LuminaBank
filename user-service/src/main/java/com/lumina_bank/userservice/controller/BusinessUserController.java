@@ -5,10 +5,7 @@ import com.lumina_bank.userservice.service.BusinessUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/users/business-users")
@@ -24,5 +21,12 @@ public class BusinessUserController {
         log.info("GET /businessusers/providers - Fetching providers with category={}", category);
 
         return ResponseEntity.ok(businessUserService.getProviders(category));
+    }
+
+    @GetMapping("/name/{id}")
+    public ResponseEntity<?> getBusinessUserNameById(@PathVariable Long id){
+        log.info("GET /businessusers/name/id - Fetching business user with id={}", id);
+
+        return ResponseEntity.ok(businessUserService.getBusinessUserNameById(id));
     }
 }
