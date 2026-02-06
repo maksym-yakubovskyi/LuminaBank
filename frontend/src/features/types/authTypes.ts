@@ -1,4 +1,4 @@
-import type {BusinessCategoryType, UserType} from "@/features/enum/enum.ts";
+import type {BusinessCategory, UserType} from "@/features/enum/enum.ts";
 
 export interface LoginRequest {
     email: string
@@ -29,7 +29,7 @@ export interface RegisterBusinessRequest {
     verificationCode: string
     phoneNumber: string
     companyName: string
-    categoty: BusinessCategoryType
+    category: BusinessCategory
     adrpou: string
     userType: UserType
 }

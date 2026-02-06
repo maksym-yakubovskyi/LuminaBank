@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "analytics_top_recipients")
@@ -24,5 +24,5 @@ public class AnalyticsTopRecipients {
     private BigDecimal totalAmount;
     private Long transactionCount;
 
-    private Instant lastTransactionAt;
+    private LocalDateTime lastTransactionAt;
 }

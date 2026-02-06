@@ -20,7 +20,7 @@ export const BusinessCategory = {
     OTHER: "OTHER",
 } as const
 
-export type BusinessCategoryType = typeof BusinessCategory[keyof typeof BusinessCategory]
+export type BusinessCategory = typeof BusinessCategory[keyof typeof BusinessCategory]
 
 export const AccountType = {
     CREDIT: "CREDIT",
@@ -89,3 +89,19 @@ export const WeekDay = {
 } as const
 
 export type WeekDay = typeof WeekDay[keyof typeof WeekDay]
+
+
+export const ReportStatus = {
+    PENDING: "PENDING",
+    PROCESSING: "PROCESSING",
+    READY: "READY",
+    FAILED: "FAILED",
+}
+export type ReportStatus = typeof ReportStatus[keyof typeof ReportStatus]
+
+export const ReportType = {
+    MONTHLY_FINANCIAL: "MONTHLY_FINANCIAL",
+    DAILY_ACTIVITY: "DAILY_ACTIVITY",
+    TRANSACTION_HISTORY: "TRANSACTION_HISTORY",
+}
+export type ReportType = typeof ReportType[keyof typeof ReportType]

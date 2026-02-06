@@ -7,7 +7,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -66,7 +65,7 @@ public class User {
     private LocalDateTime updatedAt;
 
     @Column(nullable = false)
-    private Instant registeredAt;
+    private LocalDateTime registeredAt;
 
     @Column(nullable = false)
     private Boolean active;

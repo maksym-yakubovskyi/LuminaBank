@@ -9,12 +9,14 @@ import AccountService from "@/api/service/AccountService.ts";
 import {extractErrorMessage} from "@/api/apiError.ts";
 import {AnalyticsBlock} from "@/components/analytics/AnalyticsBlock.tsx";
 import {useNavigate} from "react-router-dom";
+import {ReportBlock} from "@/components/analytics/ReportBlock.tsx";
+import type {Account} from "@/features/types/account.ts";
 
 export default function AnalyticsPage() {
     const [monthOverview, setMonthOverview] = useState<AnalyticsMonthlyOverviewResponse | null>(null)
     const [topRecipients, setTopRecipients] = useState<AnalyticsTopRecipientResponse[] | null>(null)
     const [categories, setCategories] = useState<AnalyticsCategoryResponse[] | null>(null)
-    const [currency,setCurrency] = useState<string>("UAH")
+    const [account,setAccount] = useState<Account | null>(null)
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -28,13 +30,18 @@ export default function AnalyticsPage() {
                 }
 
                 const acc = accounts[0]
-                setCurrency(acc.currency)
+
+                if(!acc){
+                    alert("Немає рахунків, будь ласка створіть для початку!")
+                    navigate("/dashboard")
+                    return
+                }
+                setAccount(acc)
 
                 const overview  = await AnalyticsService.getOverview(acc.id)
-                setMonthOverview(overview )
-
+                setMonthOverview(overview)
             }catch (err:any){
-                const  message=extractErrorMessage(err)
+                const  message= extractErrorMessage(err)
                 alert("Помилка отримання" + message)
             }
 
@@ -42,7 +49,7 @@ export default function AnalyticsPage() {
                 const recipients  = await AnalyticsService.getTopRecipients()
                 setTopRecipients(recipients )
             }catch (err:any){
-                const  message=extractErrorMessage(err)
+                const  message= extractErrorMessage(err)
                 alert("Помилка отримання" + message)
             }
 
@@ -50,7 +57,7 @@ export default function AnalyticsPage() {
                 const cats  = await AnalyticsService.getCategoriesAnalytics()
                 setCategories(cats)
             }catch (err:any){
-                const  message=extractErrorMessage(err)
+                const  message= extractErrorMessage(err)
                 alert("Помилка отримання" + message)
             }
         }
@@ -72,7 +79,7 @@ export default function AnalyticsPage() {
                     monthOverview={monthOverview}
                     topRecipients={topRecipients}
                     categories={categories}
-                    currency={currency}
+                    currency={account?.currency || "UAH"}
                 />
 
             </section>
@@ -83,7 +90,8 @@ export default function AnalyticsPage() {
                     padding: "16px",
                 }}
             >
-                Правий блок (основний контент)
+                {!account && <p>Завантаження ...</p>}
+                {account && <ReportBlock account={account} />}
             </section>
         </>
     )
