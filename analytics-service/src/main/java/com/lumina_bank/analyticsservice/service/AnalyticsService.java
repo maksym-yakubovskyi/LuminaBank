@@ -22,10 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.YearMonth;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -162,6 +159,18 @@ public class AnalyticsService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<AnalyticsDailySummary> getDailySummaries(Long userId,LocalDate from,LocalDate to){
+        return dailyRepo.findAllByIdUserIdAndIdDateBetween(userId, from, to);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AnalyticsTransactionEvent> getTransactionHistory(Long userId, LocalDate from, LocalDate to){
+        LocalDateTime fromDateTime = from.atStartOfDay();
+        LocalDateTime toDateTime = to.atTime(LocalTime.MAX);
+        return transactionEventRepo.findByUserIdAndProcessedAtBetween(userId,fromDateTime,toDateTime);
+    }
+
     private String resolveRecipientName(Long recipientId){
         try{
             var bResponse = userServiceClient
@@ -260,9 +269,7 @@ public class AnalyticsService {
     }
 
     private void updateDailySummary(PaymentCompletedEvent event) {
-        LocalDate date = event.completedAt()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate();
+        LocalDate date = event.completedAt().toLocalDate();
 
         DailySummaryId outId = DailySummaryId.builder()
                 .date(date)
@@ -274,7 +281,6 @@ public class AnalyticsService {
                 .orElse(new AnalyticsDailySummary(outId,
                         BigDecimal.ZERO,
                         BigDecimal.ZERO,
-                        0L,
                         0L));
 
         DailySummaryId inId = DailySummaryId.builder()
@@ -287,7 +293,6 @@ public class AnalyticsService {
                 .orElse(new AnalyticsDailySummary(inId,
                         BigDecimal.ZERO,
                         BigDecimal.ZERO,
-                        0L,
                         0L));
 
         outSummary.setTotalExpense(outSummary.getTotalExpense().add(event.amount()));
@@ -301,7 +306,7 @@ public class AnalyticsService {
     }
 
     private void updateCategorySummary(PaymentCompletedEvent event) {
-        LocalDate date = event.completedAt().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate date = event.completedAt().toLocalDate();
 
         CategorySummaryId id = CategorySummaryId.builder()
                 .date(date)
@@ -319,7 +324,7 @@ public class AnalyticsService {
     }
 
     private void updateMonthlySummary(PaymentCompletedEvent event) {
-        LocalDate date = event.completedAt().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate date = event.completedAt().toLocalDate();
 
         MonthlySummaryId outId = MonthlySummaryId.builder()
                 .yearMonth(YearMonth.from(date))
@@ -377,8 +382,8 @@ public class AnalyticsService {
         topRecipientsRepo.save(recipient);
     }
 
-    private void updateRiskSummary(Long userId, int riskScore, Instant time) {
-        LocalDate date = time.atZone(ZoneId.systemDefault()).toLocalDate();
+    private void updateRiskSummary(Long userId, int riskScore, LocalDateTime time) {
+        LocalDate date = time.toLocalDate();
 
         RiskSummaryId id = RiskSummaryId.builder()
                 .date(date)

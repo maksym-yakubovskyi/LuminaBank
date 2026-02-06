@@ -21,5 +21,4 @@ public class AnalyticsDailySummary {
     private BigDecimal totalExpense;
 
     private Long transactionCount;
-    private Long flaggedCount;
 }

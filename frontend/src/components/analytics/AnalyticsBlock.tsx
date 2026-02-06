@@ -15,7 +15,7 @@ interface Props {
 export function AnalyticsBlock({monthOverview, topRecipients, categories,currency}: Props){
 
     function formatMoney(value: number): string {
-        if(!value) value = 0;
+//        if(!value) value = 0;
         return value + " " + currency
     }
 
@@ -63,7 +63,7 @@ export function AnalyticsBlock({monthOverview, topRecipients, categories,currenc
                 ) : (
                     <pre style={{ fontFamily: "monospace" }}>
 + Надходження: {formatMoney(monthOverview.totalIncome)}
-                        - Витрати:     {formatMoney(monthOverview.totalExpenses)}
+                        - Витрати:     {formatMoney(monthOverview.totalExpense)}
                         = Баланс:      {formatMoney(monthOverview.cashFlow)}
 
                         Транзакцій: {monthOverview.transactionCount}

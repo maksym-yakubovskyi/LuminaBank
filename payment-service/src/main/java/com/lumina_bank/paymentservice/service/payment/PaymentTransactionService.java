@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Service
@@ -55,7 +54,7 @@ public class PaymentTransactionService {
                         payment.getFromCurrency().name(),
                         payment.getToCurrency().name(),
                         payment.getCategory(),
-                        Instant.now()
+                        LocalDateTime.now()
                 )
         );
     }
@@ -75,7 +74,7 @@ public class PaymentTransactionService {
                         payment.getAmount(),
                         payment.getCategory(),
                         riskScore,
-                        Instant.now()
+                        LocalDateTime.now()
                 )
         );
     }
@@ -95,7 +94,7 @@ public class PaymentTransactionService {
                         payment.getAmount(),
                         payment.getCategory(),
                         riskScore,
-                        Instant.now()
+                        LocalDateTime.now()
                 )
         );
     }

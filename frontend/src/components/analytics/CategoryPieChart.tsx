@@ -30,7 +30,7 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
     }))
 
     return (
-        <div style={{ width: 350, height: 350 }}>
+        <div style={{  width: 350, height: 350, minWidth: 350, minHeight: 350}}>
             <ResponsiveContainer>
                 <PieChart>
                     <Pie
