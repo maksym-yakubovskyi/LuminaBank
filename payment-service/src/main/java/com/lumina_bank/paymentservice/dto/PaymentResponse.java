@@ -14,8 +14,7 @@ public record PaymentResponse(
         BigDecimal amount,
         String description,
         String status,
-        LocalDateTime createdAt,
-        Long templateId
+        LocalDateTime createdAt
 ) {
     public static PaymentResponse fromEntity(Payment payment) {
         return PaymentResponse.builder()
@@ -26,7 +25,6 @@ public record PaymentResponse(
                 .description(payment.getDescription())
                 .status(payment.getPaymentStatus().name())
                 .createdAt(payment.getCreatedAt())
-                .templateId(payment.getTemplate() != null ? payment.getTemplate().getId() : null)
                 .build();
     }
 }

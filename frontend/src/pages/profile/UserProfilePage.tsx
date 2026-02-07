@@ -3,24 +3,28 @@ import type {UserProfile} from "@/features/types/userProfile.ts";
 import UserService from "@/api/service/UserService.ts";
 import {UserProfileInfoBlock} from "@/components/profile/UserProfileInfoBlock.tsx";
 import {UserSettingsBlock} from "@/components/profile/UserSettingsBlock.tsx";
-import {extractErrorMessage} from "@/api/apiError.ts";
+import type {BlockState} from "@/features/state/state.ts";
 
 export default function UserProfilePage() {
-    const [user, setUser]= useState<UserProfile | null>(null)
+    const [userState, setUserState] = useState<BlockState<UserProfile>>({
+        isLoading: true,
+        data: null,
+    })
 
     useEffect(() => {
-        async function loadProfile(){
-            try{
-                const profile = await UserService.getProfile()
-                setUser(profile)
-            }catch (err: any) {
-                const message = extractErrorMessage(err)
-                alert("Помилка отримання" + message)
-            }
-        }
-
-        loadProfile().catch(console.error)
+        void loadProfile()
     },[])
+
+    async function loadProfile(){
+        try{
+            const profile = await UserService.getProfile()
+            setUserState({ isLoading: false, data: profile })
+
+        }catch (e) {
+            console.error("User profile load failed", e)
+            setUserState({ isLoading: true, data: null })
+        }
+    }
 
     return (
         <>
@@ -30,7 +34,10 @@ export default function UserProfilePage() {
                     padding: "16px",
                 }}
             >
-                <UserProfileInfoBlock user={user} />
+                <UserProfileInfoBlock
+                    user={userState.data}
+                    loading={userState.isLoading}
+                />
             </section>
 
             <section
@@ -39,7 +46,13 @@ export default function UserProfilePage() {
                     padding: "16px",
                 }}
             >
-                <UserSettingsBlock user={user} onUpdate={setUser} />
+                <UserSettingsBlock
+                    user={userState.data}
+                    onUpdate={(u) =>
+                        setUserState({ isLoading: false, data: u })
+                    }
+                    loading={userState.isLoading}
+                />
             </section>
         </>
     )

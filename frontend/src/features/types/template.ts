@@ -13,7 +13,7 @@ export interface CreateTemplateRequest {
     // service
     providerId?: number
     payerReference?: string
-
+    category?: string
     amount: number
     description?: string
 

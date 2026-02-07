@@ -50,12 +50,12 @@ export type ServicePaymentFormInputs = z.infer<typeof servicePaymentSchema>;
 
 interface Props {
     cards: Card[]
+    loading: boolean
     onSubmit: (data: ServicePaymentFormInputs) => Promise<void> | void
 }
 
-export function ServicePaymentForm({ cards, onSubmit}: Props){
+export function ServicePaymentForm({ cards,loading, onSubmit}: Props){
     const [providers, setProviders] = useState<Provider[]>([])
-    const [serverError, setServerError] = useState<string | null>(null)
 
     const {
         register,
@@ -92,28 +92,25 @@ export function ServicePaymentForm({ cards, onSubmit}: Props){
     const saveAsTemplate = watch("saveAsTemplate")
 
     useEffect(() => {
-        async function loadProviders() {
-            try {
-                setServerError(null);
-
-                const data = await BusinessUserService.getProviders(category);
-                setProviders(data);
-
-                resetField("providerId")
-                setValue("providerId", 0)
-            } catch (e: any) {
-                console.error(e)
-                setServerError("Не вдалося завантажити провайдерів")
-                setProviders([])
-            }
-        }
-
-        loadProviders().catch(console.error)
+        void loadProviders(category)
     }, [])
+
+    async function loadProviders(category: BusinessCategory) {
+        try {
+            const data = await BusinessUserService.getProviders(category)
+            setProviders(data)
+            resetField("providerId")
+            setValue("providerId", 0)
+        } catch (e) {
+            console.error("Providers load failed", e)
+            setProviders([])
+        }
+    }
+
+    if (loading) return <>Завантаження...</>
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
-            {serverError && <p style={{ color: "red" }}>{serverError}</p>}
 
             <div style={{ marginBottom: "12px" }}>
                 <label>З якої карти списати</label>
@@ -133,6 +130,10 @@ export function ServicePaymentForm({ cards, onSubmit}: Props){
 
                 {errors.fromCardNumber && (
                     <p style={{ color: "red" }}>{errors.fromCardNumber.message}</p>
+                )}
+
+                {cards.length === 0 && (
+                    <p style={{ color: "gray" }}>У вас поки немає карток</p>
                 )}
             </div>
 

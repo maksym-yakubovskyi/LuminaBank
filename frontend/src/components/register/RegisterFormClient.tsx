@@ -6,7 +6,6 @@ import {Button} from "@/components/button/Button.tsx"
 import {useState} from "react"
 import {UserType} from "@/features/enum/enum.ts"
 import {useNavigate} from "react-router-dom";
-import {extractErrorMessage} from "@/api/apiError.ts";
 
 const clientShema = z.object({
     email: z.email({message: "Невірний email"}),
@@ -39,14 +38,17 @@ export function RegisterFormClient() {
         resolver: zodResolver(clientShema),
     })
 
+    const emailValue = watch("email")
+
     const sendCode = async (email: string) => {
+        if (!email) return
+
         try{
             await AuthService.sendVerificationCode(email)
             setCodeSent(true)
-        }catch(err: any){
-            console.log(err)
-            const message = extractErrorMessage(err)
-            alert("Помилка відправки коду" + message)
+        } catch (e) {
+            console.error("Send verification code failed", e)
+            alert("Помилка відправки коду")
         }
     }
 
@@ -64,14 +66,11 @@ export function RegisterFormClient() {
             })
             alert("Реєстрація пройшла успішно!");
             navigate("/login")
-        } catch (err: any) {
-            console.error(err)
-            const message = extractErrorMessage(err)
-            alert("Помилка реєстрації: " + message)
+        } catch (e) {
+            console.error("Registration failed", e)
+            alert("Помилка реєстрації")
         }
     }
-
-    const emailValue = watch("email")
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -87,6 +86,7 @@ export function RegisterFormClient() {
                     {codeSent ? "Код відправлено" : "Відправити код"}
                 </Button>
             </div>
+
             <div>
                 <label>Password</label>
                 <input type="password" {...register("password")}/>

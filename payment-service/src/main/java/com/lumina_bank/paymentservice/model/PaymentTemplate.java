@@ -28,6 +28,9 @@ public class PaymentTemplate {
     private PaymentTemplateType type;
 
     @Column(nullable = false)
+    private String category;
+
+    @Column(nullable = false)
     private String name;
 
     private String description;

@@ -5,37 +5,57 @@ import type {TransactionHistoryItem} from "@/features/types/transactionHistoryIt
 import {TransactionHistoryBlock} from "@/components/dashboard/TransactionHistoryBlock.tsx";
 import TransactionBlock from "@/components/transaction_history/TransactionBlock.tsx";
 import {useParams} from "react-router-dom";
-import {extractErrorMessage} from "@/api/apiError.ts";
+import type {BlockState} from "@/features/state/state.ts";
 
 export default function TransactionHistoryPage(){
     const { paymentId } = useParams<{ paymentId: string }>()
-
-    const [history, setHistory] =
-        useState<TransactionHistoryItem[] | null>(null)
-
     const selectedId = paymentId ? Number(paymentId) : null
 
+    const [historyState, setHistoryState] = useState<BlockState<TransactionHistoryItem[]>>({
+        isLoading: true,
+        data: null,
+    })
+
     useEffect(() => {
-        async function loadData(){
-            try{
-                const accounts = await AccountService.getMyAccounts()
-                const acc = accounts[0]
-                if (!acc) return
-
-                const history =
-                    await TransactionHistoryService.getAllTransactionHistory(acc.id)
-                setHistory(history)
-            }catch (err: any) {
-                const message = extractErrorMessage(err)
-                alert("Помилка отримання" + message)
-            }
-        }
-
-        loadData().catch(console.error)
+        void loadData()
     }, [])
 
+    async function loadData(){
+        try{
+            const accounts  = await AccountService.getMyAccounts()
+
+            if (accounts.length === 0) {
+                setHistoryState({ isLoading: false, data: [] })
+                return
+            }
+
+            const histories = await Promise.all(
+                accounts.map(acc =>
+                    TransactionHistoryService.getAllTransactionHistory(acc.id)
+                )
+            )
+
+            const allHistory = histories
+                .flat()
+                .sort(
+                    (a, b) =>
+                        new Date(b.date).getTime() -
+                        new Date(a.date).getTime()
+                )
+
+            setHistoryState({
+                isLoading: false,
+                data: allHistory,
+            })
+
+        }catch (e) {
+            console.error("Transaction history load failed", e)
+            setHistoryState({ isLoading: true, data: null })
+        }
+    }
+
     const selectedTransaction =
-        history?.find(tx => tx.paymentId === selectedId) ?? null
+        historyState.data?.find(tx => tx.paymentId === selectedId) ?? null
 
     return(
         <>
@@ -46,7 +66,8 @@ export default function TransactionHistoryPage(){
                 }}
             >
                 <TransactionHistoryBlock
-                    history={history}
+                    history={historyState.data}
+                    loading={historyState.isLoading}
                 />
             </section>
 

@@ -2,9 +2,12 @@ import type {UserProfile} from "@/features/types/userProfile.ts";
 
 interface Props {
     user: UserProfile | null
+    loading: boolean
 }
-export function UserProfileInfoBlock({ user }: Props) {
-    if (!user) return <p>Завантаження...</p>
+
+export function UserProfileInfoBlock({ user, loading }: Props) {
+    if (loading) return <p>Завантаження...</p>
+    if (!user) return <>Помилка завантаження</>
 
     return(
         <>

@@ -3,12 +3,14 @@ import {Link} from "react-router-dom";
 
 interface Props {
     history: TransactionHistoryItem[] | null
+    loading: boolean
 }
 
-export function TransactionHistoryBlock({ history }: Props) {
+export function TransactionHistoryBlock({ history,loading }: Props) {
 
-    if (!history) return <>Завантаження...</>
-    if (history.length === 0) return <>Історія транзакцій порожня</>
+    if (loading) return <>Завантаження ...</>
+    if (!history || history.length === 0)
+        return <>Історія транзакцій порожня</>
 
     return (
         <>

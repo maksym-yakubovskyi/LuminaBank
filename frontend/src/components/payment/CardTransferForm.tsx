@@ -39,10 +39,11 @@ export type CardTransferFormInputs = z.infer<typeof cardTransferSchema>
 
 interface Props {
     cards: Card[]
+    loading: boolean
     onSubmit: (data: CardTransferFormInputs) => Promise<void> | void
 }
 
-export function CardTransferForm({ cards, onSubmit }: Props) {
+export function CardTransferForm({ cards,loading,  onSubmit }: Props) {
     const {
         register,
         handleSubmit,
@@ -69,6 +70,8 @@ export function CardTransferForm({ cards, onSubmit }: Props) {
     })
 
     const saveAsTemplate = watch("saveAsTemplate")
+
+    if (loading) return <>Завантаження...</>
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
