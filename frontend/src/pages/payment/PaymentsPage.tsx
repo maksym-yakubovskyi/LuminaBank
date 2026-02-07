@@ -8,28 +8,51 @@ import PaymentService from "@/api/service/PaymentService.ts";
 import type {TemplateItem} from "@/features/types/template.ts";
 import {PaymentTemplatesBlock} from "@/components/payment/PaymentTemplatesBlock.tsx";
 import {PaymentTemplateType, RecurrenceType} from "@/features/enum/enum.ts";
-import {extractErrorMessage} from "@/api/apiError.ts";
+import type {BlockState} from "@/features/state/state.ts";
+import type {PaymentResponse} from "@/features/types/payment.ts";
+import {PaymentSuccessBanner} from "@/components/payment/PaymentSuccessBanner.tsx";
 
 export default function PaymentsPage() {
     const [mode, setMode] = useState<"transfer" | "service">("transfer")
-    const [cards, setCards] = useState<Card[]>([])
-    const [templates, setTemplates] = useState<TemplateItem[]>([])
+    const [paymentSuccess, setPaymentSuccess] = useState<PaymentResponse | null>(null);
+
+    const [cardsState, setCardsState] = useState<BlockState<Card[]>>({
+        isLoading: true,
+        data: null,
+    })
+
+    const [templatesState, setTemplatesState] = useState<BlockState<TemplateItem[]>>({
+        isLoading: true,
+        data: null,
+    })
 
     useEffect(() => {
-        async function loadData(){
-            try{
-                const cards = await CardService.getMyCards()
-                setCards(cards)
-
-                const templates = await PaymentService.getMyPaymentTemplates()
-                setTemplates(templates)
-            }catch (err: any) {
-                const message = extractErrorMessage(err)
-                alert("Помилка отримання" + message)
-            }
-        }
-        loadData().catch(console.error)
+        void loadData()
     }, [])
+
+    async function loadData(){
+        try{
+            const cards = await CardService.getMyCards()
+            setCardsState({ isLoading: false, data: cards })
+
+            await reloadTemplates()
+        }catch (e) {
+            console.error("Payments page load failed", e)
+
+            setCardsState({ isLoading: true, data: null })
+            setTemplatesState({ isLoading: true, data: null })
+        }
+    }
+
+    async function reloadTemplates() {
+        try {
+            const templates = await PaymentService.getMyPaymentTemplates()
+            setTemplatesState({ isLoading: false, data: templates })
+        } catch (e) {
+            console.error("Templates reload failed", e)
+            setTemplatesState({ isLoading: true, data: null })
+        }
+    }
 
     async function handleCardTransferSubmit(data: CardTransferFormInputs) {
         try {
@@ -50,19 +73,22 @@ export default function PaymentsPage() {
                     dayOfWeek: recurrenceEnabled ? data.recurrence.dayOfWeek : null,
                     dayOfMonth: recurrenceEnabled ? data.recurrence.dayOfMonth : null,
                 })
+                await reloadTemplates()
+                setPaymentSuccess(null)
                 return
             }
 
-            await PaymentService.makePayment({
+            const payment = await PaymentService.makePayment({
                 fromCardNumber: data.fromCardNumber,
                 toCardNumber: data.toCardNumber,
                 amount: data.amount,
                 description: data.description ?? "",
             })
-        } catch (err: any) {
-            console.error(err)
-            const message = extractErrorMessage(err)
-            alert("Помилка відправки" + message)
+
+            setPaymentSuccess(payment)
+        }catch (e) {
+            console.error("Card transfer failed", e)
+            alert("Помилка відправки")
         }
     }
 
@@ -77,6 +103,7 @@ export default function PaymentsPage() {
                     type: PaymentTemplateType.SERVICE,
                     providerId: data.providerId,
                     payerReference: data.payerReference,
+                    category: data.category,
                     amount: data.amount,
                     description: data.description ?? "",
 
@@ -86,10 +113,12 @@ export default function PaymentsPage() {
                     dayOfWeek: recurrenceEnabled ? data.recurrence.dayOfWeek : null,
                     dayOfMonth: recurrenceEnabled ? data.recurrence.dayOfMonth : null,
                 })
+                await reloadTemplates()
+                setPaymentSuccess(null)
                 return
             }
 
-            await PaymentService.makePaymentService({
+            const payment = await PaymentService.makePaymentService({
                 fromCardNumber: data.fromCardNumber,
                 providerId: data.providerId,
                 payerReference: data.payerReference,
@@ -97,15 +126,20 @@ export default function PaymentsPage() {
                 category: data.category,
                 description: data.description ?? "",
             })
-        } catch (err: any) {
-            console.error(err)
-            const message = extractErrorMessage(err)
-            alert("Помилка відправки" + message)
+            setPaymentSuccess(payment)
+
+        } catch (e) {
+            console.error("Service payment failed", e)
+            alert("Помилка відправки")
         }
     }
 
     function handleTemplateDeleted(id: number) {
-        setTemplates((prev) => prev.filter((t) => t.id !== id))
+        setTemplatesState(prev =>
+            prev.data
+                ? { isLoading: false, data: prev.data.filter(t => t.id !== id) }
+                : prev
+        )
     }
 
     return (
@@ -129,11 +163,35 @@ export default function PaymentsPage() {
 
                 <div style={{ marginTop: "16px" }}>
                     {mode === "transfer" ? (
-                        <CardTransferForm cards={cards} onSubmit={handleCardTransferSubmit} />
+                        <CardTransferForm
+                            cards={cardsState.data ?? []}
+                            loading={cardsState.isLoading}
+                            onSubmit={handleCardTransferSubmit}
+                        />
                     ) : (
-                        <ServicePaymentForm cards={cards} onSubmit={handleServicePaymentSubmit} />
+                        <ServicePaymentForm
+                            cards={cardsState.data ?? []}
+                            loading={cardsState.isLoading}
+                            onSubmit={handleServicePaymentSubmit}
+                        />
                     )}
                 </div>
+
+                {paymentSuccess && (
+                    <PaymentSuccessBanner
+                        expiresAt={Date.now() + 30_000}
+                        onClose={() => setPaymentSuccess(null)}
+                        onCancel={async () => {
+                            try {
+                                await PaymentService.cancelPayment(paymentSuccess.id)
+                                setPaymentSuccess(null)
+                            } catch (e) {
+                                console.error("Cancel failed", e)
+                                alert("Помилка скасування")
+                            }
+                        }}
+                    />
+                )}
             </section>
 
             <section
@@ -142,7 +200,11 @@ export default function PaymentsPage() {
                     padding: "16px",
                 }}
             >
-            <PaymentTemplatesBlock templates={templates} onDeleted={handleTemplateDeleted} />
+                <PaymentTemplatesBlock
+                    templates={templatesState.data}
+                    loading={templatesState.isLoading}
+                    onDeleted={handleTemplateDeleted}
+                />
             </section>
         </>
     )

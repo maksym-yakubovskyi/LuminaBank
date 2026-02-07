@@ -11,6 +11,12 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+  kafka:
+    consumer:
+      properties:
+        spring.json.trusted.packages: "com.lumina_bank"
+
   cloud:
 #    stream:
 #      enabled: false

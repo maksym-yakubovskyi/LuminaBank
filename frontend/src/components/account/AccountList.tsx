@@ -4,12 +4,13 @@ import {Status} from "@/features/enum/enum.ts";
 
 interface Props {
     cards: Card[] | null
+    loading: boolean
 }
 
-export default function AccountList({ cards }: Props) {
+export default function AccountList({ cards, loading }: Props) {
 
-    if (!cards) return <>Завантаження...</>
-    if (cards.length === 0) return <>Список карток порожній</>
+    if (loading) return <>Завантаження...</>
+    if (!cards || cards.length === 0) return <>Список карток порожній</>
 
     function maskCardNumber(cardNumber: string) {
         if (cardNumber.length < 4) return cardNumber

@@ -115,6 +115,7 @@ public class PaymentTransactionService {
                 .description(paymentTemplate.getDescription())
                 .template(paymentTemplate)
                 .paymentStatus(PaymentStatus.PENDING)
+                .category(paymentTemplate.getCategory())
                 .build();
 
         return paymentRepository.save(payment);

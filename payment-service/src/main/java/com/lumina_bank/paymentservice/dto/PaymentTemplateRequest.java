@@ -26,6 +26,7 @@ public record PaymentTemplateRequest(
         // SERVICE
         Long providerId,
         String payerReference,
+        String category,
 
         @NotNull(message = "Amount is required")
         @DecimalMin(value = "0.01", message = "Amount must be greater than zero")

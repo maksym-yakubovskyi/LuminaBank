@@ -10,14 +10,14 @@ interface Props {
     topRecipients: AnalyticsTopRecipientResponse[] | null
     categories: AnalyticsCategoryResponse[] | null
     currency: string
+    loading: boolean
 }
 
-export function AnalyticsBlock({monthOverview, topRecipients, categories,currency}: Props){
+export function AnalyticsBlock({monthOverview, topRecipients, categories,currency,loading,}: Props){
+    if (loading) return <p>Завантаження...</p>
 
-    function formatMoney(value: number): string {
-//        if(!value) value = 0;
-        return value + " " + currency
-    }
+    const formatMoney = (v?: number) => `${v ?? 0} ${currency}`
+
 
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
@@ -62,7 +62,7 @@ export function AnalyticsBlock({monthOverview, topRecipients, categories,currenc
                     <p>Немає даних за місяць</p>
                 ) : (
                     <pre style={{ fontFamily: "monospace" }}>
-+ Надходження: {formatMoney(monthOverview.totalIncome)}
+                        + Надходження: {formatMoney(monthOverview.totalIncome)}
                         - Витрати:     {formatMoney(monthOverview.totalExpense)}
                         = Баланс:      {formatMoney(monthOverview.cashFlow)}
 

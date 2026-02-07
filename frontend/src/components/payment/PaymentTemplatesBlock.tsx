@@ -1,36 +1,36 @@
 import type {TemplateItem} from "@/features/types/template.ts";
 import PaymentService from "@/api/service/PaymentService.ts";
 import {PaymentTemplateType} from "@/features/enum/enum.ts";
-import {extractErrorMessage} from "@/api/apiError.ts";
 
 interface Props {
-templates: TemplateItem[]
+    templates: TemplateItem[] | null
+    loading: boolean
     onDeleted: (id: number) => void
 }
 
-export function PaymentTemplatesBlock ({templates,onDeleted}:Props){
-    if (!templates) return <>Завантаження...</>
-    if (templates.length === 0) return <>Список шаблонів порожній</>
+export function PaymentTemplatesBlock ({templates,loading, onDeleted}:Props){
+    if (loading) return <>Завантаження...</>
+    if (!templates || templates.length === 0)
+        return <>Список шаблонів порожній</>
 
     async function deletePaymentTemplate(id: number) {
         try {
             await PaymentService.deletePaymentTemplate(id)
             onDeleted(id)
-        } catch (err) {
-            console.error(err)
-            const message = extractErrorMessage(err)
-            alert("Помилка видалення: " + message)
+        } catch (e) {
+            console.error("Delete template failed", e)
+            alert("Помилка видалення")
         }
     }
 
     async function makeTemplatePayment(id: number){
         try{
             await PaymentService.makeTemplatePayment(id)
-        } catch (err: any) {
-            console.error(err)
-            const message = extractErrorMessage(err)
-            alert("Помилка відправки" + message)
+        }catch (e) {
+            console.error("Template execution failed", e)
+            alert("Помилка відправки")
         }
+        alert("Оплата пройшла успішно")
     }
 
     return (

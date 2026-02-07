@@ -6,9 +6,13 @@ import {DeleteAccountBlock} from "@/components/profile/DeleteAccountBlock.tsx";
 interface Props {
     user: UserProfile | null
     onUpdate: (user: UserProfile) => void
+    loading: boolean
 }
 
-export function UserSettingsBlock({user, onUpdate,}: Props) {
+export function UserSettingsBlock({user, onUpdate,loading}: Props) {
+    if (loading) return <p>Завантаження...</p>
+    if (!user) return <>Помилка завантаження</>
+
     return (
         <>
             <h3>Налаштування профілю та безпеки</h3>

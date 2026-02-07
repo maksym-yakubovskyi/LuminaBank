@@ -25,7 +25,7 @@ public class ReportGenerationJob {
     private final CsvGenerator csvGenerator;
     private final FileStorage storage;
 
-    @Async
+    @Async("reportExecutor")
     public void generateMonthlyReport(UUID reportId, Long userId, Long accountId, YearMonth month){
         try{
             updateStatus(reportId,ReportStatus.PROCESSING);
@@ -61,7 +61,7 @@ public class ReportGenerationJob {
         }
     }
 
-    @Async
+    @Async("reportExecutor")
     public void generateDailyActivityReport(
             UUID reportId,
             Long userId,
@@ -92,7 +92,7 @@ public class ReportGenerationJob {
         }
     }
 
-    @Async
+    @Async("reportExecutor")
     public void generateTransactionHistoryReport(
             UUID reportId,
             Long userId,

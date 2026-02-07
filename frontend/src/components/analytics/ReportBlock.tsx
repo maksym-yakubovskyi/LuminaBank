@@ -1,7 +1,6 @@
 import type {ReportResponse} from "@/features/types/analytics.ts";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import AnalyticsService from "@/api/service/AnalyticsService.ts";
-import {extractErrorMessage} from "@/api/apiError.ts";
 import {Button} from "@/components/button/Button.tsx";
 import type {Account} from "@/features/types/account.ts";
 import {ReportStatus} from "@/features/enum/enum.ts";
@@ -14,15 +13,29 @@ export function ReportBlock({account}: Props) {
     const [loading, setLoading] = useState(false)
 
     const [month, setMonth] = useState("2026-02")
-
     const [from, setFrom] = useState("2026-02-01")
     const [to, setTo] = useState("2026-02-27")
 
     const pollingRefs = useRef<Map<string, number>>(new Map())
 
+    const { isMonthlyValid, isDateRangeValid } = useMemo(() => {
+        const isMonthlyValid =
+            Boolean(month) && /^\d{4}-\d{2}$/.test(month)
+
+        const isDateRangeValid =
+            Boolean(from) &&
+            Boolean(to) &&
+            from <= to
+
+        return {
+            isMonthlyValid,
+            isDateRangeValid,
+        }
+    }, [month, from, to])
+
     useEffect(() => {
-        loadReports().catch(console.error);
-        return () => stopAllPolling()
+        void loadReports()
+        return stopAllPolling
     }, [])
 
     async function loadReports() {
@@ -30,101 +43,24 @@ export function ReportBlock({account}: Props) {
             const list = await AnalyticsService.getMyReports()
             setReports(list)
             list.forEach(startPollingIfNeeded)
-        } catch (err: any) {
-            const  message=extractErrorMessage(err)
-            alert("Помилка отримання" + message)
+        } catch (e) {
+            console.error("Reports load failed", e)
         }
     }
 
-    async function createMonthlyReport() {
-        if (!month) {
-            alert("Оберіть місяць")
-            return
-        }
+    async function createReport(action: () => Promise<ReportResponse>) {
         try {
             setLoading(true)
-
-            const created = await AnalyticsService.createMonthlyReport(
-                account.id,
-                month
-            )
-
+            const created = await action()
             setReports(prev => [created, ...prev])
             startPollingIfNeeded(created)
-
-        } catch (err: any) {
-            const  message= extractErrorMessage(err)
-            alert("Помилка створення" + message)
+        } catch (e) {
+            console.error("Create report failed", e)
+            alert("Помилка створення")
         } finally {
             setLoading(false)
         }
     }
-
-    async function createDailyReport() {
-        if (!from || !to) {
-            alert("Оберіть діапазон дат")
-            return
-        }
-        if (from > to) {
-            alert("Дата FROM не може бути пізніше TO")
-            return
-        }
-        try {
-            setLoading(true)
-
-            const created = await AnalyticsService.createDailyReport(
-                from,
-                to
-            )
-
-            setReports(prev => [created, ...prev])
-            startPollingIfNeeded(created)
-
-        } catch (err: any) {
-            const  message= extractErrorMessage(err)
-            alert("Помилка створення" + message)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    async function createTransactionHistoryReport() {
-        if (!from || !to) {
-            alert("Оберіть діапазон дат")
-            return
-        }
-        if (from > to) {
-            alert("Дата FROM не може бути пізніше TO")
-            return
-        }
-        try {
-            setLoading(true)
-
-            const created = await AnalyticsService.createTransactionHistoryReport(
-                from,
-                to
-            )
-
-            setReports(prev => [created, ...prev])
-            startPollingIfNeeded(created)
-
-        } catch (err: any) {
-            const  message= extractErrorMessage(err)
-            alert("Помилка створення" + message)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    async function downloadReport (id: string) {
-        try {
-            await AnalyticsService.downloadReport(id)
-        } catch (err: any) {
-            const  message= extractErrorMessage(err)
-            alert("Помилка створення" + message)
-        }
-    }
-
 
     function startPollingIfNeeded(report: ReportResponse) {
         if (report.status === ReportStatus.READY || pollingRefs.current.has(report.id)) return
@@ -169,7 +105,12 @@ export function ReportBlock({account}: Props) {
                     onChange={e => setMonth(e.target.value)}
                 />
 
-                <Button loading={loading} onClick={createMonthlyReport}>
+                <Button
+                    loading={loading}
+                    disabled={!isMonthlyValid}
+                    onClick={() =>
+                    createReport(() => AnalyticsService.createMonthlyReport(account.id, month))
+                }>
                     ➕ Місячний фінансовий
                 </Button>
             </div>
@@ -187,14 +128,30 @@ export function ReportBlock({account}: Props) {
                     onChange={e => setTo(e.target.value)}
                 />
 
-                <Button loading={loading} onClick={createDailyReport}>
+                <Button
+                    loading={loading}
+                    disabled={!isDateRangeValid}
+                    onClick={() =>
+                    createReport(() => AnalyticsService.createDailyReport(from, to))
+                }>
                     ➕ Денна активність
                 </Button>
 
-                <Button loading={loading} onClick={createTransactionHistoryReport}>
+                <Button
+                    loading={loading}
+                    disabled={!isDateRangeValid}
+                    onClick={() =>
+                    createReport(() => AnalyticsService.createTransactionHistoryReport(from, to))
+                }>
                     ➕ Історія транзакцій
                 </Button>
             </div>
+
+            {!isDateRangeValid && (
+                <p style={{ fontSize: 12, color: "#888" }}>
+                    Дата FROM не може бути пізніше TO
+                </p>
+            )}
 
             <table width="100%" border={1} cellPadding={8}>
                 <thead>
@@ -213,11 +170,11 @@ export function ReportBlock({account}: Props) {
                         <td>{r.status}</td>
                         <td>
                             {r.status === ReportStatus.READY && (
-                                <Button loading={loading} onClick={() => downloadReport(r.id)}>
+                                <Button loading={loading} onClick={() => AnalyticsService.downloadReport(r.id)}>
                                     ⬇ Завантажити
                                 </Button>
                             )}
-                            {r.status === ReportStatus.FAILED && "❌ Помилка"}
+                            {r.status === ReportStatus.FAILED && "❌"}
                         </td>
                     </tr>
                 ))}

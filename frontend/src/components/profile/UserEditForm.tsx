@@ -1,10 +1,9 @@
-import type {UserProfile, UserUpdateDto} from "@/features/types/userProfile.ts";
+import type {UserProfile} from "@/features/types/userProfile.ts";
 import {useForm} from "react-hook-form";
 import UserService from "@/api/service/UserService.ts";
 import {Button} from "@/components/button/Button.tsx";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod"
-import {extractErrorMessage} from "@/api/apiError.ts";
 
 const userEditSchema = z.object({
     firstName: z.string().nonempty("Ім'я обов'язкове")
@@ -68,29 +67,25 @@ export function UserEditForm({user, onUpdate}: Props) {
             : undefined,
     })
 
-    if (!user) return <p>Завантаження...</p>
-
     const onSubmit = async (data: FormInputs) => {
-        const dto: UserUpdateDto = {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-            phoneNumber: data.phoneNumber,
-            birthDate: data.birthDate,
-            street: data.street,
-            city: data.city,
-            houseNumber: data.houseNumber,
-            zipCode: data.zipCode,
-            country: data.country,
-        }
+        try {
+            const updatedUser = await UserService.updateProfile({
+                firstName: data.firstName,
+                lastName: data.lastName,
+                email: data.email,
+                phoneNumber: data.phoneNumber,
+                birthDate: data.birthDate,
+                street: data.street,
+                city: data.city,
+                houseNumber: data.houseNumber,
+                zipCode: data.zipCode,
+                country: data.country,
+            })
 
-        try{
-            const updatedUser = await UserService.updateProfile(dto)
             onUpdate(updatedUser)
-        }catch (err: any) {
-            console.log(err)
-            const message = extractErrorMessage(err)
-            alert("Помилка отримання" + message)
+        }catch (e) {
+            console.error("Update profile failed", e)
+            alert("Помилка оновлення")
         }
     }
 

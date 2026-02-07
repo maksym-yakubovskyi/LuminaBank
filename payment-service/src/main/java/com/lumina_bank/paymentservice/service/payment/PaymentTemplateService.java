@@ -38,15 +38,18 @@ public class PaymentTemplateService {
 
         String toCardNumber;
         String finalDescription;
+        String category;
         if (request.type() == PaymentTemplateType.TRANSFER) {
             toCardNumber = request.toCardNumber();
             finalDescription = request.description();
+            category ="TRANSFER";
         } else {
             toCardNumber = paymentService.getProviderCardNumber(request.providerId());
             finalDescription = paymentService.buildServiceDescription(
                     request.description(),
                     request.payerReference()
             );
+            category = request.category();
         }
 
         PaymentTemplate template = PaymentTemplate.builder()
@@ -56,6 +59,7 @@ public class PaymentTemplateService {
                 .fromCardNumber(request.fromCardNumber())
                 .toCardNumber(toCardNumber)
                 .type(request.type())
+                .category(category)
                 .amount(request.amount())
                 .isRecurring(request.recurrenceType() != RecurrenceType.NONE)
                 .recurrenceCron(cron)

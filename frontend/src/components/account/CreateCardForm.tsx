@@ -6,9 +6,9 @@ import AccountService from "@/api/service/AccountService.ts";
 import CardService from "@/api/service/CardService.ts";
 import {Button} from "@/components/button/Button.tsx";
 import {AccountType, CardNetwork, CardType, Currency} from "@/features/enum/enum.ts";
-import {extractErrorMessage} from "@/api/apiError.ts";
 
 const createCardSchema = z.object({
+    accountId: z.number().optional(),
     cardType: z.enum([CardType.PHYSICAL, CardType.VIRTUAL], {
         message: "Оберіть тип картки",
     }),
@@ -42,14 +42,16 @@ const createCardSchema = z.object({
 type FormInputs = z.infer<typeof createCardSchema>
 
 interface Props {
-    account: Account | null
+    accounts: Account[]
+    onCreated: () => void
     onCancel: () => void
 }
 
-export function CreateCardForm({ account, onCancel }: Props) {
+export function CreateCardForm({ accounts,onCreated, onCancel }: Props) {
     const {
         register,
         handleSubmit,
+        watch,
         formState: {errors, isSubmitting },
     } = useForm<FormInputs>({
         resolver: zodResolver(createCardSchema),
@@ -62,10 +64,13 @@ export function CreateCardForm({ account, onCancel }: Props) {
         },
     })
 
+    const selectedAccountId = watch("accountId")
+
     const onSubmit = async (data: FormInputs) => {
-        let accountId = account?.id
         try {
-            if (!accountId) {
+            let accountId = data.accountId
+
+            if (accountId === -1) {
                 const createdAccount = await AccountService.createAccount({
                     currency: data.currency,
                     type: data.accountType,
@@ -78,12 +83,12 @@ export function CreateCardForm({ account, onCancel }: Props) {
                 cardNetwork: data.cardNetwork,
                 limit: data.limit,
             })
-        }catch (err: any) {
-            console.error(err);
-            const message = extractErrorMessage(err)
-            alert("Помилка відправки форми" + message)
+
+            onCreated()
+        }catch (e) {
+            console.error("Create card failed", e)
+            alert("Не вдалося створити картку")
         }
-        onCancel()
     }
 
     return (
@@ -92,6 +97,52 @@ export function CreateCardForm({ account, onCancel }: Props) {
             style={{ display: "grid", gap: "12px" }}
         >
             <h3>Відкриття нової картки</h3>
+
+                <div>
+                    <label>Існуючий рахунок</label>
+                    <select {...register("accountId", { valueAsNumber: true })}>
+                        <option value={-1}>➕ Створити новий рахунок</option>
+                        {accounts.map(a => (
+                            <option key={a.id} value={a.id}>
+                                {a.iban} ({a.currency})
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+            {selectedAccountId === -1 && (
+                <>
+                    <h4>Новий рахунок</h4>
+
+                    <div>
+                        <label>Валюта</label>
+                        <select {...register("currency")}>
+                            {Object.values(Currency).map((cur) => (
+                                <option key={cur} value={cur}>
+                                    {cur}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.currency && (
+                            <p style={{ color: "red" }}>{errors.currency.message}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <label>Тип рахунку</label>
+                        <select {...register("accountType")}>
+                            {Object.values(AccountType).map((type) => (
+                                <option key={type} value={type}>
+                                    {type}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.accountType && (
+                            <p style={{ color: "red" }}>{errors.accountType.message}</p>
+                        )}
+                    </div>
+                </>
+            )}
 
             <div>
                 <label>Тип картки</label>
@@ -128,40 +179,6 @@ export function CreateCardForm({ account, onCancel }: Props) {
                     <p style={{ color: "red" }}>{errors.limit.message}</p>
                 )}
             </div>
-
-            {!account && (
-                <>
-                    <h4>Рахунок</h4>
-
-                    <div>
-                        <label>Валюта</label>
-                        <select {...register("currency")}>
-                            {Object.values(Currency).map((cur) => (
-                                <option key={cur} value={cur}>
-                                    {cur}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.currency && (
-                            <p style={{ color: "red" }}>{errors.currency.message}</p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label>Тип рахунку</label>
-                        <select {...register("accountType")}>
-                            {Object.values(AccountType).map((type) => (
-                                <option key={type} value={type}>
-                                    {type}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.accountType && (
-                            <p style={{ color: "red" }}>{errors.accountType.message}</p>
-                        )}
-                    </div>
-                </>
-            )}
 
             <div style={{ display: "flex", gap: "8px" }}>
                 <Button type="button" onClick={onCancel}>
