@@ -1,0 +1,65 @@
+package com.lumina_bank.aiassistantservice.domain.flow.impl;
+
+import com.lumina_bank.aiassistantservice.domain.flow.FlowHandler;
+import com.lumina_bank.aiassistantservice.domain.result.data.ConfirmationSummaryData;
+import com.lumina_bank.aiassistantservice.domain.enums.ExecutionStatus;
+import com.lumina_bank.aiassistantservice.domain.enums.FlowState;
+import com.lumina_bank.aiassistantservice.domain.model.Conversation;
+import com.lumina_bank.aiassistantservice.domain.result.AssistantExecutionResult;
+import com.lumina_bank.aiassistantservice.domain.intent.IntentDefinition;
+import com.lumina_bank.aiassistantservice.domain.intent.IntentRegistry;
+import com.lumina_bank.aiassistantservice.service.ai.ParameterExtractionService;
+import com.lumina_bank.aiassistantservice.service.ConversationStateService;
+import com.lumina_bank.aiassistantservice.util.ParamsJsonMapper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.Map;
+
+@Component
+@RequiredArgsConstructor
+public class CollectingParamsHandler implements FlowHandler {
+
+    private final IntentRegistry registry;
+    private final ParameterExtractionService extractor;
+    private final ParamsJsonMapper paramsService;
+    private final ConversationStateService stateService;
+
+    @Override
+    public FlowState supportedState() {
+        return FlowState.COLLECTING_PARAMS;
+    }
+
+    @Override
+    public AssistantExecutionResult handle(Conversation c, String message) {
+
+        IntentDefinition def = registry.get(c.getActiveIntent());
+
+        Map<String, Object> extracted =
+                extractor.extract(message, c.getActiveIntent(), def.requiredParams(), c.getId());
+
+        Map<String, Object> params = paramsService.merge(c, extracted);
+
+        AssistantExecutionResult result = def.execute(params);
+
+        if (result.status() == ExecutionStatus.SUCCESS && def.requiresFinalConfirmation()) {
+
+            stateService.moveTo(c, FlowState.AWAITING_FINAL_CONFIRMATION);
+
+            return AssistantExecutionResult.needConfirmation(
+                    def.intent(),
+                    new ConfirmationSummaryData(def.intent(), params)
+            );
+        }
+
+        stateService.applyExecutionResult(c, result);
+
+        if (result.status() == ExecutionStatus.SUCCESS
+                || result.status() == ExecutionStatus.ERROR) {
+            stateService.finishFlow(c);
+        }
+
+        return result;
+    }
+}
+

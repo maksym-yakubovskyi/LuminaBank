@@ -49,23 +49,35 @@ public class PaymentService {
     private static final Duration CANCEL_WINDOW = Duration.ofSeconds(30);// час за який можна скасувати оплату
 
     @Transactional(readOnly = true)
-    public List<TransactionHistoryItemDto> getUserHistory(Long accountId,int count){
+    public List<TransactionHistoryItemDto> getUserHistory(
+            Long userId,
+            Long accountId,
+            int limit
+    ) {
+
         Pageable pageable = PageRequest.of(
                 0,
-                count,
+                limit,
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
-        Page<Payment> page = paymentRepository.findByFromAccountIdOrToAccountId(accountId,accountId, pageable);
+
+        Page<Payment> page =
+                paymentRepository.findUserHistory(userId, accountId, pageable);
 
         return page.getContent().stream()
-                .map(p -> TransactionHistoryItemDto.toHistoryItem(p, accountId))
+                .map(p -> TransactionHistoryItemDto.toHistoryItem(p, userId,accountId))
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<TransactionHistoryItemDto> getUserHistory(Long accountId){
-        return paymentRepository.findByFromAccountIdOrToAccountId(accountId,accountId).stream()
-                .map(p -> TransactionHistoryItemDto.toHistoryItem(p,accountId))
+    public List<TransactionHistoryItemDto> getUserHistory(
+            Long userId,
+            Long accountId
+    ) {
+
+        return paymentRepository.findUserHistory(userId, accountId)
+                .stream()
+                .map(p -> TransactionHistoryItemDto.toHistoryItem(p, userId,accountId))
                 .toList();
     }
 

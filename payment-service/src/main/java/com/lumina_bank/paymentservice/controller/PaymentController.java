@@ -72,21 +72,34 @@ public class PaymentController {
         return ResponseEntity.ok(PaymentResponse.fromEntity(paymentService.cancelPayment(paymentId)));
     }
 
-    @GetMapping("/history/{accountId}/limit")
+    @GetMapping("/history/limit")
     public ResponseEntity<?> getHistoryLimit(
-            @PathVariable Long accountId,
-            @RequestParam(defaultValue = "5") int limit){
-        log.info("GET /payments/history/{accountId}/limit/{limit} - Get history limit={}",limit);
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(defaultValue = "5") int limit,
+            @RequestParam(required = false) Long accountId
+    ){
+        if (jwt == null)
+            throw new JwtMissingException("JWT token is required");
 
-        return ResponseEntity.ok(paymentService.getUserHistory(accountId,limit));
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        return ResponseEntity.ok(
+                paymentService.getUserHistory(userId, accountId, limit)
+        );
     }
 
-    @GetMapping("/history/{accountId}/all")
+    @GetMapping("/history/all")
     public ResponseEntity<?> getAllHistory(
-            @PathVariable Long accountId
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false) Long accountId
     ){
-        log.info("GET /payments/history/{accountId}/all - Get all history");
+        if (jwt == null)
+            throw new JwtMissingException("JWT token is required");
 
-        return ResponseEntity.ok(paymentService.getUserHistory(accountId));
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        return ResponseEntity.ok(
+                paymentService.getUserHistory(userId, accountId)
+        );
     }
 }
