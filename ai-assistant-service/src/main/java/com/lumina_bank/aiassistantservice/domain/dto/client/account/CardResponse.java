@@ -1,4 +1,4 @@
-package com.lumina_bank.aiassistantservice.domain.dto.client;
+package com.lumina_bank.aiassistantservice.domain.dto.client.account;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

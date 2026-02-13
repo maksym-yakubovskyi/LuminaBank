@@ -1,6 +1,7 @@
 package com.lumina_bank.authservice.model;
 
 import com.lumina_bank.common.enums.user.Role;
+import com.lumina_bank.common.enums.user.UserType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;

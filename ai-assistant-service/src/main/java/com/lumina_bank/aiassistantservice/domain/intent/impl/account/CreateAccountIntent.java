@@ -1,19 +1,20 @@
-package com.lumina_bank.aiassistantservice.domain.intent.impl;
+package com.lumina_bank.aiassistantservice.domain.intent.impl.account;
 
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
-import com.lumina_bank.aiassistantservice.domain.dto.client.AccountCreateDto;
-import com.lumina_bank.aiassistantservice.domain.result.data.AccountCreatedData;
+import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountCreateDto;
+import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountResponse;
+import com.lumina_bank.aiassistantservice.domain.exception.ExternalServiceException;
+import com.lumina_bank.aiassistantservice.domain.result.data.account.AccountCreatedData;
 import com.lumina_bank.aiassistantservice.domain.result.data.ClarificationData;
 import com.lumina_bank.aiassistantservice.domain.result.data.EmptyData;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
 import com.lumina_bank.aiassistantservice.domain.enums.ParamType;
 import com.lumina_bank.aiassistantservice.domain.result.AssistantExecutionResult;
 import com.lumina_bank.aiassistantservice.domain.intent.IntentDefinition;
-import com.lumina_bank.aiassistantservice.service.client.AccountClientService;
+import com.lumina_bank.aiassistantservice.service.client.account.FeignAccountGateway;
 import com.lumina_bank.aiassistantservice.util.ParseEnumUtil;
 import com.lumina_bank.common.enums.account.AccountType;
 import com.lumina_bank.common.enums.payment.Currency;
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -25,7 +26,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class CreateAccountIntent implements IntentDefinition {
-    private final AccountClientService accountClient;
+    private final FeignAccountGateway accountGateway;
 
     @Override
     public Intent intent() {
@@ -75,51 +76,33 @@ public class CreateAccountIntent implements IntentDefinition {
 
     @Override
     public AssistantExecutionResult perform(Map<String, Object> params) {
-
-        Currency currency;
-        AccountType type;
-
         try {
-            currency = ParseEnumUtil.parseEnum(
+            Currency currency = ParseEnumUtil.parseEnum(
                     Currency.class,
                     params.get("currency")
             );
-            type = ParseEnumUtil.parseEnum(
+            AccountType type = ParseEnumUtil.parseEnum(
                     AccountType.class,
                     params.get("type")
             );
-        } catch (IllegalArgumentException e) {
-            return AssistantExecutionResult.needClarification(
-                    intent(),
-                    new ClarificationData(
-                            "Будь ласка, оберіть валюту та тип рахунку зі списку."
-                    )
-            );
-        }
 
-        try {
-            var response = accountClient.createAccount(
-                    new AccountCreateDto(currency, type)
-            );
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                return AssistantExecutionResult.error(
-                        intent(),
-                        "Не вдалося створити рахунок"
-                );
-            }
+            AccountResponse created =
+                    accountGateway.createAccount(new AccountCreateDto(currency, type));
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new AccountCreatedData(response.getBody())
+                    new AccountCreatedData(created)
             );
 
-        } catch (FeignException e) {
-            log.warn("Account creation failed", e);
-            return AssistantExecutionResult.error(
+        } catch (IllegalArgumentException e) {
+            return AssistantExecutionResult.needClarification(
                     intent(),
-                    "Помилка при створенні рахунку"
+                    new ClarificationData("Будь ласка, оберіть валюту та тип рахунку зі списку.")
             );
+
+        } catch (ExternalServiceException e) {
+            return AssistantExecutionResult.error(intent(),
+                    "Не вдалося створити рахунок");
         }
     }
 }

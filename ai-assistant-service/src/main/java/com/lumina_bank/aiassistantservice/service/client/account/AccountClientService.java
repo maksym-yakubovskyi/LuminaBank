@@ -1,9 +1,9 @@
-package com.lumina_bank.aiassistantservice.service.client;
+package com.lumina_bank.aiassistantservice.service.client.account;
 
-import com.lumina_bank.aiassistantservice.domain.dto.client.AccountCreateDto;
-import com.lumina_bank.aiassistantservice.domain.dto.client.AccountResponse;
-import com.lumina_bank.aiassistantservice.domain.dto.client.CardCreateDto;
-import com.lumina_bank.aiassistantservice.domain.dto.client.CardResponse;
+import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountCreateDto;
+import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountResponse;
+import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardCreateDto;
+import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardResponse;
 import com.lumina_bank.aiassistantservice.security.FeignSecurityConfig;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
@@ -28,5 +28,8 @@ public interface AccountClientService {
 
     @PostMapping("/cards/{accountId}")
     ResponseEntity<CardResponse> createCard(@PathVariable Long accountId, @RequestBody CardCreateDto dto);
+
+    @GetMapping("/cards/{accountId}")
+    ResponseEntity<List<CardResponse>> getCardsByAccountId(@PathVariable Long accountId);
 
 }
