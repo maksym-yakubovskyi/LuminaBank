@@ -5,12 +5,14 @@ import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountRespo
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardResponse;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
 import com.lumina_bank.aiassistantservice.domain.enums.ParamType;
-import com.lumina_bank.aiassistantservice.domain.exception.ExternalServiceException;
+import com.lumina_bank.aiassistantservice.domain.exception.ServiceCallException;
 import com.lumina_bank.aiassistantservice.domain.intent.IntentDefinition;
 import com.lumina_bank.aiassistantservice.domain.result.AssistantExecutionResult;
+import com.lumina_bank.aiassistantservice.domain.result.data.ConfirmationData;
 import com.lumina_bank.aiassistantservice.domain.result.data.account.CardsListData;
 import com.lumina_bank.aiassistantservice.domain.result.data.ClarificationData;
 import com.lumina_bank.aiassistantservice.service.client.account.FeignAccountGateway;
+import com.lumina_bank.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -32,7 +34,11 @@ public class ListAccountCardsIntent implements IntentDefinition {
     @Override
     public List<RequiredParam> requiredParams() {
         return List.of(
-                new RequiredParam("accountId", ParamType.NUMBER, List.of())
+                new RequiredParam(
+                        "accountId",
+                        ParamType.NUMBER,
+                        List.of(),
+                        "ID of the account")
         );
     }
 
@@ -42,38 +48,65 @@ public class ListAccountCardsIntent implements IntentDefinition {
             List<AccountResponse> accounts = accountGateway.getUserAccounts();
 
             if (accounts.isEmpty()) {
-                return AssistantExecutionResult.needConfirmation(
+                return AssistantExecutionResult.confirmNavigation(
                         intent(),
-                        "У вас ще немає рахунків. Хочете створити рахунок?",
+                        new ConfirmationData(
+                                "NO_ACCOUNTS",
+                                Map.of("nextIntent",Intent.CREATE_ACCOUNT)),
                         Intent.CREATE_ACCOUNT
                 );
             }
 
-            if (accounts.size() == 1 && !params.containsKey("accountId")) {
-                params.put("accountId", accounts.getFirst().id());
+            if (!params.containsKey("accountId")) {
+
+                if (accounts.size() == 1) {
+                    params.put("accountId", accounts.getFirst().id());
+                } else {
+                    return AssistantExecutionResult.askParam(
+                            intent(),
+                            new RequiredParam(
+                                    "accountId",
+                                    ParamType.NUMBER,
+                                    accounts.stream()
+                                            .map(a -> a.id() + " | " + a.currency() + " | " + a.iban())
+                                            .toList(),
+                                    "Accounts list to select"
+                            )
+                    );
+                }
             }
 
-            if (accounts.size() > 1 && !params.containsKey("accountId")) {
-                return AssistantExecutionResult.askParam(
+            Long accountId;
+
+            try {
+                accountId = Long.valueOf(
+                        params.get("accountId").toString()
+                );
+            } catch (NumberFormatException e) {
+                return AssistantExecutionResult.needClarification(
                         intent(),
-                        new RequiredParam(
-                                "accountId",
-                                ParamType.NUMBER,
-                                accounts.stream()
-                                        .map(a -> a.id() + " | " + a.currency() + " | " + a.iban())
-                                        .toList()
-                        )
+                        new ClarificationData("INVALID_ACCOUNT_ID")
                 );
             }
 
-            Long accountId = Long.valueOf(params.get("accountId").toString());
+            boolean exists = accounts.stream()
+                    .anyMatch(a -> a.id().equals(accountId));
+
+            if (!exists) {
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("ACCOUNT_NOT_FOUND")
+                );
+            }
 
             List<CardResponse> cards = accountGateway.getCardsByAccountId(accountId);
 
             if (cards.isEmpty()) {
-                return AssistantExecutionResult.needConfirmation(
+                return AssistantExecutionResult.confirmNavigation(
                         intent(),
-                        "На цьому рахунку ще немає карт. Хочете створити картку?",
+                        new ConfirmationData(
+                                "NO_CARDS",
+                                Map.of("nextIntent",Intent.CREATE_CARD)),
                         Intent.CREATE_CARD
                 );
             }
@@ -83,17 +116,15 @@ public class ListAccountCardsIntent implements IntentDefinition {
                     new CardsListData(cards)
             );
 
-        } catch (NumberFormatException e) {
-
+        }catch (NumberFormatException e) {
             return AssistantExecutionResult.needClarification(
                     intent(),
-                    new ClarificationData("Некоректний номер рахунку.")
+                    new ClarificationData("INVALID_PARAMS")
             );
-
-        } catch (ExternalServiceException e) {
+        }catch (ServiceCallException e) {
             return AssistantExecutionResult.error(
                     intent(),
-                    "Не вдалося отримати картки цього рахунку"
+                    e.getMessage()
             );
         }
     }

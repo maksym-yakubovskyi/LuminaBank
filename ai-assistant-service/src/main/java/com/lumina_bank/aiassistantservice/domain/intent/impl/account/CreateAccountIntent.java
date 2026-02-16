@@ -3,7 +3,7 @@ package com.lumina_bank.aiassistantservice.domain.intent.impl.account;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountCreateDto;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountResponse;
-import com.lumina_bank.aiassistantservice.domain.exception.ExternalServiceException;
+import com.lumina_bank.aiassistantservice.domain.exception.ServiceCallException;
 import com.lumina_bank.aiassistantservice.domain.result.data.account.AccountCreatedData;
 import com.lumina_bank.aiassistantservice.domain.result.data.ClarificationData;
 import com.lumina_bank.aiassistantservice.domain.result.data.EmptyData;
@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -39,12 +40,14 @@ public class CreateAccountIntent implements IntentDefinition {
                 new RequiredParam(
                         "currency",
                         ParamType.ENUM,
-                        ParseEnumUtil.enumValues(Currency.class)
+                        ParseEnumUtil.enumValues(Currency.class),
+                        "Account currency."
                 ),
                 new RequiredParam(
                         "type",
                         ParamType.ENUM,
-                        ParseEnumUtil.enumValues(AccountType.class)
+                        ParseEnumUtil.enumValues(AccountType.class),
+                        "Account type."
                 )
         );
     }
@@ -56,11 +59,23 @@ public class CreateAccountIntent implements IntentDefinition {
 
     @Override
     public AssistantExecutionResult execute(Map<String, Object> params) {
-
         if (!params.containsKey("currency")) {
             return AssistantExecutionResult.askParam(
                     intent(),
                     requiredParams().getFirst()
+            );
+        }
+
+        Optional<Currency> currency =
+                ParseEnumUtil.parseEnumSafe(
+                        Currency.class,
+                        params.get("currency")
+                );
+
+        if (currency.isEmpty()) {
+            return AssistantExecutionResult.needClarification(
+                    intent(),
+                    new ClarificationData("INVALID_CURRENCY")
             );
         }
 
@@ -71,38 +86,57 @@ public class CreateAccountIntent implements IntentDefinition {
             );
         }
 
+        Optional<AccountType> type =
+                ParseEnumUtil.parseEnumSafe(
+                        AccountType.class,
+                        params.get("type")
+                );
+
+        if (type.isEmpty()) {
+            return AssistantExecutionResult.needClarification(
+                    intent(),
+                    new ClarificationData("INVALID_ACCOUNT_TYPE")
+            );
+        }
+
         return AssistantExecutionResult.success(intent(), new EmptyData());
     }
 
     @Override
     public AssistantExecutionResult perform(Map<String, Object> params) {
         try {
-            Currency currency = ParseEnumUtil.parseEnum(
-                    Currency.class,
-                    params.get("currency")
-            );
-            AccountType type = ParseEnumUtil.parseEnum(
-                    AccountType.class,
-                    params.get("type")
-            );
+            Optional<Currency> currency =
+                    ParseEnumUtil.parseEnumSafe(Currency.class, params.get("currency"));
+
+            if (currency.isEmpty()) {
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("INVALID_CURRENCY")
+                );
+            }
+
+            Optional<AccountType> type =
+                    ParseEnumUtil.parseEnumSafe(AccountType.class, params.get("type"));
+
+            if (type.isEmpty()) {
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("INVALID_ACCOUNT_TYPE")
+                );
+            }
 
             AccountResponse created =
-                    accountGateway.createAccount(new AccountCreateDto(currency, type));
+                    accountGateway.createAccount(new AccountCreateDto(currency.get(), type.get()));
 
             return AssistantExecutionResult.success(
                     intent(),
                     new AccountCreatedData(created)
             );
 
-        } catch (IllegalArgumentException e) {
-            return AssistantExecutionResult.needClarification(
+        } catch (ServiceCallException e) {
+            return AssistantExecutionResult.error(
                     intent(),
-                    new ClarificationData("Будь ласка, оберіть валюту та тип рахунку зі списку.")
-            );
-
-        } catch (ExternalServiceException e) {
-            return AssistantExecutionResult.error(intent(),
-                    "Не вдалося створити рахунок");
+                    e.getMessage());
         }
     }
 }

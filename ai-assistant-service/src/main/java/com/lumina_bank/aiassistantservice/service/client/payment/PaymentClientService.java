@@ -12,15 +12,10 @@ import java.util.List;
 public interface PaymentClientService {
 
     @GetMapping("/history/limit")
-    ResponseEntity<List<TransactionHistoryItemDto>> getHistoryLimit(
-            @RequestParam(required = false) Integer limit,
-            @RequestParam(required = false) Long accountId
-    );
+    ResponseEntity<List<TransactionHistoryItemDto>> getHistoryLimit(@RequestParam(required = false) Integer limit, @RequestParam(required = false) Long accountId);
 
     @GetMapping("/history/all")
-    ResponseEntity<List<TransactionHistoryItemDto>> getAllHistory(
-            @RequestParam(required = false) Long accountId
-    );
+    ResponseEntity<List<TransactionHistoryItemDto>> getAllHistory(@RequestParam(required = false) Long accountId);
 
     @PostMapping
     ResponseEntity<PaymentResponse> makePayment(@RequestBody PaymentRequest request);

@@ -6,10 +6,11 @@ import com.lumina_bank.aiassistantservice.domain.dto.client.payment.PaymentReque
 import com.lumina_bank.aiassistantservice.domain.dto.client.payment.PaymentResponse;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
 import com.lumina_bank.aiassistantservice.domain.enums.ParamType;
-import com.lumina_bank.aiassistantservice.domain.exception.ExternalServiceException;
+import com.lumina_bank.aiassistantservice.domain.exception.ServiceCallException;
 import com.lumina_bank.aiassistantservice.domain.intent.IntentDefinition;
 import com.lumina_bank.aiassistantservice.domain.result.AssistantExecutionResult;
 import com.lumina_bank.aiassistantservice.domain.result.data.ClarificationData;
+import com.lumina_bank.aiassistantservice.domain.result.data.ConfirmationData;
 import com.lumina_bank.aiassistantservice.domain.result.data.EmptyData;
 import com.lumina_bank.aiassistantservice.service.client.account.FeignAccountGateway;
 import com.lumina_bank.aiassistantservice.service.client.payment.FeignPaymentGateway;
@@ -41,28 +42,29 @@ public class TransferByCardIntent implements IntentDefinition {
     @Override
     public List<RequiredParam> requiredParams() {
         return List.of(
-                new RequiredParam("fromCardNumber", ParamType.STRING, List.of()),
-                new RequiredParam("toCardNumber", ParamType.STRING, List.of()),
-                new RequiredParam("amount", ParamType.NUMBER, List.of()),
-                new RequiredParam("description", ParamType.STRING, List.of()));
+                new RequiredParam("fromCardNumber", ParamType.STRING, List.of(),"Sender card number. Must be one of the user's own cards."),
+                new RequiredParam("toCardNumber", ParamType.STRING, List.of(),"Recipient card number. Any valid card number."),
+                new RequiredParam("amount", ParamType.NUMBER, List.of(),"Payment amount. Must be a positive number."),
+                new RequiredParam("description", ParamType.STRING, List.of(),"Optional payment description.")
+        );
     }
 
     @Override
     public AssistantExecutionResult execute(Map<String, Object> params) {
-
         try {
             List<CardResponse> myCards = accountGateway.getMyCards();
 
             if (myCards.isEmpty()) {
-                return AssistantExecutionResult.needConfirmation(
+                return AssistantExecutionResult.confirmNavigation(
                         intent(),
-                        "У вас ще немає карток. Хочете створити картку?",
+                        new ConfirmationData(
+                                "NO_CARDS",
+                                Map.of("nextIntent",Intent.CREATE_CARD)),
                         Intent.CREATE_CARD
                 );
             }
 
             if (!params.containsKey("fromCardNumber")) {
-
                 if (myCards.size() == 1) {
                     params.put("fromCardNumber", myCards.getFirst().cardNumber());
                 } else {
@@ -73,7 +75,8 @@ public class TransferByCardIntent implements IntentDefinition {
                                     ParamType.STRING,
                                     myCards.stream()
                                             .map(CardResponse::cardNumber)
-                                            .toList()
+                                            .toList(),
+                                    "User's card number list to select"
                             )
                     );
                 }
@@ -94,21 +97,32 @@ public class TransferByCardIntent implements IntentDefinition {
             }
 
             BigDecimal amount = new BigDecimal(params.get("amount").toString());
-            if (amount.signum() <= 0)
-                throw new IllegalArgumentException();
+
+            if (amount.signum() <= 0){
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("AMOUT_NEGATIVE")
+                );
+            }
+
+            if (!params.containsKey("description")) {
+                return AssistantExecutionResult.askParam(
+                        intent(),
+                        requiredParams().get(4)
+                );
+            }
 
             return AssistantExecutionResult.success(intent(), new EmptyData());
 
-        } catch (IllegalArgumentException e) {
+        } catch (NumberFormatException e) {
             return AssistantExecutionResult.needClarification(
                     intent(),
-                    new ClarificationData("Сума має бути більше 0.")
+                    new ClarificationData("INVALID_AMOUNT_FORMAT")
             );
-
-        } catch (ExternalServiceException e) {
+        } catch (ServiceCallException e) {
             return AssistantExecutionResult.error(
                     intent(),
-                    "Не вдалося отримати список карток"
+                    e.getMessage()
             );
         }
     }
@@ -130,10 +144,15 @@ public class TransferByCardIntent implements IntentDefinition {
                     new EmptyData()
             );
 
-        } catch (ExternalServiceException e) {
+        }catch (NumberFormatException e) {
+            return AssistantExecutionResult.needClarification(
+                    intent(),
+                    new ClarificationData("INVALID_PARAMS")
+            );
+        } catch (ServiceCallException e) {
             return AssistantExecutionResult.error(
                     intent(),
-                    "Не вдалося виконати переказ"
+                    e.getMessage()
             );
         }
     }

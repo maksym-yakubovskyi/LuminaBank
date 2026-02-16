@@ -1,7 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.result;
 
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
-import com.lumina_bank.aiassistantservice.domain.result.data.ClarificationData;
 import com.lumina_bank.aiassistantservice.domain.result.data.EmptyData;
 import com.lumina_bank.aiassistantservice.domain.result.data.MissingParamsData;
 import com.lumina_bank.aiassistantservice.domain.enums.ExecutionDirective;
@@ -23,42 +22,33 @@ public record AssistantExecutionResult(
     public static AssistantExecutionResult success(
             Intent intent, AssistantData data
     ) {
-        return new AssistantExecutionResult(
+        return respond(
                 ExecutionStatus.SUCCESS,
                 intent,
                 data,
-                null,
-                null,
-                null,
-                ExecutionDirective.RESPOND
+                null
         );
     }
 
     public static AssistantExecutionResult error(
             Intent intent, String errorMessage
     ) {
-        return new AssistantExecutionResult(
+        return respond(
                 ExecutionStatus.ERROR,
                 intent,
                 new EmptyData(),
-                errorMessage,
-                null,
-                null,
-                ExecutionDirective.RESPOND
+                errorMessage
         );
     }
 
     public static AssistantExecutionResult needClarification(
             Intent intent, AssistantData data
     ){
-        return new AssistantExecutionResult(
+        return respond(
                 ExecutionStatus.NEED_CLARIFICATION,
                 intent,
                 data,
-                null,
-                null,
-                null,
-                ExecutionDirective.RESPOND
+                null
         );
     }
 
@@ -66,45 +56,46 @@ public record AssistantExecutionResult(
             Intent intent,
             RequiredParam param
     ) {
-        return new AssistantExecutionResult(
-                ExecutionStatus.NEED_CLARIFICATION,
+        return needClarification(
                 intent,
-                new MissingParamsData(intent, List.of(param)),
-                null,
-                null,
-                null,
-                ExecutionDirective.RESPOND
+                new MissingParamsData(intent, List.of(param))
         );
     }
 
-    public static AssistantExecutionResult needConfirmation(
-            Intent intent,
-            String message,
+    public static AssistantExecutionResult confirmNavigation(
+            Intent currentIntent,
+            AssistantData data,
             Intent nextIntent
     ) {
-        return new AssistantExecutionResult(
-                ExecutionStatus.NEED_CONFIRMATION,
-                intent,
-                new ClarificationData(message),
-                null,
-                FlowState.CONFIRMING,
-                nextIntent,
-                ExecutionDirective.RESPOND
+        return confirmation(
+                currentIntent,
+                data,
+                FlowState.CONFIRM_NAVIGATION,
+                nextIntent
         );
     }
 
-    public static AssistantExecutionResult needConfirmation(
+    public static AssistantExecutionResult confirmLocal(
             Intent intent,
             AssistantData data
     ) {
-        return new AssistantExecutionResult(
-                ExecutionStatus.NEED_CONFIRMATION,
+        return confirmation(
                 intent,
                 data,
-                null,
-                FlowState.CONFIRMING,
+                FlowState.CONFIRM_LOCAL,
+                null
+        );
+    }
+
+    public static AssistantExecutionResult confirmFinal(
+            Intent intent,
+            AssistantData data
+    ) {
+        return confirmation(
                 intent,
-                ExecutionDirective.RESPOND
+                data,
+                FlowState.CONFIRM_FINAL,
+                null
         );
     }
 
@@ -122,4 +113,39 @@ public record AssistantExecutionResult(
                 ExecutionDirective.CONTINUE_FLOW
         );
     }
+
+    private static AssistantExecutionResult respond(
+            ExecutionStatus status,
+            Intent intent,
+            AssistantData data,
+            String error
+    ) {
+        return new AssistantExecutionResult(
+                status,
+                intent,
+                data,
+                error,
+                null,
+                null,
+                ExecutionDirective.RESPOND
+        );
+    }
+
+    private static AssistantExecutionResult confirmation(
+            Intent intent,
+            AssistantData data,
+            FlowState flowState,
+            Intent nextIntent
+    ) {
+        return new AssistantExecutionResult(
+                ExecutionStatus.NEED_CONFIRMATION,
+                intent,
+                data,
+                null,
+                flowState,
+                nextIntent,
+                ExecutionDirective.RESPOND
+        );
+    }
 }
+

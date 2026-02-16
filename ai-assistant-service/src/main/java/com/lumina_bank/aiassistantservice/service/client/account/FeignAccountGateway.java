@@ -4,7 +4,7 @@ import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountCreat
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountResponse;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardCreateDto;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardResponse;
-import com.lumina_bank.aiassistantservice.domain.exception.ExternalServiceException;
+import com.lumina_bank.aiassistantservice.util.FeignExceptionMapper;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,77 +19,48 @@ import java.util.Optional;
 public class FeignAccountGateway {
 
     private final AccountClientService client;
+    private final FeignExceptionMapper mapper;
 
     public List<AccountResponse> getUserAccounts() {
         try {
-            var response = client.getUserAccounts();
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new ExternalServiceException("Account service returned " + response.getStatusCode());
-            }
-
-            return Optional.ofNullable(response.getBody()).orElse(List.of());
-
+            return Optional.ofNullable(client.getUserAccounts().getBody())
+                    .orElse(List.of());
         } catch (FeignException e) {
-            throw new ExternalServiceException("Сервіс рахунків тимчасово недоступний");
+            throw mapper.map(e);
         }
     }
 
     public AccountResponse createAccount(AccountCreateDto dto){
         try {
-            var response = client.createAccount(dto);
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new ExternalServiceException("Account service returned " + response.getStatusCode());
-            }
-            return response.getBody();
-
+            return client.createAccount(dto).getBody();
         } catch (FeignException e) {
-            throw new ExternalServiceException("Сервіс рахунків тимчасово недоступний");
+            throw mapper.map(e);
         }
     }
 
     public List<CardResponse> getMyCards(){
         try {
-            var response = client.getMyCards();
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new ExternalServiceException("Account service returned " + response.getStatusCode());
-            }
-
-            return Optional.ofNullable(response.getBody()).orElse(List.of());
-
+            return Optional.ofNullable(client.getMyCards().getBody())
+                    .orElse(List.of());
         } catch (FeignException e) {
-            throw new ExternalServiceException("Сервіс рахунків тимчасово недоступний");
+            throw mapper.map(e);
         }
     }
 
     public CardResponse createCard (Long accountId,CardCreateDto dto){
         try {
-            var response = client.createCard(accountId,dto);
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new ExternalServiceException("Account service returned " + response.getStatusCode());
-            }
-            return response.getBody();
-
+            return client.createCard(accountId,dto).getBody();
         } catch (FeignException e) {
-            throw new ExternalServiceException("Сервіс рахунків тимчасово недоступний");
+            throw mapper.map(e);
         }
     }
 
     public List<CardResponse> getCardsByAccountId(Long accountId){
         try {
-            var response = client.getCardsByAccountId(accountId);
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new ExternalServiceException("Account service returned " + response.getStatusCode());
-            }
-
-            return Optional.ofNullable(response.getBody()).orElse(List.of());
-
+            return Optional.ofNullable(client.getCardsByAccountId(accountId).getBody())
+                    .orElse(List.of());
         } catch (FeignException e) {
-            throw new ExternalServiceException("Сервіс рахунків тимчасово недоступний");
+            throw mapper.map(e);
         }
     }
 }

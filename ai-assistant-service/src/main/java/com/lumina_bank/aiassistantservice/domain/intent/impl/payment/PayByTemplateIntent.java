@@ -4,7 +4,7 @@ import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.payment.PaymentTemplateResponse;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
 import com.lumina_bank.aiassistantservice.domain.enums.ParamType;
-import com.lumina_bank.aiassistantservice.domain.exception.ExternalServiceException;
+import com.lumina_bank.aiassistantservice.domain.exception.ServiceCallException;
 import com.lumina_bank.aiassistantservice.domain.intent.IntentDefinition;
 import com.lumina_bank.aiassistantservice.domain.result.AssistantExecutionResult;
 import com.lumina_bank.aiassistantservice.domain.result.data.ClarificationData;
@@ -37,7 +37,11 @@ public class PayByTemplateIntent implements IntentDefinition {
     @Override
     public List<RequiredParam> requiredParams() {
         return List.of(
-                new RequiredParam("templateId", ParamType.NUMBER, List.of())
+                new RequiredParam(
+                        "templateId",
+                        ParamType.NUMBER,
+                        List.of(),
+                        "ID of the payment template")
         );
     }
 
@@ -50,77 +54,81 @@ public class PayByTemplateIntent implements IntentDefinition {
             if (templates.isEmpty()) {
                 return AssistantExecutionResult.needClarification(
                         intent(),
-                        new ClarificationData("У вас немає шаблонів.")
+                        new ClarificationData("NO_TEMPLATES")
                 );
             }
 
-            // якщо один шаблон
-            if (templates.size() == 1 && !params.containsKey("templateId")) {
-                params.put("templateId", templates.getFirst().id());
-            }
+            if (!params.containsKey("templateId")) {
 
-            // якщо багато і не вказано
-            if (templates.size() > 1 && !params.containsKey("templateId")) {
-                return AssistantExecutionResult.askParam(
+                if (templates.size() == 1) {
+                    params.put("templateId", templates.getFirst().id());
+                } else {
+                    return AssistantExecutionResult.askParam(
+                            intent(),
+                            new RequiredParam(
+                                    "templateId",
+                                    ParamType.NUMBER,
+                                    templates.stream()
+                                            .map(t -> t.id() + " | " + t.name() + " | " + t.amount())
+                                            .toList(),
+                                    "Payment template list to select"
+                            )
+                    );
+                }
+            }
+            long templateId;
+
+            try {
+                templateId = Long.parseLong(params.get("templateId").toString());
+            } catch (NumberFormatException e) {
+                return AssistantExecutionResult.needClarification(
                         intent(),
-                        new RequiredParam(
-                                "templateId",
-                                ParamType.NUMBER,
-                                templates.stream()
-                                        .map(t -> t.id() + " | " + t.name() + " | " + t.amount())
-                                        .toList()
-                        )
+                        new ClarificationData("INVALID_TEMPLATE_ID_FORMAT")
                 );
             }
 
-//            Long templateId =
-//                    Long.valueOf(params.get("templateId").toString());
-//
-//            PaymentTemplateResponse template =
-//                    templates.stream()
-//                            .filter(t -> t.id().equals(templateId))
-//                            .findFirst()
-//                            .orElseThrow();
+            boolean exists = templates.stream()
+                    .anyMatch(t -> t.id().equals(templateId));
+
+            if (!exists) {
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("TEMPLATE_NOT_FOUND")
+                );
+            }
 
             return AssistantExecutionResult.success(
                     intent(),
                     new EmptyData()
             );
 
-        } catch (NumberFormatException e) {
-
-            return AssistantExecutionResult.needClarification(
-                    intent(),
-                    new ClarificationData("Некоректний номер шаблону.")
-            );
-
-        } catch (ExternalServiceException e) {
-
+        } catch (ServiceCallException e) {
             return AssistantExecutionResult.error(
                     intent(),
-                    "Не вдалося отримати шаблони"
+                    e.getMessage()
             );
         }
     }
 
     @Override
     public AssistantExecutionResult perform(Map<String, Object> params) {
+
         try {
-            Long templateId =
-                    Long.valueOf(params.get("templateId").toString());
+            Long templateId = Long.valueOf(
+                    params.get("templateId").toString()
+            );
 
             paymentGateway.makePaymentTemplate(templateId);
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new ClarificationData("Платіж виконано успішно.")
+                    new EmptyData()
             );
 
-        } catch (ExternalServiceException e) {
-
+        } catch (ServiceCallException e) {
             return AssistantExecutionResult.error(
                     intent(),
-                    "Не вдалося виконати платіж"
+                    e.getMessage()
             );
         }
     }

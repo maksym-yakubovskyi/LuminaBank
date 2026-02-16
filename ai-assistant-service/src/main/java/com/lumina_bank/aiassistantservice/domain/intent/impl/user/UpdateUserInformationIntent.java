@@ -6,13 +6,15 @@ import com.lumina_bank.aiassistantservice.domain.dto.client.user.UserResponse;
 import com.lumina_bank.aiassistantservice.domain.dto.client.user.UserUpdateDto;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
 import com.lumina_bank.aiassistantservice.domain.enums.ParamType;
-import com.lumina_bank.aiassistantservice.domain.exception.ExternalServiceException;
+import com.lumina_bank.aiassistantservice.domain.exception.ServiceCallException;
 import com.lumina_bank.aiassistantservice.domain.intent.IntentDefinition;
 import com.lumina_bank.aiassistantservice.domain.result.AssistantExecutionResult;
 import com.lumina_bank.aiassistantservice.domain.result.data.ClarificationData;
 import com.lumina_bank.aiassistantservice.domain.result.data.user.UserUpdatePreviewData;
 import com.lumina_bank.aiassistantservice.domain.result.data.user.UserUpdatedData;
 import com.lumina_bank.aiassistantservice.service.client.user.FeignUserGateway;
+import com.lumina_bank.aiassistantservice.util.ParseDateUtil;
+import com.lumina_bank.aiassistantservice.util.UserUpdateProcessor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -23,12 +25,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class UpdateUserInformationIntent implements IntentDefinition {
     private final FeignUserGateway userGateway;
+    private final UserUpdateProcessor processor;
 
     @Override
     public Intent intent() {
@@ -43,78 +48,46 @@ public class UpdateUserInformationIntent implements IntentDefinition {
     @Override
     public List<RequiredParam> requiredParams() {
         return List.of(
-                new RequiredParam(
-                        "firstName",
-                        ParamType.STRING,
-                        List.of()
-                ),
-                new RequiredParam(
-                        "lastName",
-                        ParamType.STRING,
-                        List.of()
-                ),
-                new RequiredParam(
-                        "email",
-                        ParamType.STRING,
-                        List.of()
-                ),
-                new RequiredParam(
-                        "phoneNumber",
-                        ParamType.STRING,
-                        List.of()
-                ),
-                new RequiredParam(
-                        "birthDate",
-                        ParamType.DATE,
-                        List.of()
-                ),
-                new RequiredParam(
-                        "street",
-                        ParamType.STRING,
-                        List.of()
-                ),
-                new RequiredParam(
-                        "city",
-                        ParamType.STRING,
-                        List.of()
-                ),
-                new RequiredParam(
-                        "houseNumber",
-                        ParamType.STRING,
-                        List.of()
-                ),
-                new RequiredParam(
-                        "zipCode",
-                        ParamType.STRING,
-                        List.of()
-                ),
-                new RequiredParam(
-                        "country",
-                        ParamType.STRING,
-                        List.of()
-                )
+                new RequiredParam("firstName", ParamType.STRING, List.of(), "User first name."),
+                new RequiredParam("lastName", ParamType.STRING, List.of(),"User last name."),
+                new RequiredParam("email", ParamType.STRING, List.of(),"User email address."),
+                new RequiredParam("phoneNumber", ParamType.STRING, List.of(),"User phone number."),
+                new RequiredParam("birthDate", ParamType.DATE, List.of(),"Birth date"),
+                new RequiredParam("street", ParamType.STRING, List.of(),"Street name."),
+                new RequiredParam("city", ParamType.STRING, List.of(),"City name."),
+                new RequiredParam("houseNumber", ParamType.STRING, List.of(),"House or building number."),
+                new RequiredParam("zipCode", ParamType.STRING, List.of(),"Postal or ZIP code."),
+                new RequiredParam("country", ParamType.STRING, List.of(),"Country name.")
         );
     }
 
     @Override
     public AssistantExecutionResult execute(Map<String, Object> params) {
-
         if (params.isEmpty()) {
             return AssistantExecutionResult.needClarification(
                     intent(),
-                    new ClarificationData("Що саме потрібно змінити?")
+                    new ClarificationData("NO_PARAMS_TO_CHANGE")
             );
         }
 
         try {
             UserResponse current = userGateway.getUser();
 
-            Map<String, Object> changes = calculateChanges(current, params);
+            if (params.containsKey("birthDate")) {
+                if (ParseDateUtil.parseDate(params.get("birthDate")).isEmpty()) {
+                    return AssistantExecutionResult.needClarification(
+                            intent(),
+                            new ClarificationData("INVALID_DATE_FORMAT")
+                    );
+                }
+            }
+
+            Map<String, Object> changes = processor.calculateChanges(current, params);
 
             if (changes.isEmpty()) {
                 return AssistantExecutionResult.needClarification(
                         intent(),
-                        new ClarificationData("Нові дані не відрізняються від поточних.")
+                        new ClarificationData("VALUE_IS_THE_SAME")
                 );
             }
 
@@ -123,9 +96,11 @@ public class UpdateUserInformationIntent implements IntentDefinition {
                     new UserUpdatePreviewData(changes)
             );
 
-        } catch (ExternalServiceException e) {
-            return AssistantExecutionResult.error(intent(),
-                    "Не вдалося отримати профіль користувача");
+        } catch (ServiceCallException e) {
+            return AssistantExecutionResult.error(
+                    intent(),
+                    e.getMessage()
+            );
         }
 
     }
@@ -135,7 +110,7 @@ public class UpdateUserInformationIntent implements IntentDefinition {
         try {
             UserResponse current = userGateway.getUser();
 
-            UserUpdateDto dto = mergeIntoDto(current, params);
+            UserUpdateDto dto = processor.merge(current, params);
 
             UserResponse updated = userGateway.updateUser(dto);
 
@@ -144,114 +119,10 @@ public class UpdateUserInformationIntent implements IntentDefinition {
                     new UserUpdatedData(updated)
             );
 
-        } catch (ExternalServiceException e) {
-            return AssistantExecutionResult.error(intent(),
+        } catch (ServiceCallException e) {
+            return AssistantExecutionResult.error(
+                    intent(),
                     e.getMessage());
         }
-    }
-
-    private Map<String,Object> calculateChanges(UserResponse current, Map<String,Object> params) {
-
-        Map<String,Object> changes = new LinkedHashMap<>();
-
-        params.forEach((k,v) -> {
-            Object oldValue = extractCurrentValue(current, k);
-
-            if (oldValue != null && !oldValue.equals(v)) {
-                changes.put(k, Map.of(
-                        "old", oldValue,
-                        "new", v
-                ));
-            }
-        });
-
-        return changes;
-    }
-
-    private Object extractCurrentValue(UserResponse current, String field) {
-
-        if (current == null) return null;
-
-        return switch (field) {
-
-            case "firstName"   -> current.firstName();
-            case "lastName"    -> current.lastName();
-            case "email"       -> current.email();
-            case "phoneNumber" -> current.phoneNumber();
-            case "birthDate"   -> current.birthDate();
-
-            case "street" ->
-                    current.address() != null ? current.address().street() : null;
-
-            case "city" ->
-                    current.address() != null ? current.address().city() : null;
-
-            case "houseNumber" ->
-                    current.address() != null ? current.address().houseNumber() : null;
-
-            case "zipCode" ->
-                    current.address() != null ? current.address().zipCode() : null;
-
-            case "country" ->
-                    current.address() != null ? current.address().country() : null;
-
-            default -> null;
-        };
-    }
-
-    private UserUpdateDto mergeIntoDto(UserResponse current, Map<String, Object> params) {
-
-        Address address = current.address();
-
-        if (address == null) {
-            address = new Address();
-        }
-
-        return new UserUpdateDto(
-
-                // --- BASIC INFO ---
-                getString(params, "firstName", current.firstName()),
-                getString(params, "lastName", current.lastName()),
-                getString(params, "email", current.email()),
-                getString(params, "phoneNumber", current.phoneNumber()),
-
-                // --- DATE ---
-                params.containsKey("birthDate")
-                        ? parseDate(params.get("birthDate"))
-                        : current.birthDate(),
-
-                // --- ADDRESS ---
-                getString(params, "street", address.street()),
-                getString(params, "city", address.city()),
-                getString(params, "houseNumber", address.houseNumber()),
-                getString(params, "zipCode", address.zipCode()),
-                getString(params, "country", address.country())
-        );
-    }
-
-    private String getString(Map<String, Object> params, String key, String fallback) {
-        Object value = params.get(key);
-        return value != null ? value.toString().trim() : fallback;
-    }
-
-    private LocalDate parseDate(Object raw) {
-
-        if (raw == null) return null;
-
-        String value = raw.toString().trim();
-
-        List<DateTimeFormatter> formats = List.of(
-                DateTimeFormatter.ISO_LOCAL_DATE,          // 1995-05-10
-                DateTimeFormatter.ofPattern("dd.MM.yyyy"), // 10.05.1995
-                DateTimeFormatter.ofPattern("dd-MM-yyyy")  // 10-05-1995
-        );
-
-        for (DateTimeFormatter f : formats) {
-            try {
-                return LocalDate.parse(value, f);
-            } catch (Exception ignored) {}
-        }
-
-        throw new ValidationException("Невірний формат дати. Використайте YYYY-MM-DD");
     }
 }

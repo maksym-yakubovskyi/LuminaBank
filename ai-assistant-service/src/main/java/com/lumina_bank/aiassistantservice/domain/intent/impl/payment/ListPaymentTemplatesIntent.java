@@ -3,7 +3,7 @@ package com.lumina_bank.aiassistantservice.domain.intent.impl.payment;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.payment.PaymentTemplateResponse;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
-import com.lumina_bank.aiassistantservice.domain.exception.ExternalServiceException;
+import com.lumina_bank.aiassistantservice.domain.exception.ServiceCallException;
 import com.lumina_bank.aiassistantservice.domain.intent.IntentDefinition;
 import com.lumina_bank.aiassistantservice.domain.result.AssistantExecutionResult;
 import com.lumina_bank.aiassistantservice.domain.result.data.ClarificationData;
@@ -41,7 +41,7 @@ public class ListPaymentTemplatesIntent implements IntentDefinition {
             if (templates.isEmpty()) {
                 return AssistantExecutionResult.needClarification(
                         intent(),
-                        new ClarificationData("У вас ще немає шаблонів платежів.")
+                        new ClarificationData("NO_PAYMENT_TEMPLATES")
                 );
             }
 
@@ -50,10 +50,10 @@ public class ListPaymentTemplatesIntent implements IntentDefinition {
                     new PaymentTemplatesData(templates)
             );
 
-        } catch (ExternalServiceException e) {
+        } catch (ServiceCallException e) {
             return AssistantExecutionResult.error(
                     intent(),
-                    "Не вдалося отримати шаблони"
+                    e.getMessage()
             );
         }
     }

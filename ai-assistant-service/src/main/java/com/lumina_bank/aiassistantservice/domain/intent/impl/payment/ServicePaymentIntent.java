@@ -7,9 +7,11 @@ import com.lumina_bank.aiassistantservice.domain.dto.client.payment.ServicePayme
 import com.lumina_bank.aiassistantservice.domain.dto.client.user.BusinessUserProviderResponse;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
 import com.lumina_bank.aiassistantservice.domain.enums.ParamType;
-import com.lumina_bank.aiassistantservice.domain.exception.ExternalServiceException;
+import com.lumina_bank.aiassistantservice.domain.exception.ServiceCallException;
 import com.lumina_bank.aiassistantservice.domain.intent.IntentDefinition;
 import com.lumina_bank.aiassistantservice.domain.result.AssistantExecutionResult;
+import com.lumina_bank.aiassistantservice.domain.result.data.ClarificationData;
+import com.lumina_bank.aiassistantservice.domain.result.data.ConfirmationData;
 import com.lumina_bank.aiassistantservice.domain.result.data.EmptyData;
 import com.lumina_bank.aiassistantservice.service.client.account.FeignAccountGateway;
 import com.lumina_bank.aiassistantservice.service.client.payment.FeignPaymentGateway;
@@ -43,12 +45,14 @@ public class ServicePaymentIntent implements IntentDefinition {
     @Override
     public List<RequiredParam> requiredParams() {
         return List.of(
-                new RequiredParam("fromCardNumber", ParamType.STRING, List.of()),
-                new RequiredParam("providerId", ParamType.NUMBER, List.of()),
-                new RequiredParam("category", ParamType.STRING, List.of()),
-                new RequiredParam("amount", ParamType.NUMBER, List.of()),
-                new RequiredParam("payerReference", ParamType.STRING, List.of()),
-                new RequiredParam("description", ParamType.STRING, List.of())
+                new RequiredParam("fromCardNumber", ParamType.STRING, List.of(),"Sender card number. Must be one of the user's own cards."),
+                new RequiredParam("providerId", ParamType.NUMBER, List.of(),"ID of the service provider."),
+                new RequiredParam("amount", ParamType.NUMBER, List.of(),"Payment amount. Must be a positive number."),
+                new RequiredParam("payerReference", ParamType.STRING, List.of(),
+                        "Identifier required by the service provider to identify the payer. " +
+                        "Can be phone number, contract number, personal account number, email, or any reference provided by user."
+                ),
+                new RequiredParam("description", ParamType.STRING, List.of(),"Optional payment description.")
         );
     }
 
@@ -58,9 +62,11 @@ public class ServicePaymentIntent implements IntentDefinition {
             List<CardResponse> cards = accountGateway.getMyCards();
 
             if (cards.isEmpty()) {
-                return AssistantExecutionResult.needConfirmation(
+                return AssistantExecutionResult.confirmNavigation(
                         intent(),
-                        "У вас ще немає карток. Хочете створити картку?",
+                        new ConfirmationData(
+                                "NO_CARDS",
+                                Map.of("nextIntent",Intent.CREATE_CARD)),
                         Intent.CREATE_CARD
                 );
             }
@@ -76,7 +82,8 @@ public class ServicePaymentIntent implements IntentDefinition {
                                     ParamType.STRING,
                                     cards.stream()
                                             .map(CardResponse::cardNumber)
-                                            .toList()
+                                            .toList(),
+                                    "User's card number list to select"
                             )
                     );
                 }
@@ -93,7 +100,8 @@ public class ServicePaymentIntent implements IntentDefinition {
                                 ParamType.NUMBER,
                                 providers.stream()
                                         .map(p -> p.id() + " | " + p.companyName() + " | " + p.category())
-                                        .toList()
+                                        .toList(),
+                                "Provider list to select"
                         )
                 );
             }
@@ -101,16 +109,41 @@ public class ServicePaymentIntent implements IntentDefinition {
             if (!params.containsKey("amount")) {
                 return AssistantExecutionResult.askParam(
                         intent(),
-                        requiredParams().get(3)
+                        requiredParams().get(2)
+                );
+            }
+
+            BigDecimal amount = new BigDecimal(params.get("amount").toString());
+
+            if (amount.signum() <= 0){
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("AMOUT_NEGATIVE")
+                );
+            }
+
+            if (!params.containsKey("payerReference")) {
+                return AssistantExecutionResult.askParam(intent(), requiredParams().get(3));
+            }
+
+            if (!params.containsKey("description")) {
+                return AssistantExecutionResult.askParam(
+                        intent(),
+                        requiredParams().get(4)
                 );
             }
 
             return AssistantExecutionResult.success(intent(), new EmptyData());
 
-        } catch (ExternalServiceException e) {
+        }catch (NumberFormatException e) {
+            return AssistantExecutionResult.needClarification(
+                    intent(),
+                    new ClarificationData("INVALID_AMOUNT_FORMAT")
+            );
+        } catch (ServiceCallException e) {
             return AssistantExecutionResult.error(
                     intent(),
-                    "Не вдалося отримати необхідні дані"
+                    e.getMessage()
             );
         }
     }
@@ -118,12 +151,28 @@ public class ServicePaymentIntent implements IntentDefinition {
     @Override
     public AssistantExecutionResult perform(Map<String, Object> params) {
         try {
+            Long providerId = Long.valueOf(params.get("providerId").toString());
+
+            List<BusinessUserProviderResponse> providers = userGateway.getProviders();
+
+            BusinessUserProviderResponse selected = providers.stream()
+                    .filter(p -> p.id().equals(providerId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (selected == null) {
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("PROVIDER_NOT_FOUND")
+                );
+            }
+
             PaymentResponse payment =
                     paymentGateway.makePaymentService(
                             new ServicePaymentRequest(
                                     params.get("fromCardNumber").toString(),
-                                    Long.valueOf(params.get("providerId").toString()),
-                                    params.get("category").toString(),
+                                    providerId,
+                                    selected.category(),
                                     new BigDecimal(params.get("amount").toString()),
                                     params.get("payerReference").toString(),
                                     (String) params.get("description")
@@ -135,10 +184,15 @@ public class ServicePaymentIntent implements IntentDefinition {
                     new EmptyData()
             );
 
-        } catch (ExternalServiceException e) {
+        } catch (NumberFormatException e) {
+            return AssistantExecutionResult.needClarification(
+                    intent(),
+                    new ClarificationData("INVALID_PARAMS")
+            );
+        } catch (ServiceCallException e) {
             return AssistantExecutionResult.error(
                     intent(),
-                    "Не вдалося виконати оплату"
+                    e.getMessage()
             );
         }
     }

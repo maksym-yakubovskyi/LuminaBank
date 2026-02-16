@@ -1,11 +1,10 @@
 package com.lumina_bank.aiassistantservice.service.client.payment;
 
 import com.lumina_bank.aiassistantservice.domain.dto.client.payment.*;
-import com.lumina_bank.aiassistantservice.domain.exception.ExternalServiceException;
+import com.lumina_bank.aiassistantservice.util.FeignExceptionMapper;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -16,6 +15,7 @@ import java.util.Optional;
 @Slf4j
 public class FeignPaymentGateway {
     private final PaymentClientService client;
+    private final FeignExceptionMapper mapper;
 
     public List<TransactionHistoryItemDto> getHistory(
             Integer limit,
@@ -23,85 +23,47 @@ public class FeignPaymentGateway {
             boolean all
     ) {
         try {
-            ResponseEntity<List<TransactionHistoryItemDto>> response;
-
             if (all) {
-                response = client.getAllHistory(accountId);
+                return Optional.ofNullable(client.getAllHistory(accountId).getBody())
+                        .orElse(List.of());
             } else {
-                response = client.getHistoryLimit(limit, accountId);
+                return Optional.ofNullable(client.getHistoryLimit(limit, accountId).getBody())
+                        .orElse(List.of());
             }
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new ExternalServiceException("Payment service returned " + response.getStatusCode());
-            }
-
-            return Optional.ofNullable(response.getBody()).orElse(List.of());
-
         } catch (FeignException e) {
-            throw new ExternalServiceException(
-                    "Сервіс оплат тимчасово недоступний"
-            );
+            throw mapper.map(e);
         }
     }
 
     public PaymentResponse makePayment(PaymentRequest request){
         try{
-            var response = client.makePayment(request);
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new ExternalServiceException("Payment service returned " + response.getStatusCode());
-            }
-            return response.getBody();
+            return client.makePayment(request).getBody();
         } catch (FeignException e) {
-            throw new ExternalServiceException(
-                    "Сервіс оплат тимчасово недоступний"
-            );
+            throw mapper.map(e);
         }
     }
 
     public PaymentResponse makePaymentService(ServicePaymentRequest request){
         try{
-            var response = client.makePaymentService(request);
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new ExternalServiceException("Payment service returned " + response.getStatusCode());
-            }
-
-            return response.getBody();
+            return client.makePaymentService(request).getBody();
         } catch (FeignException e) {
-            throw new ExternalServiceException(
-                    "Сервіс оплат тимчасово недоступний"
-            );
+            throw mapper.map(e);
         }
     }
 
     public void makePaymentTemplate(Long templateId){
         try{
-            var response = client.makePaymentTemplate(templateId);
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new ExternalServiceException("Payment service returned " + response.getStatusCode());
-            }
+            client.makePaymentTemplate(templateId);
         } catch (FeignException e) {
-            throw new ExternalServiceException(
-                    "Сервіс оплат тимчасово недоступний"
-            );
+            throw mapper.map(e);
         }
     }
 
     public List<PaymentTemplateResponse> getPaymentTemplates(){
         try{
-            var response = client.getMyPaymentTemplates();
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new ExternalServiceException("Payment service returned " + response.getStatusCode());
-            }
-
-            return Optional.ofNullable(response.getBody()).orElse(List.of());
+            return Optional.ofNullable(client.getMyPaymentTemplates().getBody()).orElse(List.of());
         }catch (FeignException e) {
-            throw new ExternalServiceException(
-                    "Сервіс оплат тимчасово недоступний"
-            );
+            throw mapper.map(e);
         }
     }
 }

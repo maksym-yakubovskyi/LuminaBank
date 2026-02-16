@@ -1,9 +1,10 @@
 package com.lumina_bank.aiassistantservice.domain.intent.impl.account;
 
-import com.lumina_bank.aiassistantservice.domain.exception.ExternalServiceException;
+import com.lumina_bank.aiassistantservice.domain.exception.ServiceCallException;
 import com.lumina_bank.aiassistantservice.domain.result.AssistantExecutionResult;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountResponse;
+import com.lumina_bank.aiassistantservice.domain.result.data.ConfirmationData;
 import com.lumina_bank.aiassistantservice.domain.result.data.account.BalanceData;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
 import com.lumina_bank.aiassistantservice.domain.intent.IntentDefinition;
@@ -38,9 +39,11 @@ public class CheckBalanceIntent implements IntentDefinition {
             List<AccountResponse> accounts = accountGateway.getUserAccounts();
 
             if (accounts.isEmpty()) {
-                return AssistantExecutionResult.needConfirmation(
+                return AssistantExecutionResult.confirmNavigation(
                         intent(),
-                        "У вас ще немає рахунків. Хочете створити рахунок?",
+                        new ConfirmationData(
+                                "NO_ACCOUNTS",
+                                Map.of("nextIntent",Intent.CREATE_ACCOUNT)),
                         Intent.CREATE_ACCOUNT
                 );
             }
@@ -50,9 +53,10 @@ public class CheckBalanceIntent implements IntentDefinition {
                     new BalanceData(accounts)
             );
 
-        }catch (ExternalServiceException e) {
-            return AssistantExecutionResult.error(intent(),
-                    "Не вдалося отримати інформацію про рахунки");
+        }catch (ServiceCallException e) {
+            return AssistantExecutionResult.error(
+                    intent(),
+                    e.getMessage());
         }
     }
 }

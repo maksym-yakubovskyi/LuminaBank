@@ -7,5 +7,6 @@ import java.util.List;
 public record RequiredParam(
         String name,
         ParamType type,
-        List<String> options
+        List<String> options,
+        String description
 ) {}

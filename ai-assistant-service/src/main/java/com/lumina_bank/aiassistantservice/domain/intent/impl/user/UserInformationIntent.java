@@ -3,7 +3,7 @@ package com.lumina_bank.aiassistantservice.domain.intent.impl.user;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.user.UserResponse;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
-import com.lumina_bank.aiassistantservice.domain.exception.ExternalServiceException;
+import com.lumina_bank.aiassistantservice.domain.exception.ServiceCallException;
 import com.lumina_bank.aiassistantservice.domain.intent.IntentDefinition;
 import com.lumina_bank.aiassistantservice.domain.result.AssistantExecutionResult;
 import com.lumina_bank.aiassistantservice.domain.result.data.user.UserInfoData;
@@ -42,10 +42,10 @@ public class UserInformationIntent implements IntentDefinition {
                     new UserInfoData(user)
             );
 
-        } catch (ExternalServiceException e) {
+        } catch (ServiceCallException e) {
             return AssistantExecutionResult.error(
                     intent(),
-                    "Не вдалося отримати дані користувача"
+                    e.getMessage()
             );
         }
     }

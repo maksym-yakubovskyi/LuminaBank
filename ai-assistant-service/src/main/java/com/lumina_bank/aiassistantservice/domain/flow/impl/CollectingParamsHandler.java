@@ -44,9 +44,9 @@ public class CollectingParamsHandler implements FlowHandler {
 
         if (result.status() == ExecutionStatus.SUCCESS && def.requiresFinalConfirmation()) {
 
-            stateService.moveTo(c, FlowState.AWAITING_FINAL_CONFIRMATION);
+            stateService.moveTo(c, FlowState.CONFIRM_FINAL);
 
-            return AssistantExecutionResult.needConfirmation(
+            return AssistantExecutionResult.confirmFinal(
                     def.intent(),
                     new ConfirmationSummaryData(def.intent(), params)
             );

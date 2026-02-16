@@ -2,8 +2,11 @@ package com.lumina_bank.aiassistantservice.util;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
-public class ParseEnumUtil {
+public final class ParseEnumUtil {
+
+    private ParseEnumUtil() {}
 
     public static <E extends Enum<E>> List<String> enumValues(Class<E> e) {
         return Arrays.stream(e.getEnumConstants())
@@ -11,16 +14,21 @@ public class ParseEnumUtil {
                 .toList();
     }
 
-    public static <E extends Enum<E>> E parseEnum(
+    public static <E extends Enum<E>> Optional<E> parseEnumSafe(
             Class<E> enumClass,
             Object value
     ) {
-        try {
-            return Enum.valueOf(enumClass, value.toString());
-        } catch (Exception e) {
-            throw new IllegalArgumentException(
-                    "Invalid value for " + enumClass.getSimpleName()
-            );
+        if (value == null) return Optional.empty();
+
+        String normalized = value.toString().trim().toUpperCase();
+
+        for (E constant : enumClass.getEnumConstants()) {
+            if (constant.name().equalsIgnoreCase(normalized)) {
+                return Optional.of(constant);
+            }
         }
+
+        return Optional.empty();
     }
 }
+

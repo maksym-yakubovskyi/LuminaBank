@@ -4,7 +4,7 @@ import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountResponse;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardCreateDto;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardResponse;
-import com.lumina_bank.aiassistantservice.domain.exception.ExternalServiceException;
+import com.lumina_bank.aiassistantservice.domain.result.data.ConfirmationData;
 import com.lumina_bank.aiassistantservice.domain.result.data.account.CardCreatedData;
 import com.lumina_bank.aiassistantservice.domain.result.data.ClarificationData;
 import com.lumina_bank.aiassistantservice.domain.result.data.EmptyData;
@@ -16,6 +16,7 @@ import com.lumina_bank.aiassistantservice.service.client.account.FeignAccountGat
 import com.lumina_bank.aiassistantservice.util.ParseEnumUtil;
 import com.lumina_bank.common.enums.account.CardNetwork;
 import com.lumina_bank.common.enums.account.CardType;
+import com.lumina_bank.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -41,22 +43,26 @@ public class CreateCardIntent implements IntentDefinition{
                 new RequiredParam(
                         "accountId",
                         ParamType.NUMBER,
-                        List.of()
+                        List.of(),
+                        "ID of the account to issue the card for."
                 ),
                 new RequiredParam(
                         "cardType",
                         ParamType.ENUM,
-                        ParseEnumUtil.enumValues(CardType.class)
+                        ParseEnumUtil.enumValues(CardType.class),
+                        "Type of card. "
                 ),
                 new RequiredParam(
                         "cardNetwork",
                         ParamType.ENUM,
-                        ParseEnumUtil.enumValues(CardNetwork.class)
+                        ParseEnumUtil.enumValues(CardNetwork.class),
+                        "Payment network."
                 ),
                 new RequiredParam(
                         "limit",
                         ParamType.NUMBER,
-                        List.of("мін: 0, не від'ємне")
+                        List.of(),
+                        "Card limit amount. Must be a positive number."
                 )
         );
     }
@@ -74,27 +80,40 @@ public class CreateCardIntent implements IntentDefinition{
             List<AccountResponse> accounts = accountGateway.getUserAccounts();
 
             if (accounts.isEmpty()) {
-                return AssistantExecutionResult.needConfirmation(
+                return AssistantExecutionResult.confirmNavigation(
                         intent(),
-                        "У вас ще немає рахунків. Хочете створити рахунок?",
+                        new ConfirmationData(
+                                "NO_ACCOUNTS",
+                                Map.of("nextIntent",Intent.CREATE_ACCOUNT)),
                         Intent.CREATE_ACCOUNT
                 );
             }
 
-            if (accounts.size() == 1 && !params.containsKey("accountId")) {
-                params.put("accountId", accounts.getFirst().id());
+            if (!params.containsKey("accountId")) {
+
+                if (accounts.size() == 1) {
+                    params.put("accountId", accounts.getFirst().id());
+                } else {
+                    return AssistantExecutionResult.askParam(
+                            intent(),
+                            new RequiredParam(
+                                    "accountId",
+                                    ParamType.NUMBER,
+                                    accounts.stream()
+                                            .map(a -> a.id() + " | " + a.currency() + " | " + a.iban())
+                                            .toList(),
+                                    "Accounts list to select"
+                            )
+                    );
+                }
             }
 
-            if (accounts.size() > 1 && !params.containsKey("accountId")) {
-                return AssistantExecutionResult.askParam(
+            try {
+                Long.parseLong(params.get("accountId").toString());
+            } catch (NumberFormatException e) {
+                return AssistantExecutionResult.needClarification(
                         intent(),
-                        new RequiredParam(
-                                "accountId",
-                                ParamType.NUMBER,
-                                accounts.stream()
-                                        .map(a -> a.id() + " | " + a.currency() + " | " + a.iban())
-                                        .toList()
-                        )
+                        new ClarificationData("INVALID_ACCOUNT_ID")
                 );
             }
 
@@ -105,10 +124,36 @@ public class CreateCardIntent implements IntentDefinition{
                 );
             }
 
+            Optional<CardType> cardType =
+                    ParseEnumUtil.parseEnumSafe(
+                            CardType.class,
+                            params.get("cardType")
+                    );
+
+            if (cardType.isEmpty()) {
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("INVALID_CARD_TYPE")
+                );
+            }
+
             if (!params.containsKey("cardNetwork")) {
                 return AssistantExecutionResult.askParam(
                         intent(),
                         requiredParams().get(2)
+                );
+            }
+
+            Optional<CardNetwork> cardNetwork =
+                    ParseEnumUtil.parseEnumSafe(
+                            CardNetwork.class,
+                            params.get("cardNetwork")
+                    );
+
+            if (cardNetwork.isEmpty()) {
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("INVALID_CARD_NETWORK")
                 );
             }
 
@@ -119,45 +164,63 @@ public class CreateCardIntent implements IntentDefinition{
                 );
             }
 
-            BigDecimal limit = new BigDecimal(params.get("limit").toString());
+            BigDecimal limit;
 
-            if (limit.signum() < 0)
-                throw new IllegalArgumentException();
+            try {
+                limit = new BigDecimal(
+                        params.get("limit").toString()
+                );
+            } catch (NumberFormatException e) {
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("INVALID_LIMIT_FORMAT")
+                );
+            }
 
-            return AssistantExecutionResult.success(intent(), new EmptyData());
+            if (limit.signum() < 0) {
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("LIMIT_NEGATIVE")
+                );
+            }
 
-        } catch (IllegalArgumentException e) {
-            return AssistantExecutionResult.needClarification(
+            return AssistantExecutionResult.success(
                     intent(),
-                    new ClarificationData("Ліміт має бути невідʼємним числом.")
+                    new EmptyData()
             );
-
-        } catch (ExternalServiceException e) {
-            return AssistantExecutionResult.error(intent(),
-                    "Не вдалося отримати рахунки");
+        }catch (BusinessException e) {
+            return AssistantExecutionResult.error(
+                    intent(),
+                    e.getMessage());
         }
     }
 
     @Override
     public AssistantExecutionResult perform(Map<String, Object> params) {
         try {
-            Long accountId = Long.valueOf(params.get("accountId").toString());
+            Long accountId = Long.parseLong(params.get("accountId").toString());
+            CardType cardType = CardType.valueOf(params.get("cardType").toString());
+            CardNetwork cardNetwork = CardNetwork.valueOf(params.get("cardNetwork").toString());
             BigDecimal limit = new BigDecimal(params.get("limit").toString());
 
-            CardResponse created = accountGateway.createCard(accountId,
-                    new CardCreateDto(
-                            params.get("cardType").toString(),
-                            params.get("cardNetwork").toString(),
-                            limit));
+            CardResponse created =
+                    accountGateway.createCard(
+                            accountId,
+                            new CardCreateDto(
+                                    cardType.name(),
+                                    cardNetwork.name(),
+                                    limit
+                            )
+                    );
 
             return AssistantExecutionResult.success(
                     intent(),
                     new CardCreatedData(created)
             );
-
-        } catch (ExternalServiceException e) {
-            return AssistantExecutionResult.error(intent(),
-                    "Не вдалося створити картку");
+        }catch (BusinessException e) {
+            return AssistantExecutionResult.error(
+                    intent(),
+                    e.getMessage());
         }
     }
 }

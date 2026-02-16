@@ -3,8 +3,10 @@ package com.lumina_bank.aiassistantservice.domain.intent.impl.account;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardResponse;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
+import com.lumina_bank.aiassistantservice.domain.exception.ServiceCallException;
 import com.lumina_bank.aiassistantservice.domain.intent.IntentDefinition;
 import com.lumina_bank.aiassistantservice.domain.result.AssistantExecutionResult;
+import com.lumina_bank.aiassistantservice.domain.result.data.ConfirmationData;
 import com.lumina_bank.aiassistantservice.domain.result.data.account.CardsListData;
 import com.lumina_bank.aiassistantservice.service.client.account.FeignAccountGateway;
 import feign.FeignException;
@@ -37,9 +39,11 @@ public class ListCardsIntent implements IntentDefinition {
             List<CardResponse> cards = accountGateway.getMyCards();
 
             if(cards.isEmpty()) {
-                return AssistantExecutionResult.needConfirmation(
+                return AssistantExecutionResult.confirmNavigation(
                         intent(),
-                        "У вас ще немає карт. Хочете створити нову картку?",
+                        new ConfirmationData(
+                                "NO_CARDS",
+                                Map.of("nextIntent",Intent.CREATE_CARD)),
                         Intent.CREATE_CARD
                 );
             }
@@ -49,10 +53,11 @@ public class ListCardsIntent implements IntentDefinition {
                     new CardsListData(cards)
             );
 
-        } catch (FeignException e) {
+        } catch (ServiceCallException e) {
             return AssistantExecutionResult.error(
                     intent(),
-                    "Не вдалося отримати картки");
+                    e.getMessage()
+            );
         }
     }
 }

@@ -26,10 +26,10 @@ public class IdleHandler implements FlowHandler {
     @Override
     public AssistantExecutionResult handle(Conversation c, String message) {
 
-        IntentResult intent = intentDetector.detect(message);
+        IntentResult intent = intentDetector.detect(message,c.getId());
 
         if (intent.confidence() < 0.8) {
-            return AssistantExecutionResult.error(Intent.UNKNOWN, "Я не зрозуміла запит");
+            return AssistantExecutionResult.error(Intent.UNKNOWN, "UNKNOWN_MESSAGE");
         }
 
         stateService.initIntent(c, intent.intent(),FlowState.COLLECTING_PARAMS);

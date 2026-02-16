@@ -18,7 +18,7 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
-public class AwaitingFinalConfirmationHandler implements FlowHandler {
+public class ConfirmingFinalHandler implements FlowHandler {
 
     private final ConfirmationExtractor confirmationExtractor;
     private final IntentRegistry registry;
@@ -27,7 +27,7 @@ public class AwaitingFinalConfirmationHandler implements FlowHandler {
 
     @Override
     public FlowState supportedState() {
-        return FlowState.AWAITING_FINAL_CONFIRMATION;
+        return FlowState.CONFIRM_FINAL;
     }
 
     @Override
@@ -52,7 +52,7 @@ public class AwaitingFinalConfirmationHandler implements FlowHandler {
 
                 return AssistantExecutionResult.success(
                         c.getActiveIntent(),
-                        new ClarificationData("Добре, операцію скасовано.")
+                        new ClarificationData("OPERATION_CANCELED")
                 );
             }
 
@@ -61,12 +61,22 @@ public class AwaitingFinalConfirmationHandler implements FlowHandler {
 
                 return AssistantExecutionResult.needClarification(
                         c.getActiveIntent(),
-                        new ClarificationData("Що саме потрібно змінити?")
+                        new ClarificationData("WHAT_SHOULD_BE_CHANGED")
+                );
+            }
+
+            case UNCERTAIN -> {
+                return AssistantExecutionResult.needClarification(
+                        c.getActiveIntent(),
+                        new ClarificationData("PLEASE_CONFIRM_OPERATION")
                 );
             }
         }
 
-        throw new IllegalStateException("Unknown decision");
+        return AssistantExecutionResult.error(
+                c.getActiveIntent(),
+                "UNKNOWN_CONFIRMATION_STATE"
+        );
     }
 }
 

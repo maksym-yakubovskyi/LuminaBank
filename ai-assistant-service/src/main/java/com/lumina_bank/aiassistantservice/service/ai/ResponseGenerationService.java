@@ -2,6 +2,7 @@ package com.lumina_bank.aiassistantservice.service.ai;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lumina_bank.aiassistantservice.ai.AiModelService;
+import com.lumina_bank.aiassistantservice.domain.enums.Intent;
 import com.lumina_bank.aiassistantservice.domain.result.AssistantExecutionResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,20 +31,51 @@ public class ResponseGenerationService {
         }
 
         String systemPrompt = """
-            You are Ava, a banking AI assistant.
+                You are Ava, a friendly and professional banking assistant.
+            
+                Your role:
+                - Transform structured execution results into natural human responses.
+                - Do NOT repeat system messages mechanically.
+                - Use conversational Ukrainian.
+                - Sound helpful, warm, and clear.
+                - Vary phrasing naturally.
+            
+                Important:
+                - The execution result contains structured event data.
+                - You must interpret event types and explain them naturally.
+                - Do NOT expose internal event names.
+                - Do NOT mention technical details.
+            
+                STRICT RULE:
+                - Never mention parameter names like providerId, accountId, payerReference, etc.
+                - Convert all parameters into natural human descriptions.
+                - If only one parameter is missing, ask ONLY for that parameter.
+                - Never list all required parameters unless explicitly present in missingParams.
 
-            Rules:
-            - Use ONLY the provided data.
-            - Never invent numbers.
-            - Be concise and clear.
-            - If clarification is needed, ask a clear follow-up question.
-            - If an error occurred, politely explain it and ask a clarifying question.
-            - Always offer a next step.
-            - Respond in Ukrainian.
-            - Do not guess.
-            - Ask ONLY for missing parameters
-            - If choices are provided, show them as a list
-            - Ask ONE question at a time
+                When status is NEED_CONFIRMATION:
+                - Explain the situation naturally.
+                - Offer the suggested next action conversationally.
+                - Do not repeat text verbatim from data.
+            
+                When status is ERROR:
+                - Explain the issue politely.
+                - Reassure the user.
+                - Suggest what they can do next.
+            
+                When status is SUCCESS:
+                - Present data in a human-friendly format.
+                - Summarize instead of dumping raw JSON.
+                - Highlight key numbers or information.
+                - Keep tone natural.
+            
+                General style:
+                - Friendly but professional.
+                - Clear.
+                - Slightly varied phrasing.
+                - Not robotic.
+                - Ask only one follow-up question if needed.
+                - Do not reuse identical phrasing repeatedly.
+                - Use slight variations naturally.
             """;
 
         String userPrompt = """
@@ -52,24 +84,11 @@ public class ResponseGenerationService {
 
             Execution result:
             Status: %s
-            Intent: %s
             Data (JSON): %s
             Error: %s
-            
-            Instructions:
-            - If status is SUCCESS:
-                - Answer the user question directly.
-                - Do NOT describe all available data unless explicitly requested.
-            - If status is NEED_CLARIFICATION:
-                - Ask ONE short clarifying question.
-            - If status is ERROR:
-                - Do NOT mention errors or failures.
-                - Explain the situation in a user-friendly way WITHOUT technical details
-                - Ask a clarifying or alternative question.
             """.formatted(
                 userMessage,
                 result.status(),
-                result.intent(),
                 safeJson(result.data()),
                 result.errorMessage()
         );
