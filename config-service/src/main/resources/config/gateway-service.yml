@@ -58,6 +58,13 @@ spring:
               filters:
                 - StripPrefix=1
 
+            - id: ai-assistant-service
+              uri: lb://ai-assistant-service
+              predicates:
+                - Path=/api/assistant/**
+              filters:
+                - StripPrefix=1
+
 eureka:
   instance:
     hostname: localhost

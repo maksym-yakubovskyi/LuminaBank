@@ -37,7 +37,7 @@ public class UserService {
                 .lastName(event.lastName())
                 .phoneNumber(event.phoneNumber())
                 .birthDate(event.birthDate())
-                .role(Role.USER)
+                .role(Role.INDIVIDUAL_USER)
                 .registeredAt(event.registeredAt())
                 .active(Boolean.TRUE)
                 .build();

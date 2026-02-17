@@ -34,6 +34,8 @@ public class AnalyticsTransactionEvent {
     private Integer riskScore;
     private String status;
 
+    private String reasons;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
