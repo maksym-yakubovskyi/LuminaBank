@@ -25,8 +25,8 @@ public class PaymentEventsConsumerConfig {
             log.info("Received PaymentRiskResultEvent paymentId={}", event.paymentId());
 
             switch (event.riskLevel()){
-                case HIGH -> paymentTransactionService.markBlocking(event.paymentId(),event.riskScore());
-                case MEDIUM ->  paymentTransactionService.markFlagged(event.paymentId(),event.riskScore());
+                case HIGH -> paymentTransactionService.markBlocking(event.paymentId(),event.riskScore(),event.reasons());
+                case MEDIUM ->  paymentTransactionService.markFlagged(event.paymentId(),event.riskScore(),event.reasons());
                 case LOW -> paymentTransactionService.markPending(event.paymentId());
             }
         };
