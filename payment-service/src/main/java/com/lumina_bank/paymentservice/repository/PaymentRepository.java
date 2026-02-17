@@ -3,6 +3,8 @@ package com.lumina_bank.paymentservice.repository;
 import com.lumina_bank.paymentservice.enums.PaymentStatus;
 import com.lumina_bank.paymentservice.model.Payment;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,7 +15,34 @@ import java.util.List;
 public interface PaymentRepository extends JpaRepository<Payment,Long> {
     List<Payment> findAllByPaymentStatusAndCreatedAtBefore(PaymentStatus paymentStatus, LocalDateTime minus);
 
-    Page<Payment> findByFromAccountIdOrToAccountId(Long fromId, Long toId, Pageable pageable);
+    @Query("""
+    SELECT p FROM Payment p
+    WHERE
+        (p.userId = :userId OR p.toAccountOwnerId = :userId)
+        AND
+        (:accountId IS NULL
+            OR p.fromAccountId = :accountId
+            OR p.toAccountId = :accountId)
+    ORDER BY p.createdAt DESC
+""")
+    Page<Payment> findUserHistory(
+            @Param("userId") Long userId,
+            @Param("accountId") Long accountId,
+            Pageable pageable
+    );
 
-    List<Payment> findByFromAccountIdOrToAccountId(Long accountId, Long accountId1);
+    @Query("""
+    SELECT p FROM Payment p
+    WHERE
+        (p.userId = :userId OR p.toAccountOwnerId = :userId)
+        AND
+        (:accountId IS NULL
+            OR p.fromAccountId = :accountId
+            OR p.toAccountId = :accountId)
+    ORDER BY p.createdAt DESC
+""")
+    List<Payment> findUserHistory(
+            @Param("userId") Long userId,
+            @Param("accountId") Long accountId
+    );
 }

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -60,7 +61,7 @@ public class PaymentTransactionService {
     }
 
     @Transactional
-    public void markBlocking(Long paymentId, int riskScore) {
+    public void markBlocking(Long paymentId, int riskScore,List<String> reasons) {
         Payment payment = paymentRepository.findById(paymentId).orElse(null);
         if (payment == null) return;
         if (!payment.getPaymentStatus().equals(PaymentStatus.RISK_PENDING)) return;
@@ -74,13 +75,14 @@ public class PaymentTransactionService {
                         payment.getAmount(),
                         payment.getCategory(),
                         riskScore,
+                        reasons,
                         LocalDateTime.now()
                 )
         );
     }
 
     @Transactional
-    public void markFlagged(Long paymentId,int riskScore) {
+    public void markFlagged(Long paymentId, int riskScore, List<String> reasons) {
         Payment payment = paymentRepository.findById(paymentId).orElse(null);
         if (payment == null) return;
         if (!payment.getPaymentStatus().equals(PaymentStatus.RISK_PENDING)) return;
@@ -94,6 +96,7 @@ public class PaymentTransactionService {
                         payment.getAmount(),
                         payment.getCategory(),
                         riskScore,
+                        reasons,
                         LocalDateTime.now()
                 )
         );

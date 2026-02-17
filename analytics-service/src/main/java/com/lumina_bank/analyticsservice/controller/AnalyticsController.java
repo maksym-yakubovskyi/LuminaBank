@@ -1,8 +1,6 @@
 package com.lumina_bank.analyticsservice.controller;
 
-import com.lumina_bank.analyticsservice.dto.AnalyticsCategoryResponse;
-import com.lumina_bank.analyticsservice.dto.AnalyticsMonthlyOverviewResponse;
-import com.lumina_bank.analyticsservice.dto.AnalyticsTopRecipientResponse;
+import com.lumina_bank.analyticsservice.dto.*;
 import com.lumina_bank.analyticsservice.service.AnalyticsService;
 import com.lumina_bank.common.exception.JwtMissingException;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 
@@ -47,6 +46,25 @@ public class AnalyticsController {
         log.info(
                 "GET /analytics/overview - Overview fetched successfully for userId={}, accountId={}",
                 userId, accountId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/daily")
+    public ResponseEntity<?> getDailyAnalytics(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam Long accountId,
+            @RequestParam(required = false) String date){
+
+        if (jwt == null) throw new JwtMissingException("JWT token is required");
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        LocalDate localDate = (date == null)
+                ? LocalDate.now()
+                : LocalDate.parse(date);
+
+        AnalyticsDailyOverviewResponse response =
+                analyticsService.getDailyOverview(userId,accountId,localDate);
 
         return ResponseEntity.ok(response);
     }
@@ -92,6 +110,35 @@ public class AnalyticsController {
         log.info(
                 "GET /analytics/top-recipients - Top recipients fetched successfully for userId={}, count={}",
                 userId, response.size());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/ai-forecast")
+    public ResponseEntity<?> getAiForecast(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        if (jwt == null) {
+            throw new JwtMissingException("JWT token is required");
+        }
+
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        AiForecastResponse response =
+                analyticsService.buildForecast(userId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/ai-recommendations")
+    public ResponseEntity<?> getRecommendations(@AuthenticationPrincipal Jwt jwt){
+        if (jwt == null) {
+            throw new JwtMissingException("JWT token is required");
+        }
+
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        RecommendationResponse response = analyticsService.buildRecommendationInfo(userId);
 
         return ResponseEntity.ok(response);
     }
