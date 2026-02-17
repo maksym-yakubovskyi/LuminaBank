@@ -1,9 +1,14 @@
-package com.lumina_bank.aiassistantservice.ai;
+package com.lumina_bank.aiassistantservice.ai.impl;
 
+import com.lumina_bank.aiassistantservice.ai.AiModelService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 
@@ -11,8 +16,10 @@ import org.springframework.stereotype.Service;
 public class OpenAiModelService implements AiModelService {
 
     private final ChatClient chatClient;
+    private final VectorStore vectorStore;
 
-    public OpenAiModelService(ChatClient.Builder builder,ChatMemory chatMemory) {
+    @Autowired
+    public OpenAiModelService(ChatClient.Builder builder,ChatMemory chatMemory,VectorStore vectorStore) {
         this.chatClient = builder
                 .defaultOptions(ChatOptions.builder()
                         .model("gpt-5-nano")
@@ -23,6 +30,8 @@ public class OpenAiModelService implements AiModelService {
                                 .build()
                 )
                 .build();
+
+        this.vectorStore = vectorStore;
     }
 
     @Override
@@ -58,6 +67,27 @@ public class OpenAiModelService implements AiModelService {
                 .call()
                 .entity(typeRef);
     }
+
+    @Override
+    public String generateWithRag(String systemPrompt, String userPrompt, String conversationId) {
+        QuestionAnswerAdvisor qaAdvisor = QuestionAnswerAdvisor.builder(vectorStore)
+                        .searchRequest(
+                                SearchRequest.builder()
+                                        .similarityThreshold(0.75)
+                                        .topK(5)
+                                        .build()
+                        )
+                        .build();
+
+        return chatClient.prompt()
+                .system(systemPrompt)
+                .user(userPrompt)
+                .advisors(qaAdvisor)
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .call()
+                .content();
+    }
+
 
     @Override
     public String generateText(

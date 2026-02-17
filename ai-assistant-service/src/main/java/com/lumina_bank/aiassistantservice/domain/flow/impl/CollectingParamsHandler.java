@@ -40,7 +40,9 @@ public class CollectingParamsHandler implements FlowHandler {
 
         Map<String, Object> params = paramsService.merge(c, extracted);
 
-        AssistantExecutionResult result = def.execute(params);
+        params.put("originalMessage", message);
+
+        AssistantExecutionResult result =  def.execute(params, c.getId());
 
         if (result.status() == ExecutionStatus.SUCCESS && def.requiresFinalConfirmation()) {
 

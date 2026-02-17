@@ -6,6 +6,7 @@ import com.lumina_bank.aiassistantservice.domain.enums.Intent;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public interface IntentDefinition {
 
@@ -14,6 +15,13 @@ public interface IntentDefinition {
     List<RequiredParam> requiredParams();
 
     AssistantExecutionResult execute(Map<String, Object> params);
+
+    default AssistantExecutionResult execute(
+            Map<String, Object> params,
+            UUID conversationId
+    ) {
+        return execute(params);
+    }
 
     default AssistantExecutionResult perform(Map<String,Object> params) {
         return execute(params);

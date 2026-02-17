@@ -6,6 +6,7 @@ import com.lumina_bank.aiassistantservice.domain.enums.MessageType;
 import com.lumina_bank.aiassistantservice.domain.flow.FlowRouter;
 import com.lumina_bank.aiassistantservice.domain.model.Conversation;
 import com.lumina_bank.aiassistantservice.domain.result.AssistantExecutionResult;
+import com.lumina_bank.aiassistantservice.domain.result.data.info.FinalResponseData;
 import com.lumina_bank.aiassistantservice.service.*;
 import com.lumina_bank.aiassistantservice.service.ai.ResponseGenerationService;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,13 @@ public class AssistantOrchestrator {
         AssistantExecutionResult result =
                 flowRouter.handle(conversation, request.message());
 
-        String text = responses.generateResponse(request.message(), result, conversation.getId());
+        String text;
+
+        if(result.data() instanceof FinalResponseData(String finalText)){
+            text = finalText;
+        }else{
+            text = responses.generateResponse(request.message(), result, conversation.getId());
+        }
 
         history.saveAssistantMessage(
                 conversation,

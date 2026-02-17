@@ -22,4 +22,10 @@ public interface AiModelService {
             ParameterizedTypeReference<T> typeRef
 
     );
+
+    String generateWithRag(
+            String systemPrompt,
+            String userPrompt,
+            String conversationId
+    );
 }
