@@ -1,8 +1,6 @@
 package com.lumina_bank.aiassistantservice.service.client.user;
 
-import com.lumina_bank.aiassistantservice.domain.dto.client.user.BusinessUserProviderResponse;
-import com.lumina_bank.aiassistantservice.domain.dto.client.user.UserResponse;
-import com.lumina_bank.aiassistantservice.domain.dto.client.user.UserUpdateDto;
+import com.lumina_bank.aiassistantservice.domain.dto.client.user.*;
 import com.lumina_bank.aiassistantservice.util.FeignExceptionMapper;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +28,22 @@ public class FeignUserGateway {
     public UserResponse updateUser(UserUpdateDto dto) {
         try {
             return client.updateUser(dto).getBody();
+        } catch (FeignException e) {
+            throw mapper.map(e);
+        }
+    }
+
+    public BusinessUserResponse getBusinessUser(){
+        try{
+            return client.getBusinessUser().getBody();
+        }catch (FeignException e){
+            throw mapper.map(e);
+        }
+    }
+
+    public BusinessUserResponse updateBusinessUser(BusinessUserUpdateDto dto) {
+        try {
+            return client.updateBusinessUser(dto).getBody();
         } catch (FeignException e) {
             throw mapper.map(e);
         }

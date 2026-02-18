@@ -13,6 +13,7 @@ import com.lumina_bank.accountservice.model.Card;
 import com.lumina_bank.accountservice.repository.AccountRepository;
 import com.lumina_bank.accountservice.repository.CardRepository;
 import com.lumina_bank.accountservice.service.client.UserServiceClient;
+import com.lumina_bank.common.enums.user.UserType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,18 @@ public class AccountService {
         log.debug("Attempting to create account with userId={}", userId);
 
         UserCheckResponse userCheck = checkUser(userId);
+
+        if (userCheck.userType() == UserType.INDIVIDUAL_USER) {
+            if (accountDto.type() == AccountType.MERCHANT) {
+                throw new AccountTypeNotAllowedException("Individual users cannot create MERCHANT accounts");
+            }
+        }
+
+        if (userCheck.userType() == UserType.BUSINESS_USER) {
+            if (accountDto.type() == AccountType.DEBIT) {
+                throw new AccountTypeNotAllowedException("Business users cannot create DEBIT accounts");
+            }
+        }
 
         String iban = generateIban();
         while (accountRepository.existsByIban(iban))

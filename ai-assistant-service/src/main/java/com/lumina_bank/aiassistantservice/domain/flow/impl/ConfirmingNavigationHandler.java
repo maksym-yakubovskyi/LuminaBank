@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.flow.impl;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.enums.ConfirmationDecision;
 import com.lumina_bank.aiassistantservice.domain.flow.FlowHandler;
 import com.lumina_bank.aiassistantservice.domain.result.data.ClarificationData;
@@ -28,7 +29,7 @@ public class ConfirmingNavigationHandler implements FlowHandler {
     }
 
     @Override
-    public AssistantExecutionResult handle(Conversation c, String message) {
+    public AssistantExecutionResult handle(Conversation c, String message, AssistantContext  context) {
 
         IntentResult newIntent = intentDetector.detect(message,c.getId());
 

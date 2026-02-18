@@ -1,4 +1,4 @@
-import type {UserProfile, UserUpdateDto} from "@/features/types/userProfile.ts"
+import type {BusinessProfile, BusinessUserUpdateDto, UserProfile, UserUpdateDto} from "@/features/types/userProfile.ts"
 import {api} from "@/api/api.ts"
 
 export default class UserService {
@@ -15,5 +15,19 @@ export default class UserService {
 
     static async deleteProfile(): Promise<void> {
         await api.delete("/users/me")
+    }
+
+    static async getBusinessProfile(): Promise<BusinessProfile> {
+        const response = await api.get("/users/business-users/my")
+        return response.data
+    }
+
+    static async updateBusinessProfile(data: BusinessUserUpdateDto): Promise<BusinessProfile>{
+        const response = await api.put("/users/business-users/me", data)
+        return response.data
+    }
+
+    static async deleteBusinessProfile(): Promise<void> {
+        await api.delete("/users/business-users/me")
     }
 }

@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.intent.impl.payment;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardResponse;
 import com.lumina_bank.aiassistantservice.domain.dto.client.payment.PaymentRequest;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -40,17 +42,37 @@ public class TransferByCardIntent implements IntentDefinition {
     }
 
     @Override
-    public List<RequiredParam> requiredParams() {
+    public List<RequiredParam> requiredParams(AssistantContext context) {
         return List.of(
-                new RequiredParam("fromCardNumber", ParamType.STRING, List.of(),"Sender card number. Must be one of the user's own cards."),
-                new RequiredParam("toCardNumber", ParamType.STRING, List.of(),"Recipient card number. Any valid card number."),
-                new RequiredParam("amount", ParamType.NUMBER, List.of(),"Payment amount. Must be a positive number."),
-                new RequiredParam("description", ParamType.STRING, List.of(),"Optional payment description.")
+                new RequiredParam(
+                        "fromCardNumber",
+                        ParamType.STRING,
+                        List.of(),
+                        "Sender card number. Must be one of the user's own cards."),
+                new RequiredParam(
+                        "toCardNumber",
+                        ParamType.STRING,
+                        List.of(),
+                        "Recipient card number. Any valid card number."),
+                new RequiredParam(
+                        "amount",
+                        ParamType.NUMBER,
+                        List.of(),
+                        "Payment amount. Must be a positive number."),
+                new RequiredParam(
+                        "description",
+                        ParamType.STRING,
+                        List.of(),
+                        "Optional payment description.")
         );
     }
 
     @Override
-    public AssistantExecutionResult execute(Map<String, Object> params) {
+    public AssistantExecutionResult execute(
+            Map<String, Object> params,
+            UUID conversationId,
+            AssistantContext context
+    ) {
         try {
             List<CardResponse> myCards = accountGateway.getMyCards();
 
@@ -85,41 +107,47 @@ public class TransferByCardIntent implements IntentDefinition {
             if (!params.containsKey("toCardNumber")) {
                 return AssistantExecutionResult.askParam(
                         intent(),
-                        requiredParams().get(1)
+                        requiredParams(context).get(1)
                 );
             }
 
             if (!params.containsKey("amount")) {
                 return AssistantExecutionResult.askParam(
                         intent(),
-                        requiredParams().get(2)
+                        requiredParams(context).get(2)
                 );
             }
 
-            BigDecimal amount = new BigDecimal(params.get("amount").toString());
+            BigDecimal amount;
 
-            if (amount.signum() <= 0){
+            try {
+                amount = new BigDecimal(
+                        params.get("amount").toString()
+                );
+            } catch (NumberFormatException e) {
                 return AssistantExecutionResult.needClarification(
                         intent(),
-                        new ClarificationData("AMOUT_NEGATIVE")
+                        new ClarificationData("INVALID_AMOUNT_FORMAT")
+                );
+            }
+
+            if (amount.signum() <= 0) {
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("AMOUNT_MUST_BE_POSITIVE")
                 );
             }
 
             if (!params.containsKey("description")) {
                 return AssistantExecutionResult.askParam(
                         intent(),
-                        requiredParams().get(4)
+                        requiredParams(context).get(3)
                 );
             }
 
             return AssistantExecutionResult.success(intent(), new EmptyData());
 
-        } catch (NumberFormatException e) {
-            return AssistantExecutionResult.needClarification(
-                    intent(),
-                    new ClarificationData("INVALID_AMOUNT_FORMAT")
-            );
-        } catch (ServiceCallException e) {
+        }catch (ServiceCallException e) {
             return AssistantExecutionResult.error(
                     intent(),
                     e.getMessage()
@@ -128,7 +156,7 @@ public class TransferByCardIntent implements IntentDefinition {
     }
 
     @Override
-    public AssistantExecutionResult perform(Map<String, Object> params) {
+    public AssistantExecutionResult perform(Map<String, Object> params,AssistantContext context) {
         try {
             PaymentResponse payment = paymentGateway.makePayment(
                     new PaymentRequest(

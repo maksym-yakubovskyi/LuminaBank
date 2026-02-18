@@ -87,6 +87,7 @@ public class KnowledgeLoader {
 
             for (Document doc : chunks) {
                 doc.getMetadata().put("docId", meta.docId());
+                doc.getMetadata().put("audience", meta.audience());
                 doc.getMetadata().put("type", meta.type());
                 doc.getMetadata().put("topic", meta.topic());
                 doc.getMetadata().put("language", meta.language());
@@ -110,20 +111,22 @@ public class KnowledgeLoader {
         String clean = filename.replace(".md", "");
         String[] parts = clean.split("__");
 
-        if (parts.length != 4) {
+        if (parts.length != 5) {
             throw new IllegalStateException(
                     "Invalid filename format. Expected: type__topic__lang__vX.md"
             );
         }
+        String audienceRaw = parts[0].toLowerCase();
+        String type = parts[1];
+        String topic = parts[2];
+        String language = parts[3];
+        String version = parts[4];
 
-        String type = parts[0];
-        String topic = parts[1];
-        String language = parts[2];
-        String version = parts[3];
+        String audience = resolveAudience(audienceRaw);
 
         String docId = type + "_" + topic;
 
-        return new FileMetadata(docId, type, topic, language, version);
+        return new FileMetadata(docId,audience, type, topic, language, version);
     }
 
     private boolean isUpToDate(String docId, String version) {
@@ -149,9 +152,19 @@ public class KnowledgeLoader {
         } catch (Exception ignored) {
         }
     }
-
+    private String resolveAudience(String raw) {
+        return switch (raw) {
+            case "personal" -> "INDIVIDUAL";
+            case "business" -> "BUSINESS";
+            case "shared" -> "ALL";
+            default -> throw new IllegalStateException(
+                    "Unknown audience type: " + raw
+            );
+        };
+    }
     private record FileMetadata(
             String docId,
+            String audience,
             String type,
             String topic,
             String language,

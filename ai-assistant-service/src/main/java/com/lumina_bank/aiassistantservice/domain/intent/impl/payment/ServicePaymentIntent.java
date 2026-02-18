@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.intent.impl.payment;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardResponse;
 import com.lumina_bank.aiassistantservice.domain.dto.client.payment.PaymentResponse;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -43,21 +45,44 @@ public class ServicePaymentIntent implements IntentDefinition {
     }
 
     @Override
-    public List<RequiredParam> requiredParams() {
+    public List<RequiredParam> requiredParams(AssistantContext context) {
         return List.of(
-                new RequiredParam("fromCardNumber", ParamType.STRING, List.of(),"Sender card number. Must be one of the user's own cards."),
-                new RequiredParam("providerId", ParamType.NUMBER, List.of(),"ID of the service provider."),
-                new RequiredParam("amount", ParamType.NUMBER, List.of(),"Payment amount. Must be a positive number."),
-                new RequiredParam("payerReference", ParamType.STRING, List.of(),
+                new RequiredParam(
+                        "fromCardNumber",
+                        ParamType.STRING,
+                        List.of(),
+                        "Sender card number. Must be one of the user's own cards."),
+                new RequiredParam(
+                        "providerId",
+                        ParamType.NUMBER,
+                        List.of(),
+                        "ID of the service provider."),
+                new RequiredParam(
+                        "amount",
+                        ParamType.NUMBER,
+                        List.of(),
+                        "Payment amount. Must be a positive number."),
+                new RequiredParam(
+                        "payerReference",
+                        ParamType.STRING,
+                        List.of(),
                         "Identifier required by the service provider to identify the payer. " +
                                 "Can be phone number, contract number, personal account number, email, or any reference provided by user."
                 ),
-                new RequiredParam("description", ParamType.STRING, List.of(),"Optional payment description.")
+                new RequiredParam(
+                        "description",
+                        ParamType.STRING,
+                        List.of(),
+                        "Optional payment description.")
         );
     }
 
     @Override
-    public AssistantExecutionResult execute(Map<String, Object> params) {
+    public AssistantExecutionResult execute(
+            Map<String, Object> params,
+            UUID conversationId,
+            AssistantContext context
+    ) {
         try {
             List<CardResponse> cards = accountGateway.getMyCards();
 
@@ -109,38 +134,45 @@ public class ServicePaymentIntent implements IntentDefinition {
             if (!params.containsKey("amount")) {
                 return AssistantExecutionResult.askParam(
                         intent(),
-                        requiredParams().get(2)
+                        requiredParams(context).get(2)
                 );
             }
 
-            BigDecimal amount = new BigDecimal(params.get("amount").toString());
+            BigDecimal amount;
 
-            if (amount.signum() <= 0){
+            try {
+                amount = new BigDecimal(params.get("amount").toString());
+            } catch (NumberFormatException e) {
                 return AssistantExecutionResult.needClarification(
                         intent(),
-                        new ClarificationData("AMOUT_NEGATIVE")
+                        new ClarificationData("INVALID_AMOUNT_FORMAT")
+                );
+            }
+
+            if (amount.signum() <= 0) {
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("AMOUNT_MUST_BE_POSITIVE")
                 );
             }
 
             if (!params.containsKey("payerReference")) {
-                return AssistantExecutionResult.askParam(intent(), requiredParams().get(3));
+                return AssistantExecutionResult.askParam(
+                        intent(),
+                        requiredParams(context).get(3)
+                );
             }
 
             if (!params.containsKey("description")) {
                 return AssistantExecutionResult.askParam(
                         intent(),
-                        requiredParams().get(4)
+                        requiredParams(context).get(4)
                 );
             }
 
             return AssistantExecutionResult.success(intent(), new EmptyData());
 
-        }catch (NumberFormatException e) {
-            return AssistantExecutionResult.needClarification(
-                    intent(),
-                    new ClarificationData("INVALID_AMOUNT_FORMAT")
-            );
-        } catch (ServiceCallException e) {
+        }catch (ServiceCallException e) {
             return AssistantExecutionResult.error(
                     intent(),
                     e.getMessage()
@@ -149,7 +181,8 @@ public class ServicePaymentIntent implements IntentDefinition {
     }
 
     @Override
-    public AssistantExecutionResult perform(Map<String, Object> params) {
+    public AssistantExecutionResult perform(Map<String, Object> params,
+                                            AssistantContext context) {
         try {
             Long providerId = Long.valueOf(params.get("providerId").toString());
 

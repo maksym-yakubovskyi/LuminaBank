@@ -6,40 +6,43 @@ import AccountService from "@/api/service/AccountService.ts";
 import CardService from "@/api/service/CardService.ts";
 import {Button} from "@/components/button/Button.tsx";
 import {AccountType, CardNetwork, CardType, Currency} from "@/features/enum/enum.ts";
+import {useMemo} from "react";
+import {useAuth} from "@/features/auth/auth.context.tsx";
 
-const createCardSchema = z.object({
-    accountId: z.number().optional(),
-    cardType: z.enum([CardType.PHYSICAL, CardType.VIRTUAL], {
-        message: "Оберіть тип картки",
-    }),
+const getAllowedAccountTypes = (role?: string): AccountType[] => {
+    if (role === "BUSINESS_USER") {
+        return [AccountType.MERCHANT, AccountType.CREDIT];
+    }
 
-    cardNetwork: z.enum([CardNetwork.VISA, CardNetwork.MASTERCARD], {
-        message: "Оберіть платіжну систему",
-    }),
+    return [AccountType.DEBIT, AccountType.CREDIT];
+};
+const createCardSchema = (role?: string) => {
+    const allowedTypes = getAllowedAccountTypes(role);
 
-    limit: z
-        .number( "Ліміт має бути числом")
-        .min(0, "Ліміт не може бути меншим за 0")
-        .max(1_000_000, "Занадто великий ліміт"),
+    return z.object({
+        accountId: z.number().optional(),
 
-    currency: z.enum(
-        [
-            Currency.UAH,
-            Currency.USD,
-            Currency.EUR,
-            Currency.GBP,
-            Currency.PLN,
-            Currency.CHF,
-        ],
-        { message: "Оберіть валюту" }
-    ),
+        cardType: z.enum(CardType, {message: "Оберіть тип картки",}),
 
-    accountType: z.enum([AccountType.DEBIT, AccountType.CREDIT], {
-        message: "Оберіть тип рахунку",
-    }),
-})
+        cardNetwork: z.enum(CardNetwork, {message: "Оберіть платіжну систему",}),
 
-type FormInputs = z.infer<typeof createCardSchema>
+        limit: z
+            .number("Ліміт має бути числом")
+            .min(0, "Ліміт не може бути меншим за 0")
+            .max(1_000_000, "Занадто великий ліміт"),
+
+        currency: z.enum(Currency, { message: "Оберіть валюту" }),
+
+        accountType: z.enum(
+            allowedTypes as [AccountType, ...AccountType[]],
+            {
+                message: "Оберіть тип рахунку",
+            }
+        ),
+    });
+};
+
+type FormInputs = z.infer<ReturnType<typeof createCardSchema>>;
 
 interface Props {
     accounts: Account[]
@@ -48,19 +51,31 @@ interface Props {
 }
 
 export function CreateCardForm({ accounts,onCreated, onCancel }: Props) {
+    const { user } = useAuth();
+
+    const schema = useMemo(
+        () => createCardSchema(user?.role),
+        [user?.role]
+    );
+
+    const allowedAccountTypes = useMemo(
+        () => getAllowedAccountTypes(user?.role),
+        [user?.role]
+    );
+
     const {
         register,
         handleSubmit,
         watch,
         formState: {errors, isSubmitting },
     } = useForm<FormInputs>({
-        resolver: zodResolver(createCardSchema),
+        resolver: zodResolver(schema),
         defaultValues: {
             cardType: CardType.PHYSICAL,
             cardNetwork: CardNetwork.VISA,
             limit: 0,
             currency: Currency.UAH,
-            accountType: AccountType.DEBIT,
+            accountType: allowedAccountTypes[0],
         },
     })
 
@@ -131,7 +146,7 @@ export function CreateCardForm({ accounts,onCreated, onCancel }: Props) {
                     <div>
                         <label>Тип рахунку</label>
                         <select {...register("accountType")}>
-                            {Object.values(AccountType).map((type) => (
+                            {allowedAccountTypes.map((type) => (
                                 <option key={type} value={type}>
                                     {type}
                                 </option>

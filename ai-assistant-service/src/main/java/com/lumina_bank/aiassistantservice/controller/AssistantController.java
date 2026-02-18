@@ -1,8 +1,10 @@
 package com.lumina_bank.aiassistantservice.controller;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.dto.ChatRequest;
 import com.lumina_bank.aiassistantservice.domain.dto.ChatResponse;
 import com.lumina_bank.aiassistantservice.service.orchestrator.AssistantOrchestrator;
+import com.lumina_bank.common.enums.user.Role;
 import com.lumina_bank.common.exception.JwtMissingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +30,11 @@ public class AssistantController {
         if (jwt == null) throw new JwtMissingException("JWT token is required");
         Long userId = Long.valueOf(jwt.getSubject());
 
-        ChatResponse response = orchestrator.handleMessage(request,userId);
+        Role role = Role.valueOf(jwt.getClaimAsStringList("roles").getFirst());
+
+        ChatResponse response = orchestrator.handleMessage(
+                request,
+                new AssistantContext(userId,role));
 
         return  ResponseEntity.ok().body(response);
     }

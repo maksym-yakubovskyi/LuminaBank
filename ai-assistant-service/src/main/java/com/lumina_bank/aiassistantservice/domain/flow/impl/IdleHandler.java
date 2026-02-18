@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.flow.impl;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.enums.FlowState;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
 import com.lumina_bank.aiassistantservice.domain.flow.FlowHandler;
@@ -24,7 +25,7 @@ public class IdleHandler implements FlowHandler {
     }
 
     @Override
-    public AssistantExecutionResult handle(Conversation c, String message) {
+    public AssistantExecutionResult handle(Conversation c, String message, AssistantContext context) {
 
         IntentResult intent = intentDetector.detect(message,c.getId());
 

@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.intent.impl.account;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountCreateDto;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountResponse;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -35,7 +37,7 @@ public class CreateAccountIntent implements IntentDefinition {
     }
 
     @Override
-    public List<RequiredParam> requiredParams() {
+    public List<RequiredParam> requiredParams(AssistantContext context) {
         return List.of(
                 new RequiredParam(
                         "currency",
@@ -46,7 +48,7 @@ public class CreateAccountIntent implements IntentDefinition {
                 new RequiredParam(
                         "type",
                         ParamType.ENUM,
-                        ParseEnumUtil.enumValues(AccountType.class),
+                        allowedAccountTypes(context),
                         "Account type."
                 )
         );
@@ -58,11 +60,13 @@ public class CreateAccountIntent implements IntentDefinition {
     }
 
     @Override
-    public AssistantExecutionResult execute(Map<String, Object> params) {
+    public AssistantExecutionResult execute(Map<String, Object> params, UUID conversationId, AssistantContext context) {
+        List<RequiredParam> schema = requiredParams(context);
+
         if (!params.containsKey("currency")) {
             return AssistantExecutionResult.askParam(
                     intent(),
-                    requiredParams().getFirst()
+                    schema.getFirst()
             );
         }
 
@@ -82,7 +86,7 @@ public class CreateAccountIntent implements IntentDefinition {
         if (!params.containsKey("type")) {
             return AssistantExecutionResult.askParam(
                     intent(),
-                    requiredParams().get(1)
+                    schema.get(1)
             );
         }
 
@@ -99,34 +103,36 @@ public class CreateAccountIntent implements IntentDefinition {
             );
         }
 
-        return AssistantExecutionResult.success(intent(), new EmptyData());
+        if (!allowedAccountTypes(context).contains(type.get().name())) {
+            return AssistantExecutionResult.needClarification(
+                    intent(),
+                    new ClarificationData("ACCOUNT_TYPE_NOT_ALLOWED_FOR_ROLE")
+            );
+        }
+
+        return AssistantExecutionResult.success(
+                intent(),
+                new EmptyData()
+        );
     }
 
     @Override
-    public AssistantExecutionResult perform(Map<String, Object> params) {
+    public AssistantExecutionResult perform(Map<String, Object> params,AssistantContext context) {
         try {
-            Optional<Currency> currency =
-                    ParseEnumUtil.parseEnumSafe(Currency.class, params.get("currency"));
+            Currency currency = Currency.valueOf(params.get("currency").toString());
+            AccountType type = AccountType.valueOf(params.get("type").toString());
 
-            if (currency.isEmpty()) {
+            if (!allowedAccountTypes(context).contains(type.name())) {
                 return AssistantExecutionResult.needClarification(
                         intent(),
-                        new ClarificationData("INVALID_CURRENCY")
-                );
-            }
-
-            Optional<AccountType> type =
-                    ParseEnumUtil.parseEnumSafe(AccountType.class, params.get("type"));
-
-            if (type.isEmpty()) {
-                return AssistantExecutionResult.needClarification(
-                        intent(),
-                        new ClarificationData("INVALID_ACCOUNT_TYPE")
+                        new ClarificationData("ACCOUNT_TYPE_NOT_ALLOWED_FOR_ROLE")
                 );
             }
 
             AccountResponse created =
-                    accountGateway.createAccount(new AccountCreateDto(currency.get(), type.get()));
+                    accountGateway.createAccount(
+                            new AccountCreateDto(currency, type)
+                    );
 
             return AssistantExecutionResult.success(
                     intent(),
@@ -138,5 +144,19 @@ public class CreateAccountIntent implements IntentDefinition {
                     intent(),
                     e.getMessage());
         }
+    }
+    private List<String> allowedAccountTypes(AssistantContext context) {
+
+        if (context.isBusiness()) {
+            return List.of(
+                    AccountType.MERCHANT.name(),
+                    AccountType.CREDIT.name()
+            );
+        }
+
+        return List.of(
+                AccountType.DEBIT.name(),
+                AccountType.CREDIT.name()
+        );
     }
 }

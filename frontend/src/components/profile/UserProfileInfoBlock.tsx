@@ -20,7 +20,9 @@ export function UserProfileInfoBlock({ user, loading }: Props) {
             <h4>Адреса</h4>
             {user.address ? (
                 <p>
-                    {user.address.street} {user.address.houseNumber}, {user.address.city}<br />
+                    {user.address.street} {user.address.houseNumber},{" "}
+                    {user.address.city}
+                    <br />
                     {user.address.zipCode}, {user.address.country}
                 </p>
             ) : (

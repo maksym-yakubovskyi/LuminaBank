@@ -1,4 +1,4 @@
-import type {UserProfile} from "@/features/types/userProfile.ts";
+import type {UserProfile, UserUpdateDto} from "@/features/types/userProfile.ts";
 import {useForm} from "react-hook-form";
 import UserService from "@/api/service/UserService.ts";
 import {Button} from "@/components/button/Button.tsx";
@@ -80,7 +80,7 @@ export function UserEditForm({user, onUpdate}: Props) {
                 houseNumber: data.houseNumber,
                 zipCode: data.zipCode,
                 country: data.country,
-            })
+            }as UserUpdateDto)
 
             onUpdate(updatedUser)
         }catch (e) {

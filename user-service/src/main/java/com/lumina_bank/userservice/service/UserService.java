@@ -84,8 +84,6 @@ public class UserService {
         address.setZipCode(userDto.zipCode());
         user.setAddress(address);
 
-        user.setAddress(address);
-
         return userRepository.save(user);
     }
 

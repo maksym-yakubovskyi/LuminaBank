@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.intent;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.result.AssistantExecutionResult;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
@@ -12,21 +13,20 @@ public interface IntentDefinition {
 
     Intent intent();
 
-    List<RequiredParam> requiredParams();
+    List<RequiredParam> requiredParams(AssistantContext context);
 
-    AssistantExecutionResult execute(Map<String, Object> params);
-
-    default AssistantExecutionResult execute(
+    AssistantExecutionResult execute(
             Map<String, Object> params,
-            UUID conversationId
+            UUID conversationId,
+            AssistantContext context
+    );
+
+    default AssistantExecutionResult perform(
+            Map<String,Object> params,
+            AssistantContext context
     ) {
-        return execute(params);
+        return execute(params, null, context);
     }
-
-    default AssistantExecutionResult perform(Map<String,Object> params) {
-        return execute(params);
-    }
-
     default boolean requiresFinalConfirmation() {
         return false;
     }

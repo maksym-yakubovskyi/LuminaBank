@@ -21,22 +21,26 @@ public class AssistantOrchestrator {
     private final FlowRouter flowRouter;
     private final ResponseGenerationService responses;
 
-    public ChatResponse handleMessage(ChatRequest request, Long userId) {
+    public ChatResponse handleMessage(ChatRequest request, AssistantContext context) {
 
         Conversation conversation =
-                history.getOrCreateConversation(request.conversationIdAsUuid(), userId);
+                history.getOrCreateConversation(request.conversationIdAsUuid(), context.userId());
 
         history.saveUserMessage(conversation, request.message());
 
         AssistantExecutionResult result =
-                flowRouter.handle(conversation, request.message());
+                flowRouter.handle(conversation, request.message(),context);
 
         String text;
 
         if(result.data() instanceof FinalResponseData(String finalText)){
             text = finalText;
         }else{
-            text = responses.generateResponse(request.message(), result, conversation.getId());
+            text = responses.generateResponse(
+                    request.message(),
+                    result,
+                    conversation.getId(),
+                    context);
         }
 
         history.saveAssistantMessage(
@@ -45,7 +49,11 @@ public class AssistantOrchestrator {
                 text
         );
 
-        return new ChatResponse(mapType(result.status()).name(), text);
+        return new ChatResponse(
+                mapType(result.status()).name(),
+                text,
+                conversation.getId().toString()
+        );
     }
 
 
