@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.intent.impl.payment;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountResponse;
 import com.lumina_bank.aiassistantservice.domain.dto.client.payment.TransactionHistoryItemDto;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -34,7 +36,7 @@ public class PaymentHistoryIntent implements IntentDefinition {
     }
 
     @Override
-    public List<RequiredParam> requiredParams() {
+    public List<RequiredParam> requiredParams(AssistantContext context) {
         return List.of(
                 new RequiredParam(
                         "mode",
@@ -54,7 +56,11 @@ public class PaymentHistoryIntent implements IntentDefinition {
         );
     }
     @Override
-    public AssistantExecutionResult execute(Map<String, Object> params) {
+    public AssistantExecutionResult execute(
+            Map<String, Object> params,
+            UUID conversationId,
+            AssistantContext context
+    ) {
         try {
             List<AccountResponse> accounts = accountGateway.getUserAccounts();
 
@@ -111,7 +117,7 @@ public class PaymentHistoryIntent implements IntentDefinition {
             if (!params.containsKey("mode")) {
                 return AssistantExecutionResult.askParam(
                         intent(),
-                        requiredParams().getFirst()
+                        requiredParams(context).getFirst()
                 );
             }
 
@@ -125,7 +131,6 @@ public class PaymentHistoryIntent implements IntentDefinition {
             }
 
             boolean all = modeRaw.equals("ALL");
-
             Integer limit = null;
 
             if (!all) {
@@ -133,7 +138,7 @@ public class PaymentHistoryIntent implements IntentDefinition {
                 if (!params.containsKey("limit")) {
                     return AssistantExecutionResult.askParam(
                             intent(),
-                            requiredParams().get(2)
+                            requiredParams(context).get(2)
                     );
                 }
 
@@ -172,7 +177,6 @@ public class PaymentHistoryIntent implements IntentDefinition {
             );
 
         } catch (ServiceCallException e) {
-
             return AssistantExecutionResult.error(
                     intent(),
                     e.getMessage()

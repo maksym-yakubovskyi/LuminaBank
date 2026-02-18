@@ -1,8 +1,8 @@
 package com.lumina_bank.aiassistantservice.util;
-
 import com.lumina_bank.aiassistantservice.domain.dto.client.user.Address;
-import com.lumina_bank.aiassistantservice.domain.dto.client.user.UserResponse;
-import com.lumina_bank.aiassistantservice.domain.dto.client.user.UserUpdateDto;
+import com.lumina_bank.aiassistantservice.domain.dto.client.user.BusinessUserResponse;
+import com.lumina_bank.aiassistantservice.domain.dto.client.user.BusinessUserUpdateDto;
+import com.lumina_bank.common.enums.user.BusinessCategory;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
@@ -10,19 +10,20 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Component
-public class UserUpdateProcessor {
+public class BusinessUserUpdateProcessor {
 
-    private static final Map<String, Function<UserResponse, Object>> FIELD_EXTRACTORS =
+    private static final Map<String, Function<BusinessUserResponse, Object>> FIELD_EXTRACTORS =
             Map.of(
-                    "firstName", UserResponse::firstName,
-                    "lastName", UserResponse::lastName,
-                    "email", UserResponse::email,
-                    "phoneNumber", UserResponse::phoneNumber,
-                    "birthDate", UserResponse::birthDate
+                    "companyName", BusinessUserResponse::companyName,
+                    "email", BusinessUserResponse::email,
+                    "phoneNumber", BusinessUserResponse::phoneNumber,
+                    "adrpou", BusinessUserResponse::adrpou,
+                    "description", BusinessUserResponse::description,
+                    "category", BusinessUserResponse::category
             );
 
     public Map<String, Object> calculateChanges(
-            UserResponse current,
+            BusinessUserResponse current,
             Map<String, Object> params
     ) {
 
@@ -32,18 +33,15 @@ public class UserUpdateProcessor {
             Object oldValue = extractCurrentValue(current, k);
 
             if (oldValue != null && !oldValue.equals(v)) {
-                changes.put(k, Map.of(
-                        "old", oldValue,
-                        "new", v
-                ));
+                changes.put(k, Map.of("old", oldValue, "new", v));
             }
         });
 
         return changes;
     }
 
-    public UserUpdateDto merge(
-            UserResponse current,
+    public BusinessUserUpdateDto merge(
+            BusinessUserResponse current,
             Map<String, Object> params
     ) {
 
@@ -51,13 +49,13 @@ public class UserUpdateProcessor {
                 ? current.address()
                 : new Address();
 
-        return new UserUpdateDto(
-                getString(params, "firstName", current.firstName()),
-                getString(params, "lastName", current.lastName()),
+        return new BusinessUserUpdateDto(
                 getString(params, "email", current.email()),
                 getString(params, "phoneNumber", current.phoneNumber()),
-                ParseDateUtil.parseDate(params.get("birthDate"))
-                        .orElse(current.birthDate()),
+                getString(params, "companyName", current.companyName()),
+                getString(params, "adrpou", current.adrpou()),
+                getString(params, "description", current.description()),
+                parseCategory(params, current.category()),
                 getString(params, "street", address.street()),
                 getString(params, "city", address.city()),
                 getString(params, "houseNumber", address.houseNumber()),
@@ -66,7 +64,17 @@ public class UserUpdateProcessor {
         );
     }
 
-    private Object extractCurrentValue(UserResponse current, String field) {
+    private BusinessCategory parseCategory(
+            Map<String, Object> params,
+            BusinessCategory fallback
+    ) {
+        return ParseEnumUtil.parseEnumSafe(
+                BusinessCategory.class,
+                params.get("category")
+        ).orElse(fallback);
+    }
+
+    private Object extractCurrentValue(BusinessUserResponse current, String field) {
         if (current == null) return null;
 
         if (FIELD_EXTRACTORS.containsKey(field)) {

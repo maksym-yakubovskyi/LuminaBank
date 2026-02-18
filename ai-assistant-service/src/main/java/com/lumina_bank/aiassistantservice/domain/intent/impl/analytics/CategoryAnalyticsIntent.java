@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.intent.impl.analytics;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.analytics.AnalyticsCategoryResponse;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
@@ -19,6 +20,7 @@ import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -33,7 +35,7 @@ public class CategoryAnalyticsIntent implements IntentDefinition {
     }
 
     @Override
-    public List<RequiredParam> requiredParams() {
+    public List<RequiredParam> requiredParams(AssistantContext context) {
         return List.of(
                 new RequiredParam(
                         "yearMonth",
@@ -44,7 +46,11 @@ public class CategoryAnalyticsIntent implements IntentDefinition {
     }
 
     @Override
-    public AssistantExecutionResult execute(Map<String, Object> params) {
+    public AssistantExecutionResult execute(
+            Map<String, Object> params,
+            UUID conversationId,
+            AssistantContext context
+    ) {
         try {
             YearMonth yearMonth;
 

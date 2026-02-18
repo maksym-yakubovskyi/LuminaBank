@@ -1,5 +1,6 @@
 package com.lumina_bank.userservice.model;
 
+import com.lumina_bank.common.enums.user.Role;
 import com.lumina_bank.userservice.enums.BusinessCategory;
 import jakarta.persistence.*;
 import lombok.*;
@@ -43,6 +44,10 @@ public class BusinessUser {
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 
     @LastModifiedDate
     @Column(nullable = false)

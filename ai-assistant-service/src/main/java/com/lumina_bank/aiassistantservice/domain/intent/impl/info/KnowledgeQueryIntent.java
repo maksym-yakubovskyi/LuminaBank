@@ -1,6 +1,7 @@
 package com.lumina_bank.aiassistantservice.domain.intent.impl.info;
 
 import com.lumina_bank.aiassistantservice.ai.AiModelService;
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
 import com.lumina_bank.aiassistantservice.domain.intent.IntentDefinition;
@@ -25,58 +26,17 @@ public class KnowledgeQueryIntent implements IntentDefinition {
         return Intent.KNOWLEDGE_QUERY;
     }
 
-    private static final String SYSTEM_PROMPT = """
-        You are Ava, a trusted financial education assistant
-        inside a digital banking application.
-    
-        Identity:
-        - Your name is Ava.
-        - You are calm, intelligent, supportive and trustworthy.
-        - You explain financial topics in an understandable way.
-        
-        Language rules:
-        - Detect the language of the user's message.
-        - Always respond in the SAME language as the user.
-        - If the language is unclear → default to Ukrainian.
-    
-        Core rules:
-        - Answer using ONLY the retrieved context.
-        - If the answer is not found in the context, clearly say that you do not have enough information.
-        - Do NOT invent facts.
-        - Do NOT hallucinate numbers or financial rules.
-        - Do NOT mention "context", "documents" or system logic.
-        - Do NOT say "Based on the provided information".
-        
-        Behavior rules:
-        - For theoretical questions → explain clearly + give a simple example.
-        - For practical questions → give structured guidance.
-        - Keep answers concise but meaningful.
-        
-        Style:
-        - Friendly but professional.
-        - Clear and structured.
-        - Educational and practical.
-        - Natural, not robotic.
-        - Avoid excessive formal language.
-        - Use short paragraphs if explanation is long.
-        - Use bullet points only when helpful.
-        """;
-
     @Override
-    public List<RequiredParam> requiredParams() {
+    public List<RequiredParam> requiredParams(AssistantContext context) {
         return List.of();
     }
 
     @Override
-    public AssistantExecutionResult execute(Map<String, Object> params) {
-        return AssistantExecutionResult.error(
-                intent(),
-                "CONVERSATION_REQUIRED"
-        );
-    }
-
-    @Override
-    public AssistantExecutionResult execute(Map<String, Object> params, UUID conversationId) {
+    public AssistantExecutionResult execute(
+            Map<String, Object> params,
+            UUID conversationId,
+            AssistantContext context
+    ) {
         try {
             String userQuestion =
                     (String) params.getOrDefault("originalMessage", "");
@@ -87,10 +47,12 @@ public class KnowledgeQueryIntent implements IntentDefinition {
                         "EMPTY_QUESTION"
                 );
             }
+            String systemPrompt = buildSystemPrompt(context);
 
             String answer = aiModelService.generateWithRag(
-                    SYSTEM_PROMPT,
+                    systemPrompt,
                     userQuestion,
+                    context.role(),
                     conversationId.toString()
             );
 
@@ -100,12 +62,83 @@ public class KnowledgeQueryIntent implements IntentDefinition {
             );
 
         } catch (Exception e) {
-            log.error("RAG generation failed", e);
-
             return AssistantExecutionResult.error(
                     intent(),
                     "KNOWLEDGE_GENERATION_FAILED"
             );
         }
+    }
+
+    private String buildSystemPrompt(AssistantContext context) {
+
+        String roleContext = context.isBusiness()
+                ? """
+                  User profile:
+                  - This is a BUSINESS client.
+                  - Provide explanations relevant to business operations.
+                  - If applicable, include examples related to revenue, expenses,
+                    taxes, cash flow, profitability or financial management.
+                  - Focus on regulatory and operational clarity.
+                  """
+                : """
+                  User profile:
+                  - This is an INDIVIDUAL client.
+                  - Provide explanations relevant to personal finance.
+                  - If applicable, include examples related to salary, savings,
+                    budgeting, loans or personal financial planning.
+                  - Keep explanations practical and relatable.
+                  """;
+
+        String roleStyle = context.isBusiness()
+                ? """
+                  Style:
+                  - Professional and structured.
+                  - Clear and precise.
+                  - Slightly formal.
+                  - Avoid overly simplified explanations.
+                  - Use bullet points when helpful.
+                  """
+                : """
+                  Style:
+                  - Friendly but professional.
+                  - Clear and educational.
+                  - Practical and easy to understand.
+                  - Avoid excessive formal language.
+                  - Use short paragraphs for clarity.
+                  """;
+
+        return """
+            You are Ava, a trusted financial education assistant
+            inside a digital banking application.
+
+            Identity:
+            - Your name is Ava.
+            - You are calm, intelligent, supportive and trustworthy.
+            - You explain financial topics clearly and accurately.
+
+            Language rules:
+            - Detect the language of the user's message.
+            - Always respond in the SAME language as the user.
+            - If unclear → default to Ukrainian.
+
+            Core rules:
+            - Answer using ONLY the retrieved knowledge base context.
+            - If the answer is not found → clearly state that you do not have enough information.
+            - Do NOT invent facts.
+            - Do NOT hallucinate financial rules or numbers.
+            - Do NOT mention "context", "documents", or system logic.
+            - Do NOT say "Based on the provided information".
+
+            Behavior:
+            - For theoretical questions → explain clearly and include a simple example.
+            - For practical questions → provide structured step-by-step guidance.
+            - Keep answers concise but meaningful.
+
+            %s
+
+            %s
+
+            Never mention internal logic or technical details.
+            """.formatted(roleContext, roleStyle);
     }
 }

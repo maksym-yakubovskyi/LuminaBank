@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.flow;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.enums.ExecutionDirective;
 import com.lumina_bank.aiassistantservice.domain.enums.FlowState;
 import com.lumina_bank.aiassistantservice.domain.model.Conversation;
@@ -27,7 +28,7 @@ public class FlowRouter {
                 ));
     }
 
-    public AssistantExecutionResult handle(Conversation c, String message) {
+    public AssistantExecutionResult handle(Conversation c, String message, AssistantContext context) {
         AssistantExecutionResult result;
         int guard = 0;
         do {
@@ -36,7 +37,7 @@ public class FlowRouter {
             }
 
             FlowHandler handler = handlers.get(c.getFlowState());
-            result = handler.handle(c, message);
+            result = handler.handle(c, message,context);
 
         } while (result.directive() == ExecutionDirective.CONTINUE_FLOW);
 

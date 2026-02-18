@@ -1,8 +1,13 @@
 package com.lumina_bank.userservice.service;
 
 import com.lumina_bank.common.dto.event.user_events.BusinessUserRegisteredEvent;
+import com.lumina_bank.common.enums.user.Role;
 import com.lumina_bank.userservice.dto.BusinessUserProviderResponse;
+import com.lumina_bank.userservice.dto.BusinessUserUpdateDto;
 import com.lumina_bank.userservice.enums.BusinessCategory;
+import com.lumina_bank.userservice.exception.UserAlreadyExistsException;
+import com.lumina_bank.userservice.exception.UserNotFoundException;
+import com.lumina_bank.userservice.model.Address;
 import com.lumina_bank.userservice.model.BusinessUser;
 import com.lumina_bank.userservice.repository.BusinessUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +52,7 @@ public class BusinessUserService {
                 .companyName(event.companyName())
                 .adrpou(event.adrpou())
                 .category(BusinessCategory.valueOf(event.category()))
+                .role(Role.BUSINESS_USER)
                 .createdAt(event.registeredAt())
                 .active(Boolean.TRUE)
                 .build();
@@ -54,6 +60,50 @@ public class BusinessUserService {
         businessUserRepository.save(businessUser);
 
         log.debug("Created B user with id={}", event.authUserId());
+    }
+
+    @Transactional(readOnly = true)
+    public BusinessUser getBusinessUserById(Long id) {
+        return businessUserRepository.findByIdAndActiveTrue(id)
+                .orElseThrow(() -> new UserNotFoundException("User with id " + id + " not found"));
+    }
+
+    @Transactional
+    public BusinessUser updateBusinessUser(Long id, BusinessUserUpdateDto bUserDto) {
+        BusinessUser bUser = getBusinessUserById(id);
+
+        if(!bUserDto.email().equals(bUser.getEmail()) && businessUserRepository.existsByEmailAndActiveTrue(bUserDto.email())) {
+            throw new UserAlreadyExistsException("Email already exists");
+        }
+
+        bUser.setEmail(bUserDto.email());
+        bUser.setPhoneNumber(bUserDto.phoneNumber());
+        bUser.setCompanyName(bUserDto.companyName());
+        bUser.setAdrpou(bUserDto.adrpou());
+        bUser.setCategory(bUserDto.category());
+        bUser.setDescription(bUserDto.description());
+
+        Address address = bUser.getAddress();
+
+        if(address == null) {
+            address = new Address();
+        }
+
+        address.setStreet(bUserDto.street());
+        address.setCity(bUserDto.city());
+        address.setCountry(bUserDto.country());
+        address.setHouseNumber(bUserDto.houseNumber());
+        address.setZipCode(bUserDto.zipCode());
+        bUser.setAddress(address);
+
+        return businessUserRepository.save(bUser);
+    }
+
+    @Transactional
+    public void deleteBusinessUser(Long id){
+        BusinessUser bUser = getBusinessUserById(id);
+        bUser.setActive(false);
+        businessUserRepository.save(bUser);
     }
 
     @Transactional(readOnly = true)

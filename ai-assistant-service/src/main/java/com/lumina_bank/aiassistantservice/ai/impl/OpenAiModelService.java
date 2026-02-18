@@ -1,6 +1,7 @@
 package com.lumina_bank.aiassistantservice.ai.impl;
 
 import com.lumina_bank.aiassistantservice.ai.AiModelService;
+import com.lumina_bank.common.enums.user.Role;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
@@ -69,12 +70,28 @@ public class OpenAiModelService implements AiModelService {
     }
 
     @Override
-    public String generateWithRag(String systemPrompt, String userPrompt, String conversationId) {
+    public String generateWithRag(String systemPrompt, String userPrompt, Role role, String conversationId) {
+
+        if (role == null) {
+            return "audience == 'ALL'";
+        }
+
+        String audienceFilter = switch (role) {
+            case Role.BUSINESS_USER ->
+                    "audience == 'BUSINESS' OR audience == 'ALL'";
+            case Role.INDIVIDUAL_USER ->
+                    "audience == 'INDIVIDUAL' OR audience == 'ALL'";
+            default ->
+                    "audience == 'ALL'";
+        };
+
+
         QuestionAnswerAdvisor qaAdvisor = QuestionAnswerAdvisor.builder(vectorStore)
                 .searchRequest(
                         SearchRequest.builder()
                                 .similarityThreshold(0.75)
                                 .topK(5)
+                                .filterExpression(audienceFilter)
                                 .build()
                 )
                 .build();
@@ -87,7 +104,6 @@ public class OpenAiModelService implements AiModelService {
                 .call()
                 .content();
     }
-
 
     @Override
     public String generateText(

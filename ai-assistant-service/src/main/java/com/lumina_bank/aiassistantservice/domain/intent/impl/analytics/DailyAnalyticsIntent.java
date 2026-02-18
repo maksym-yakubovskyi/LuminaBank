@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.intent.impl.analytics;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.dto.client.analytics.AnalyticsDailyOverviewResponse;
 import com.lumina_bank.aiassistantservice.domain.exception.ServiceCallException;
 import com.lumina_bank.aiassistantservice.domain.intent.IntentDefinition;
@@ -22,6 +23,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -37,7 +39,7 @@ public class DailyAnalyticsIntent implements IntentDefinition {
     }
 
     @Override
-    public List<RequiredParam> requiredParams() {
+    public List<RequiredParam> requiredParams(AssistantContext context) {
         return List.of(
                 new RequiredParam(
                         "accountId",
@@ -53,7 +55,11 @@ public class DailyAnalyticsIntent implements IntentDefinition {
     }
 
     @Override
-    public AssistantExecutionResult execute(Map<String, Object> params) {
+    public AssistantExecutionResult execute(
+            Map<String, Object> params,
+            UUID conversationId,
+            AssistantContext context
+    ) {
         try {
             List<AccountResponse> accounts = accountGateway.getUserAccounts();
 
@@ -86,7 +92,7 @@ public class DailyAnalyticsIntent implements IntentDefinition {
                 }
             }
 
-            long accountId;
+            Long accountId;
 
             try {
                 accountId = Long.parseLong(params.get("accountId").toString());
@@ -94,6 +100,16 @@ public class DailyAnalyticsIntent implements IntentDefinition {
                 return AssistantExecutionResult.needClarification(
                         intent(),
                         new ClarificationData("INVALID_ACCOUNT_ID")
+                );
+            }
+
+            boolean exists = accounts.stream()
+                    .anyMatch(a -> a.id().equals(accountId));
+
+            if (!exists) {
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("ACCOUNT_NOT_FOUND")
                 );
             }
 

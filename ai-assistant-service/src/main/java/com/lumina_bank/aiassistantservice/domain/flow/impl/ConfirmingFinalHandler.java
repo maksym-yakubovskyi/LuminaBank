@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.flow.impl;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.flow.FlowHandler;
 import com.lumina_bank.aiassistantservice.domain.result.data.ClarificationData;
 import com.lumina_bank.aiassistantservice.domain.enums.ConfirmationDecision;
@@ -31,7 +32,7 @@ public class ConfirmingFinalHandler implements FlowHandler {
     }
 
     @Override
-    public AssistantExecutionResult handle(Conversation c, String message) {
+    public AssistantExecutionResult handle(Conversation c, String message, AssistantContext context) {
 
         ConfirmationDecision decision  = confirmationExtractor.extractDecision(message, c.getId());
 
@@ -41,7 +42,7 @@ public class ConfirmingFinalHandler implements FlowHandler {
                 IntentDefinition def = registry.get(c.getActiveIntent());
                 Map<String, Object> params = paramsService.read(c);
 
-                AssistantExecutionResult result = def.perform(params);
+                AssistantExecutionResult result = def.perform(params,context);
 
                 stateService.finishFlow(c);
                 return result;

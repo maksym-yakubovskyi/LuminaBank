@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.intent.impl.payment;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.payment.PaymentTemplateResponse;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -35,7 +37,7 @@ public class PayByTemplateIntent implements IntentDefinition {
     }
 
     @Override
-    public List<RequiredParam> requiredParams() {
+    public List<RequiredParam> requiredParams(AssistantContext context) {
         return List.of(
                 new RequiredParam(
                         "templateId",
@@ -46,7 +48,11 @@ public class PayByTemplateIntent implements IntentDefinition {
     }
 
     @Override
-    public AssistantExecutionResult execute(Map<String, Object> params) {
+    public AssistantExecutionResult execute(
+            Map<String, Object> params,
+            UUID conversationId,
+            AssistantContext context
+    ) {
         try {
             List<PaymentTemplateResponse> templates =
                     paymentGateway.getPaymentTemplates();
@@ -111,8 +117,8 @@ public class PayByTemplateIntent implements IntentDefinition {
     }
 
     @Override
-    public AssistantExecutionResult perform(Map<String, Object> params) {
-
+    public AssistantExecutionResult perform(Map<String, Object> params,
+                                            AssistantContext context) {
         try {
             Long templateId = Long.valueOf(
                     params.get("templateId").toString()

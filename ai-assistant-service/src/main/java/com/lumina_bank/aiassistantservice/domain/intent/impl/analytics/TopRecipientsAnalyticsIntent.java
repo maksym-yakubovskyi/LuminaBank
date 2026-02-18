@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.intent.impl.analytics;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.analytics.AnalyticsTopRecipientResponse;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -29,12 +31,16 @@ public class TopRecipientsAnalyticsIntent implements IntentDefinition {
     }
 
     @Override
-    public List<RequiredParam> requiredParams() {
+    public List<RequiredParam> requiredParams(AssistantContext context) {
         return List.of();
     }
 
     @Override
-    public AssistantExecutionResult execute(Map<String, Object> params) {
+    public AssistantExecutionResult execute(
+            Map<String, Object> params,
+            UUID conversationId,
+            AssistantContext context
+    ) {
         try {
             List<AnalyticsTopRecipientResponse> recipients =
                     analyticsGateway.getTopRecipients();

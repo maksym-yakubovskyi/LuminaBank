@@ -1,9 +1,11 @@
 package com.lumina_bank.aiassistantservice.domain.intent.impl.account;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.dto.RequiredParam;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountResponse;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardCreateDto;
 import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardResponse;
+import com.lumina_bank.aiassistantservice.domain.exception.ServiceCallException;
 import com.lumina_bank.aiassistantservice.domain.result.data.ConfirmationData;
 import com.lumina_bank.aiassistantservice.domain.result.data.account.CardCreatedData;
 import com.lumina_bank.aiassistantservice.domain.result.data.ClarificationData;
@@ -16,7 +18,6 @@ import com.lumina_bank.aiassistantservice.service.client.account.FeignAccountGat
 import com.lumina_bank.aiassistantservice.util.ParseEnumUtil;
 import com.lumina_bank.common.enums.account.CardNetwork;
 import com.lumina_bank.common.enums.account.CardType;
-import com.lumina_bank.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -25,6 +26,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -38,7 +40,7 @@ public class CreateCardIntent implements IntentDefinition{
     }
 
     @Override
-    public List<RequiredParam> requiredParams() {
+    public List<RequiredParam> requiredParams(AssistantContext context) {
         return List.of(
                 new RequiredParam(
                         "accountId",
@@ -74,7 +76,9 @@ public class CreateCardIntent implements IntentDefinition{
 
     @Override
     public AssistantExecutionResult execute(
-            Map<String, Object> params
+            Map<String, Object> params,
+            UUID conversationId,
+            AssistantContext context
     ) {
         try {
             List<AccountResponse> accounts = accountGateway.getUserAccounts();
@@ -108,8 +112,9 @@ public class CreateCardIntent implements IntentDefinition{
                 }
             }
 
+            long accountId;
             try {
-                Long.parseLong(params.get("accountId").toString());
+                accountId = Long.parseLong(params.get("accountId").toString());
             } catch (NumberFormatException e) {
                 return AssistantExecutionResult.needClarification(
                         intent(),
@@ -117,10 +122,20 @@ public class CreateCardIntent implements IntentDefinition{
                 );
             }
 
+            boolean exists = accounts.stream()
+                    .anyMatch(a -> a.id().equals(accountId));
+
+            if (!exists) {
+                return AssistantExecutionResult.needClarification(
+                        intent(),
+                        new ClarificationData("ACCOUNT_NOT_FOUND")
+                );
+            }
+
             if (!params.containsKey("cardType")) {
                 return AssistantExecutionResult.askParam(
                         intent(),
-                        requiredParams().get(1)
+                        requiredParams(context).get(1)
                 );
             }
 
@@ -140,7 +155,7 @@ public class CreateCardIntent implements IntentDefinition{
             if (!params.containsKey("cardNetwork")) {
                 return AssistantExecutionResult.askParam(
                         intent(),
-                        requiredParams().get(2)
+                        requiredParams(context).get(2)
                 );
             }
 
@@ -160,7 +175,7 @@ public class CreateCardIntent implements IntentDefinition{
             if (!params.containsKey("limit")) {
                 return AssistantExecutionResult.askParam(
                         intent(),
-                        requiredParams().get(3)
+                        requiredParams(context).get(3)
                 );
             }
 
@@ -188,7 +203,7 @@ public class CreateCardIntent implements IntentDefinition{
                     intent(),
                     new EmptyData()
             );
-        }catch (BusinessException e) {
+        }catch (ServiceCallException e) {
             return AssistantExecutionResult.error(
                     intent(),
                     e.getMessage());
@@ -196,7 +211,7 @@ public class CreateCardIntent implements IntentDefinition{
     }
 
     @Override
-    public AssistantExecutionResult perform(Map<String, Object> params) {
+    public AssistantExecutionResult perform(Map<String, Object> params,AssistantContext context) {
         try {
             Long accountId = Long.parseLong(params.get("accountId").toString());
             CardType cardType = CardType.valueOf(params.get("cardType").toString());
@@ -217,7 +232,7 @@ public class CreateCardIntent implements IntentDefinition{
                     intent(),
                     new CardCreatedData(created)
             );
-        }catch (BusinessException e) {
+        }catch (ServiceCallException e) {
             return AssistantExecutionResult.error(
                     intent(),
                     e.getMessage());

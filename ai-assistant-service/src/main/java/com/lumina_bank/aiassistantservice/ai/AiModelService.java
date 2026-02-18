@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.ai;
 
+import com.lumina_bank.common.enums.user.Role;
 import org.springframework.core.ParameterizedTypeReference;
 
 public interface AiModelService {
@@ -26,6 +27,7 @@ public interface AiModelService {
     String generateWithRag(
             String systemPrompt,
             String userPrompt,
+            Role role,
             String conversationId
     );
 }

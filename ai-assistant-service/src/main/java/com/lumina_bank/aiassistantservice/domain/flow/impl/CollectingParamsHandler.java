@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.domain.flow.impl;
 
+import com.lumina_bank.aiassistantservice.domain.dto.AssistantContext;
 import com.lumina_bank.aiassistantservice.domain.flow.FlowHandler;
 import com.lumina_bank.aiassistantservice.domain.result.data.ConfirmationSummaryData;
 import com.lumina_bank.aiassistantservice.domain.enums.ExecutionStatus;
@@ -31,18 +32,18 @@ public class CollectingParamsHandler implements FlowHandler {
     }
 
     @Override
-    public AssistantExecutionResult handle(Conversation c, String message) {
+    public AssistantExecutionResult handle(Conversation c, String message, AssistantContext context) {
 
         IntentDefinition def = registry.get(c.getActiveIntent());
 
         Map<String, Object> extracted =
-                extractor.extract(message, c.getActiveIntent(), def.requiredParams(), c.getId());
+                extractor.extract(message, c.getActiveIntent(), def.requiredParams(context), c.getId());
 
         Map<String, Object> params = paramsService.merge(c, extracted);
 
         params.put("originalMessage", message);
 
-        AssistantExecutionResult result =  def.execute(params, c.getId());
+        AssistantExecutionResult result =  def.execute(params, c.getId(),context);
 
         if (result.status() == ExecutionStatus.SUCCESS && def.requiresFinalConfirmation()) {
 
