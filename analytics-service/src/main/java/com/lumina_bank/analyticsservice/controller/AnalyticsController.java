@@ -132,13 +132,22 @@ public class AnalyticsController {
 
     @GetMapping("/ai-recommendations")
     public ResponseEntity<?> getRecommendations(@AuthenticationPrincipal Jwt jwt){
-        if (jwt == null) {
-            throw new JwtMissingException("JWT token is required");
-        }
+        if (jwt == null) throw new JwtMissingException("JWT token is required");
 
         Long userId = Long.valueOf(jwt.getSubject());
 
         RecommendationResponse response = analyticsService.buildRecommendationInfo(userId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/loan")
+    public ResponseEntity<?> getLoanInfo(@AuthenticationPrincipal Jwt jwt){
+        if (jwt == null) throw new JwtMissingException("JWT token is required");
+
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        LoanInfoResponse response = analyticsService.buildLoanInfo(userId);
 
         return ResponseEntity.ok(response);
     }

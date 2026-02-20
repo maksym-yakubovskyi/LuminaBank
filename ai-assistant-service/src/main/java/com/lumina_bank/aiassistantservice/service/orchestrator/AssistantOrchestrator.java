@@ -64,5 +64,4 @@ public class AssistantOrchestrator {
             case ERROR -> MessageType.ERROR;
         };
     }
-
 }

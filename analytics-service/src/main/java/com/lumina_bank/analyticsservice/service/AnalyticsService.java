@@ -112,53 +112,7 @@ public class AnalyticsService {
 
     @Transactional(readOnly = true)
     public List<AnalyticsCategoryResponse> getCategoryExpenses(Long userId, YearMonth month) {
-        LocalDate from = month.atDay(1);
-        LocalDate to = month.atEndOfMonth();
-
-        List<AnalyticsCategorySummary> summaries =
-                categorySummaryRepo.findAllByIdUserIdAndIdDateBetween(userId, from, to);
-
-        if (summaries.isEmpty()) {
-            return List.of();
-        }
-
-        BigDecimal totalExpense = summaries.stream()
-                .map(AnalyticsCategorySummary::getTotalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        if (totalExpense.compareTo(BigDecimal.ZERO) == 0) {
-            return List.of();
-        }
-
-        return summaries.stream()
-                .collect(Collectors.groupingBy(
-                        s->s.getId().getCategory(),
-                        Collectors.reducing(
-                                BigDecimal.ZERO,
-                                AnalyticsCategorySummary::getTotalAmount,
-                                BigDecimal::add
-                        )
-                ))
-                .entrySet()
-                .stream()
-                .map(
-                        entry->{
-                            BigDecimal amount = entry.getValue();
-
-                            int percent = amount
-                                    .multiply(BigDecimal.valueOf(100))
-                                    .divide(totalExpense,0, RoundingMode.HALF_UP)
-                                    .intValue();
-
-                            return AnalyticsCategoryResponse.builder()
-                                    .category(entry.getKey())
-                                    .totalAmount(amount)
-                                    .percentage(percent)
-                                    .build();
-                        }
-                )
-                .sorted((a,b)-> b.totalAmount().compareTo(a.totalAmount()))
-                .toList();
+        return buildCategoryStats(userId, month.atDay(1), month.atEndOfMonth());
     }
 
     @Transactional(readOnly = true)
@@ -167,53 +121,7 @@ public class AnalyticsService {
             YearMonth fromMonth,
             YearMonth toMonth
     ) {
-        LocalDate from = fromMonth.atDay(1);
-        LocalDate to = toMonth.atEndOfMonth();
-
-        List<AnalyticsCategorySummary> summaries =
-                categorySummaryRepo.findAllByIdUserIdAndIdDateBetween(userId, from, to);
-
-        if (summaries.isEmpty()) {
-            return List.of();
-        }
-
-        BigDecimal totalExpense = summaries.stream()
-                .map(AnalyticsCategorySummary::getTotalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        if (totalExpense.compareTo(BigDecimal.ZERO) == 0) {
-            return List.of();
-        }
-
-        return summaries.stream()
-                .collect(Collectors.groupingBy(
-                        s->s.getId().getCategory(),
-                        Collectors.reducing(
-                                BigDecimal.ZERO,
-                                AnalyticsCategorySummary::getTotalAmount,
-                                BigDecimal::add
-                        )
-                ))
-                .entrySet()
-                .stream()
-                .map(
-                        entry->{
-                            BigDecimal amount = entry.getValue();
-
-                            int percent = amount
-                                    .multiply(BigDecimal.valueOf(100))
-                                    .divide(totalExpense,0, RoundingMode.HALF_UP)
-                                    .intValue();
-
-                            return AnalyticsCategoryResponse.builder()
-                                    .category(entry.getKey())
-                                    .totalAmount(amount)
-                                    .percentage(percent)
-                                    .build();
-                        }
-                )
-                .sorted((a,b)-> b.totalAmount().compareTo(a.totalAmount()))
-                .toList();
+        return buildCategoryStats(userId, fromMonth.atDay(1), toMonth.atEndOfMonth());
     }
 
     @Transactional(readOnly = true)
@@ -250,79 +158,17 @@ public class AnalyticsService {
     }
 
     @Transactional(readOnly = true)
+    public LoanInfoResponse buildLoanInfo(Long userId){
+        FinancialAggregate agg = aggregateLastMonths(userId, 5);
+        return LoanInfoResponse.from(agg);
+    }
+
+    @Transactional(readOnly = true)
     public RecommendationResponse buildRecommendationInfo (Long userId){
         YearMonth currentMonth = YearMonth.now();
         YearMonth fromMonth = currentMonth.minusMonths(5);
 
-        List<AnalyticsMonthlySummary> monthlySummaries =
-                monthlyRepo.findByIdUserIdAndIdYearMonthBetween(
-                        userId,
-                        fromMonth,
-                        currentMonth
-                );
-
-        if (monthlySummaries.isEmpty()) {
-            return emptyRec();
-        }
-
-        BigDecimal totalIncome = BigDecimal.ZERO;
-        BigDecimal totalExpense = BigDecimal.ZERO;
-        BigDecimal totalCashFlow = BigDecimal.ZERO;
-        long totalTransactions = 0;
-
-        for (AnalyticsMonthlySummary m : monthlySummaries) {
-            totalIncome = totalIncome.add(nullSafe(m.getTotalIncome()));
-            totalExpense = totalExpense.add(nullSafe(m.getTotalExpense()));
-            totalCashFlow = totalCashFlow.add(nullSafe(m.getCashFlow()));
-            totalTransactions += nullSafe(m.getTransactionCount());
-        }
-
-        int monthsCount = monthlySummaries.size();
-
-        BigDecimal avgIncome = divide(totalIncome, monthsCount);
-        BigDecimal avgExpense = divide(totalExpense, monthsCount);
-        BigDecimal avgCashFlow = divide(totalCashFlow, monthsCount);
-
-        int monthlyTransactionCount =
-                Math.toIntExact(
-                        Math.round(
-                                (double) totalTransactions / monthsCount
-                        )
-                );
-
-        BigDecimal totalVolume = totalIncome.add(totalExpense);
-
-        BigDecimal avgTransactionAmount =
-                totalTransactions == 0
-                        ? BigDecimal.ZERO
-                        : totalVolume.divide(
-                        BigDecimal.valueOf(totalTransactions),
-                        2,
-                        RoundingMode.HALF_UP
-                );
-
-        BigDecimal expenseGrowth = BigDecimal.ZERO;
-        BigDecimal incomeGrowth = BigDecimal.ZERO;
-
-        monthlySummaries.sort(Comparator.comparing(m -> m.getId().getYearMonth()));
-
-        if (monthlySummaries.size() >= 2) {
-            AnalyticsMonthlySummary last =
-                    monthlySummaries.getLast();
-
-            AnalyticsMonthlySummary prev =
-                    monthlySummaries.get(monthlySummaries.size() - 2);
-
-            expenseGrowth = growthPercent(
-                    nullSafe(prev.getTotalExpense()),
-                    nullSafe(last.getTotalExpense())
-            );
-
-            incomeGrowth = growthPercent(
-                    nullSafe(prev.getTotalIncome()),
-                    nullSafe(last.getTotalIncome())
-            );
-        }
+        FinancialAggregate agg = aggregateLastMonths(userId, 5);
 
         List<AnalyticsCategoryResponse> topCategories =
                 getTopCategoriesForPeriod(userId, fromMonth,currentMonth).stream().limit(5).toList();
@@ -331,14 +177,14 @@ public class AnalyticsService {
                 getTopRecipients(userId).stream().limit(5).toList();
 
         return RecommendationResponse.builder()
-                .avgMonthlyExpense(avgExpense)
-                .avgMonthlyIncome(avgIncome)
-                .avgMonthlyCashFlow(avgCashFlow)
-                .expenseGrowthPercent(expenseGrowth)
-                .incomeGrowthPercent(incomeGrowth)
+                .avgMonthlyExpense(agg.getAvgExpense())
+                .avgMonthlyIncome(agg.getAvgIncome())
+                .avgMonthlyCashFlow(agg.getAvgCashFlow())
+                .expenseGrowthPercent(agg.getExpenseGrowth())
+                .incomeGrowthPercent(agg.getIncomeGrowth())
+                .avgTransactionAmount(agg.getAvgTransactionAmount())
+                .monthlyTransactionCount(agg.getMonthlyTransactionCount())
                 .topCategories(topCategories)
-                .avgTransactionAmount(avgTransactionAmount)
-                .monthlyTransactionCount(monthlyTransactionCount)
                 .topRecipients(topRecipients)
                 .build();
     }
@@ -405,20 +251,6 @@ public class AnalyticsService {
         return value == null ? 0L : value;
     }
 
-    private RecommendationResponse emptyRec() {
-        return new RecommendationResponse(
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                List.of(),
-                BigDecimal.ZERO,
-                0,
-                List.of()
-        );
-    }
-
     private AiForecastResponse emptyForecast() {
         return new AiForecastResponse(
                 BigDecimal.ZERO,
@@ -450,7 +282,6 @@ public class AnalyticsService {
                 .multiply(BigDecimal.valueOf(100))
                 .divide(previous, 2, RoundingMode.HALF_UP);
     }
-
 
     private String resolveRecipientName(Long recipientId){
         try{
@@ -637,11 +468,19 @@ public class AnalyticsService {
 
         outSummary.setTotalExpense(outSummary.getTotalExpense().add(event.amount()));
         outSummary.setTransactionCount(outSummary.getTransactionCount() + 1);
-        outSummary.setCashFlow(outSummary.getTotalIncome().subtract(outSummary.getTotalExpense()));
 
-        inSummary.setTotalIncome(inSummary.getTotalIncome().add(event.amount()));
+        BigDecimal updatedIncome = nullSafe(outSummary.getTotalIncome());
+        BigDecimal updatedExpense = nullSafe(outSummary.getTotalExpense());
+
+        outSummary.setCashFlow(updatedIncome.subtract(updatedExpense));
+
+        inSummary.setTotalIncome(inSummary.getTotalIncome().add(event.convertedAmount()));
         inSummary.setTransactionCount(inSummary.getTransactionCount() + 1);
-        inSummary.setCashFlow(inSummary.getTotalIncome().subtract(inSummary.getTotalExpense()));
+
+        BigDecimal updatedIncomeIn = nullSafe(inSummary.getTotalIncome());
+        BigDecimal updatedExpenseIn = nullSafe(inSummary.getTotalExpense());
+
+        inSummary.setCashFlow(updatedIncomeIn.subtract(updatedExpenseIn));
 
         monthlyRepo.save(outSummary);
         monthlyRepo.save(inSummary);
@@ -679,10 +518,18 @@ public class AnalyticsService {
                         riskScore,
                         0));
 
-        summary.setFlaggedCount(summary.getFlaggedCount() + 1);
         summary.setMaxRiskScore(Math.max(summary.getMaxRiskScore(), riskScore));
         summary.setMinRiskScore(Math.min(summary.getMinRiskScore(), riskScore));
-        summary.setAvgRiskScore((summary.getAvgRiskScore() + riskScore)/2);
+
+        int newCount = summary.getFlaggedCount() + 1;
+
+        int newAvg = (
+                summary.getAvgRiskScore() * summary.getFlaggedCount()
+                        + riskScore
+        ) / newCount;
+
+        summary.setAvgRiskScore(newAvg);
+        summary.setFlaggedCount(newCount);
 
         riskRepo.save(summary);
     }
@@ -691,37 +538,154 @@ public class AnalyticsService {
 
         int n = values.size();
 
-        if (n < 2) {
-            return values.isEmpty() ? BigDecimal.ZERO : values.getFirst();
+        if (n == 0) {
+            return BigDecimal.ZERO;
         }
 
-        double sumX = 0;
-        double sumY = 0;
-        double sumXY = 0;
-        double sumXX = 0;
+        if (n == 1) {
+            return values.getFirst().setScale(2, RoundingMode.HALF_UP);
+        }
+
+        BigDecimal sumX = BigDecimal.ZERO;
+        BigDecimal sumY = BigDecimal.ZERO;
+        BigDecimal sumXY = BigDecimal.ZERO;
+        BigDecimal sumXX = BigDecimal.ZERO;
 
         for (int i = 0; i < n; i++) {
-            double x = i + 1;
-            double y = values.get(i).doubleValue();
 
-            sumX += x;
-            sumY += y;
-            sumXY += x * y;
-            sumXX += x * x;
+            BigDecimal x = BigDecimal.valueOf(i + 1);
+            BigDecimal y = values.get(i);
+
+            sumX = sumX.add(x);
+            sumY = sumY.add(y);
+            sumXY = sumXY.add(x.multiply(y));
+            sumXX = sumXX.add(x.multiply(x));
         }
 
-        double slope =
-                (n * sumXY - sumX * sumY) /
-                        (n * sumXX - sumX * sumX);
+        BigDecimal bigN = BigDecimal.valueOf(n);
 
-        double intercept =
-                (sumY - slope * sumX) / n;
+        BigDecimal numerator =
+                bigN.multiply(sumXY)
+                        .subtract(sumX.multiply(sumY));
 
-        double nextX = n + 1;
+        BigDecimal denominator =
+                bigN.multiply(sumXX)
+                        .subtract(sumX.multiply(sumX));
 
-        double forecast = intercept + slope * nextX;
+        if (denominator.compareTo(BigDecimal.ZERO) == 0) {
+            return values.get(n - 1).setScale(2, RoundingMode.HALF_UP);
+        }
 
-        return BigDecimal.valueOf(forecast)
-                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal slope = numerator.divide(
+                denominator,
+                10,
+                RoundingMode.HALF_UP
+        );
+
+        BigDecimal intercept = sumY
+                .subtract(slope.multiply(sumX))
+                .divide(bigN, 10, RoundingMode.HALF_UP);
+
+        BigDecimal nextX = BigDecimal.valueOf(n + 1);
+
+        BigDecimal forecast = intercept.add(
+                slope.multiply(nextX)
+        );
+
+        return forecast.setScale(2, RoundingMode.HALF_UP);
     }
+
+    private FinancialAggregate aggregateLastMonths(Long userId, int monthsBack) {
+
+        YearMonth currentMonth = YearMonth.now();
+        YearMonth fromMonth = currentMonth.minusMonths(monthsBack);
+
+        List<AnalyticsMonthlySummary> summaries =
+                monthlyRepo.findByIdUserIdAndIdYearMonthBetween(
+                        userId,
+                        fromMonth,
+                        currentMonth
+                );
+
+        if (summaries.isEmpty()) {
+            return FinancialAggregate.empty();
+        }
+
+        summaries.sort(Comparator.comparing(m -> m.getId().getYearMonth()));
+
+        BigDecimal totalIncome = BigDecimal.ZERO;
+        BigDecimal totalExpense = BigDecimal.ZERO;
+        BigDecimal totalCashFlow = BigDecimal.ZERO;
+        long totalTransactions = 0;
+
+        for (AnalyticsMonthlySummary m : summaries) {
+            totalIncome = totalIncome.add(nullSafe(m.getTotalIncome()));
+            totalExpense = totalExpense.add(nullSafe(m.getTotalExpense()));
+            totalCashFlow = totalCashFlow.add(nullSafe(m.getCashFlow()));
+            totalTransactions += nullSafe(m.getTransactionCount());
+        }
+
+        int months = summaries.size();
+
+        return FinancialAggregate.builder()
+                .avgIncome(divide(totalIncome, months))
+                .avgExpense(divide(totalExpense, months))
+                .avgCashFlow(divide(totalCashFlow, months))
+                .avgTransactionAmount(
+                        totalTransactions == 0
+                                ? BigDecimal.ZERO
+                                : totalIncome.add(totalExpense)
+                                .divide(BigDecimal.valueOf(totalTransactions), 2, RoundingMode.HALF_UP)
+                )
+                .monthlyTransactionCount((int) (totalTransactions / months))
+                .expenseGrowth(growthPercent(
+                        nullSafe(summaries.get(months - 2).getTotalExpense()),
+                        nullSafe(summaries.get(months - 1).getTotalExpense())
+                ))
+                .incomeGrowth(growthPercent(
+                        nullSafe(summaries.get(months - 2).getTotalIncome()),
+                        nullSafe(summaries.get(months - 1).getTotalIncome())
+                ))
+                .fromMonth(fromMonth)
+                .toMonth(currentMonth)
+                .build();
+    }
+
+    private List<AnalyticsCategoryResponse> buildCategoryStats(Long userId, LocalDate from, LocalDate to) {
+        List<AnalyticsCategorySummary> summaries =
+                categorySummaryRepo.findAllByIdUserIdAndIdDateBetween(userId, from, to);
+
+        if (summaries.isEmpty()) return List.of();
+
+        BigDecimal total = summaries.stream()
+                .map(AnalyticsCategorySummary::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (total.compareTo(BigDecimal.ZERO) == 0) return List.of();
+
+        return summaries.stream()
+                .collect(Collectors.groupingBy(
+                        s -> s.getId().getCategory(),
+                        Collectors.reducing(BigDecimal.ZERO,
+                                AnalyticsCategorySummary::getTotalAmount,
+                                BigDecimal::add)
+                ))
+                .entrySet()
+                .stream()
+                .map(e -> {
+                    BigDecimal amount = e.getValue();
+                    int percent = amount.multiply(BigDecimal.valueOf(100))
+                            .divide(total, 0, RoundingMode.HALF_UP)
+                            .intValue();
+
+                    return new AnalyticsCategoryResponse(
+                            e.getKey(),
+                            amount,
+                            percent
+                    );
+                })
+                .sorted(Comparator.comparing(AnalyticsCategoryResponse::totalAmount).reversed())
+                .toList();
+    }
+
 }

@@ -30,6 +30,7 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final CardRepository cardRepository;
     private final UserServiceClient userServiceClient;
+    private final LoanPaymentService loanPaymentService;
 
     @Transactional
     public Account createAccount(AccountCreateDto accountDto,Long userId) {
@@ -106,6 +107,11 @@ public class AccountService {
         }
 
         account.setBalance(account.getBalance().add(amount));
+
+        if (account.getType() == AccountType.CREDIT) {
+            loanPaymentService.processCreditAccountPayment(account, amount);
+        }
+
         return accountRepository.save(account);
     }
 
@@ -146,6 +152,20 @@ public class AccountService {
                 .orElseThrow(() -> new AccountNotFoundException("Account with id " + accountId + " not found"));
     }
 
+    @Transactional(readOnly = true)
+    public Account getCreditAccountById(Long userId, Long accountId) {
+        Account account = accountRepository.findByIdAndUserIdAndStatus(userId,accountId,Status.ACTIVE)
+                .orElseThrow(() -> new AccountNotFoundException("Account with id " + accountId + " not found"));
+
+        if(account.getType() != AccountType.CREDIT) throw new IllegalArgumentException("Only CREDIT accounts allowed");
+        return account;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Account> getCreditAccountsEntities(Long userId){
+        return accountRepository.findAllByUserIdAndStatusAndType(userId,Status.ACTIVE,AccountType.CREDIT);
+    }
+
     @Transactional
     public Account setStatus(Long accountId, Status status) {
         log.debug("Attempting to change account status accountId={}", accountId);
@@ -166,6 +186,20 @@ public class AccountService {
                 .orElseThrow(() -> new CardNotFoundException("Card not found: " + cardNumber));
 
         return AccountResponse.fromEntity(account);
+    }
+
+    @Transactional
+    public void creditAccount(Long accountId, BigDecimal amount) {
+
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
+            throw new InvalidAmountException("Amount must be greater than zero");
+
+        Account account = getAccountById(accountId);
+
+        if (account.getStatus() != Status.ACTIVE)
+            throw new AccountLockedException("Account is not active");
+
+        account.setBalance(account.getBalance().add(amount));
     }
 
     private String generateIban() {

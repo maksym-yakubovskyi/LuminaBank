@@ -1,9 +1,6 @@
 package com.lumina_bank.aiassistantservice.service.client.account;
 
-import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountCreateDto;
-import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountResponse;
-import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardCreateDto;
-import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardResponse;
+import com.lumina_bank.aiassistantservice.domain.dto.client.account.*;
 import com.lumina_bank.aiassistantservice.util.FeignExceptionMapper;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +35,7 @@ public class FeignAccountGateway {
         }
     }
 
+
     public List<CardResponse> getMyCards(){
         try {
             return Optional.ofNullable(client.getMyCards().getBody())
@@ -58,6 +56,41 @@ public class FeignAccountGateway {
     public List<CardResponse> getCardsByAccountId(Long accountId){
         try {
             return Optional.ofNullable(client.getCardsByAccountId(accountId).getBody())
+                    .orElse(List.of());
+        } catch (FeignException e) {
+            throw mapper.map(e);
+        }
+    }
+
+    public List<LoanOfferResponse> getLoanOffers (LoanApplicationRequest request){
+        try {
+            return Optional.ofNullable(client.getLoanOffers(request).getBody())
+                    .orElse(List.of());
+        } catch (FeignException e) {
+            throw mapper.map(e);
+        }
+    }
+
+    public LoanResponse approveLoan (LoanApplicationRequest request){
+        try {
+            return client.approveLoan(request).getBody();
+        } catch (FeignException e) {
+            throw mapper.map(e);
+        }
+    }
+
+    public List<LoanResponse> getMyLoans (){
+        try {
+            return Optional.ofNullable(client.getMyLoans().getBody())
+                    .orElse(List.of());
+        } catch (FeignException e) {
+            throw mapper.map(e);
+        }
+    }
+
+    public List<AccountResponse> getAvailableCreditAccounts (){
+        try {
+            return Optional.ofNullable(client.getAvailableCreditAccounts().getBody())
                     .orElse(List.of());
         } catch (FeignException e) {
             throw mapper.map(e);

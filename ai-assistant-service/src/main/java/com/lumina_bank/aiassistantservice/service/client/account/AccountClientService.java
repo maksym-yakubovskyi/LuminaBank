@@ -1,9 +1,6 @@
 package com.lumina_bank.aiassistantservice.service.client.account;
 
-import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountCreateDto;
-import com.lumina_bank.aiassistantservice.domain.dto.client.account.AccountResponse;
-import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardCreateDto;
-import com.lumina_bank.aiassistantservice.domain.dto.client.account.CardResponse;
+import com.lumina_bank.aiassistantservice.domain.dto.client.account.*;
 import com.lumina_bank.aiassistantservice.security.FeignSecurityConfig;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +20,7 @@ public interface AccountClientService {
     @PostMapping("/accounts")
     ResponseEntity<AccountResponse> createAccount(@RequestBody AccountCreateDto dto);
 
+
     @GetMapping("/cards/my")
     ResponseEntity<List<CardResponse>> getMyCards();
 
@@ -32,4 +30,16 @@ public interface AccountClientService {
     @GetMapping("/cards/{accountId}")
     ResponseEntity<List<CardResponse>> getCardsByAccountId(@PathVariable Long accountId);
 
+
+    @PostMapping("/accounts/loans/offers")
+    ResponseEntity<List<LoanOfferResponse>> getLoanOffers(@RequestBody LoanApplicationRequest request);
+
+    @PostMapping("/accounts/loans/approve")
+    ResponseEntity<LoanResponse> approveLoan(@RequestBody LoanApplicationRequest request);
+
+    @GetMapping("/accounts/loans/my")
+    ResponseEntity<List<LoanResponse>> getMyLoans();
+
+    @GetMapping("/accounts/loans/available-credit-accounts")
+    ResponseEntity<List<AccountResponse>> getAvailableCreditAccounts();
 }

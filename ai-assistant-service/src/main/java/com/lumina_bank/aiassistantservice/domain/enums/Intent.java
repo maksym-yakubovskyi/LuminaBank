@@ -20,6 +20,9 @@ public enum Intent {
     LIST_CARDS("User wants to see all cards or information about an card/cards."),
     LIST_ACCOUNT_CARDS("User wants to see cards that belong to a specific account."),
 
+    LIST_LOANS("User wants to see all their loans or details about existing loans."),
+    CREATE_LOAN("User wants to apply for a new loan."),
+
     USER_INFORMATION("User wants to view their personal profile or information."),
     UPDATE_USER_INFORMATION("User wants to update or change their personal profile information."),
 
