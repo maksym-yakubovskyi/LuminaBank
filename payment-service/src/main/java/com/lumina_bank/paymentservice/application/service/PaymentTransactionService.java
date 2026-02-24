@@ -1,0 +1,122 @@
+package com.lumina_bank.paymentservice.application.service;
+
+import com.lumina_bank.common.dto.event.payment_events.PaymentBlockedEvent;
+import com.lumina_bank.common.dto.event.payment_events.PaymentCompletedEvent;
+import com.lumina_bank.common.dto.event.payment_events.PaymentFlaggedEvent;
+import com.lumina_bank.paymentservice.domain.enums.PaymentStatus;
+import com.lumina_bank.paymentservice.domain.model.Payment;
+import com.lumina_bank.paymentservice.domain.model.PaymentTemplate;
+import com.lumina_bank.paymentservice.domain.repository.PaymentRepository;
+import com.lumina_bank.paymentservice.infrastructure.messaging.producer.PaymentEventsPublisher;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class PaymentTransactionService {
+    private final PaymentRepository paymentRepository;
+    private final PaymentEventsPublisher paymentEventsPublisher;
+
+    @Transactional
+    public void markProcessing(Payment payment) {
+        if (payment.getPaymentStatus() != PaymentStatus.PENDING) return;
+        payment.setPaymentStatus(PaymentStatus.PROCESSING);
+    }
+
+    @Transactional
+    public void markSuccess(Payment  payment) {
+        payment.setPaymentStatus(PaymentStatus.SUCCESS);
+        payment.setCompletedAt(LocalDateTime.now());
+
+        paymentEventsPublisher.publishPaymentCompleted(
+                new PaymentCompletedEvent(
+                        payment.getId(),
+                        payment.getUserId(),
+                        payment.getToAccountOwnerId(),
+                        payment.getFromAccountId(),
+                        payment.getToAccountId(),
+                        payment.getAmount(),
+                        payment.getConvertedAmount(),
+                        payment.getFromCurrency().name(),
+                        payment.getToCurrency().name(),
+                        payment.getCategory(),
+                        LocalDateTime.now()
+                )
+        );
+    }
+
+    @Transactional
+    public void markFailed(Payment  payment) {
+        payment.setPaymentStatus(PaymentStatus.FAILED);
+        payment.setCompletedAt(LocalDateTime.now());
+    }
+
+    @Transactional
+    public void markPending(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId).orElse(null);
+        if (payment == null) return;
+        if (payment.getPaymentStatus() != PaymentStatus.RISK_PENDING) return;
+        payment.setPaymentStatus(PaymentStatus.PENDING);
+    }
+
+    @Transactional
+    public void markBlocking(Long paymentId, int riskScore,List<String> reasons) {
+        Payment payment = paymentRepository.findById(paymentId).orElse(null);
+        if (payment == null) return;
+        if (payment.getPaymentStatus() != PaymentStatus.RISK_PENDING) return;
+        payment.setPaymentStatus(PaymentStatus.BLOCKED);
+
+        paymentEventsPublisher.publishPaymentBlocking(
+                new PaymentBlockedEvent(
+                        payment.getId(),
+                        payment.getUserId(),
+                        payment.getAmount(),
+                        payment.getCategory(),
+                        riskScore,
+                        reasons,
+                        LocalDateTime.now()
+                )
+        );
+    }
+
+    @Transactional
+    public void markFlagged(Long paymentId, int riskScore, List<String> reasons) {
+        Payment payment = paymentRepository.findById(paymentId).orElse(null);
+        if (payment == null) return;
+        if (payment.getPaymentStatus() != PaymentStatus.RISK_PENDING) return;
+        payment.setPaymentStatus(PaymentStatus.FLAGGED);
+
+        paymentEventsPublisher.publishPaymentFlagged(
+                new PaymentFlaggedEvent(
+                        payment.getId(),
+                        payment.getUserId(),
+                        payment.getAmount(),
+                        payment.getCategory(),
+                        riskScore,
+                        reasons,
+                        LocalDateTime.now()
+                )
+        );
+    }
+
+    @Transactional
+    public Payment createPendingPayment(PaymentTemplate paymentTemplate) {
+        Payment payment = Payment.builder()
+                .userId(paymentTemplate.getUserId())
+                .fromCardNumber(paymentTemplate.getFromCardNumber())
+                .toCardNumber(paymentTemplate.getToCardNumber())
+                .amount(paymentTemplate.getAmount())
+                .description(paymentTemplate.getDescription())
+                .template(paymentTemplate)
+                .paymentStatus(PaymentStatus.PENDING)
+                .category(paymentTemplate.getCategory())
+                .build();
+
+        return paymentRepository.save(payment);
+    }
+
+}
