@@ -15,6 +15,7 @@ import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -101,6 +102,19 @@ public class PaymentTemplateService {
     @Transactional(readOnly = true)
     public List<PaymentTemplate> getRecurredTemplatesBefore(LocalDateTime now) {
         return paymentTemplateRepository.findByIsRecurringTrueAndIsActiveTrueAndNextExecutionTimeBefore(now);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentTemplate> getTemplatesForReminder(LocalDateTime now, LocalDateTime reminderTime, Duration reminderBefore) {
+        LocalDateTime windowStart = now.minus(reminderBefore);
+
+        return paymentTemplateRepository.findTemplatesForReminder(now, reminderTime, windowStart);
+    }
+
+    @Transactional
+    public void markReminderSent(PaymentTemplate template, LocalDateTime now) {
+        template.setLastReminderSentAt(now);
+        paymentTemplateRepository.save(template);
     }
 
     @Transactional

@@ -3,7 +3,6 @@ package com.lumina_bank.accountservice.domain.model;
 import com.lumina_bank.accountservice.domain.enums.AccountType;
 import com.lumina_bank.accountservice.domain.enums.Status;
 import com.lumina_bank.common.enums.payment.Currency;
-import com.lumina_bank.common.enums.user.UserType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -31,8 +30,6 @@ public class Account {
     @Column(nullable = false)
     private Long userId;
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserType userType;
 
     @Column(nullable = false,precision = 15, scale = 2)
     private BigDecimal balance;

@@ -50,6 +50,7 @@ public class PaymentTemplate {
     private String recurrenceCron;
 
     private LocalDateTime nextExecutionTime;
+    private LocalDateTime lastReminderSentAt;
 
     @Column(nullable = false)
     private Boolean isActive;

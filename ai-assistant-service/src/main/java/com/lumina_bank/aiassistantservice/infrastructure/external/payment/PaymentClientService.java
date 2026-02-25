@@ -3,7 +3,6 @@ package com.lumina_bank.aiassistantservice.infrastructure.external.payment;
 import com.lumina_bank.aiassistantservice.infrastructure.external.payment.dto.*;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.FeignClientProperties;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface ExchangeRateRepository extends JpaRepository<ExchangeRate, Integer> {
+public interface ExchangeRateRepository extends JpaRepository<ExchangeRate, Long> {
     Optional<ExchangeRate> findTopByBaseCurrencyAndTargetCurrencyOrderByDateDesc(Currency from, Currency to);
 }

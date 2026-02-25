@@ -3,7 +3,6 @@ package com.lumina_bank.aiassistantservice.infrastructure.external.analytics;
 import com.lumina_bank.aiassistantservice.infrastructure.external.analytics.dto.*;
 import com.lumina_bank.aiassistantservice.infrastructure.security.FeignSecurityConfig;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 

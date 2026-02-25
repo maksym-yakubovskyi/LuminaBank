@@ -1,7 +1,5 @@
 package com.lumina_bank.userservice.application.service;
 
-import com.lumina_bank.common.enums.user.UserType;
-import com.lumina_bank.userservice.api.response.UserCheckResponse;
 import com.lumina_bank.userservice.domain.repository.BusinessUserRepository;
 import com.lumina_bank.userservice.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,14 +12,6 @@ import org.springframework.stereotype.Service;
 public class UserCheckService {
     private final UserRepository userRepository;
     private final BusinessUserRepository businessUserRepository;
-
-    public UserCheckResponse checkUser(Long userId) {
-        return userRepository.findById(userId)
-                .map(u-> new UserCheckResponse(u.getId(),true,u.getActive(), UserType.INDIVIDUAL_USER))
-                .orElseGet(()-> businessUserRepository.findById(userId)
-                        .map(bu-> new UserCheckResponse(bu.getId(),true,bu.getActive(),UserType.BUSINESS_USER))
-                        .orElse(new UserCheckResponse(userId,false,false,null)));
-    }
 
     public boolean checkUserExistsByEmailAndId(Long userId, String email) {
         if (userRepository.existsByEmailAndActiveTrue(email) ||

@@ -2,7 +2,6 @@ package com.lumina_bank.accountservice.application.service;
 
 import com.lumina_bank.accountservice.domain.exception.*;
 import com.lumina_bank.accountservice.api.request.AccountCreateRequest;
-import com.lumina_bank.accountservice.infrastructure.external.user.dto.UserCheckExternalResponse;
 import com.lumina_bank.accountservice.domain.enums.AccountType;
 import com.lumina_bank.accountservice.domain.enums.CountryBankCode;
 import com.lumina_bank.accountservice.domain.enums.Status;
@@ -10,10 +9,6 @@ import com.lumina_bank.accountservice.domain.model.Account;
 import com.lumina_bank.accountservice.domain.model.Card;
 import com.lumina_bank.accountservice.domain.repository.AccountRepository;
 import com.lumina_bank.accountservice.domain.repository.CardRepository;
-import com.lumina_bank.accountservice.infrastructure.external.user.UserServiceClient;
-import com.lumina_bank.common.enums.user.UserType;
-import com.lumina_bank.common.exception.ExternalServiceException;
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,20 +24,14 @@ import java.util.Random;
 public class AccountService {
     private final AccountRepository accountRepository;
     private final CardRepository cardRepository;
-    private final UserServiceClient userServiceClient;
     private final LoanPaymentService loanPaymentService;
 
     @Transactional
     public Account createAccount(AccountCreateRequest request, Long userId) {
-        UserCheckExternalResponse user = validateUser(userId);
-
-        validateAccountType(user.userType(), request.type());
-
         String iban = generateUniqueIban();
 
         Account account = Account.builder().
                 userId(userId).
-                userType(user.userType()).
                 balance(BigDecimal.ZERO).
                 iban(iban).
                 currency(request.currency()).
@@ -190,14 +179,6 @@ public class AccountService {
         return account;
     }
 
-    private void validateAccountType(UserType userType, AccountType accountType) {
-        if (userType == UserType.INDIVIDUAL_USER && accountType == AccountType.MERCHANT)
-            throw new AccountTypeNotAllowedException("Individual users cannot create MERCHANT accounts");
-
-        if (userType == UserType.BUSINESS_USER && accountType == AccountType.DEBIT)
-            throw new AccountTypeNotAllowedException("Business users cannot create DEBIT accounts");
-    }
-
     private String generateUniqueIban() {
         String iban;
         do {
@@ -217,21 +198,4 @@ public class AccountService {
         return CountryBankCode.UA.name() + controlDigit + CountryBankCode.UA.getBankCode() + accountNumber;
     }
 
-    private UserCheckExternalResponse validateUser(Long userId) {
-        try{
-            UserCheckExternalResponse body = userServiceClient.checkUser(userId);
-
-            if (body == null) throw new ExternalServiceException("User service returned empty body");
-            if (!body.exists()) throw new ExternalServiceException("User not found id=" + userId);
-            if (!body.active()) throw new ExternalServiceException("User is inactive id=" + userId);
-
-            return body;
-        } catch (FeignException e) {
-            log.error("User service HTTP error: status={}, message={}", e.status(), e.getMessage());
-            throw new ExternalServiceException("User service unavailable", e);
-        } catch (Exception e) {
-            log.error("Unexpected error while calling user service", e);
-            throw new ExternalServiceException("Failed to validate user", e);
-        }
-    }
 }

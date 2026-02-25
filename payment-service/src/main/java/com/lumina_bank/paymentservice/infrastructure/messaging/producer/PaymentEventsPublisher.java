@@ -1,9 +1,6 @@
 package com.lumina_bank.paymentservice.infrastructure.messaging.producer;
 
-import com.lumina_bank.common.dto.event.payment_events.PaymentBlockedEvent;
-import com.lumina_bank.common.dto.event.payment_events.PaymentCompletedEvent;
-import com.lumina_bank.common.dto.event.payment_events.PaymentCreatedEvent;
-import com.lumina_bank.common.dto.event.payment_events.PaymentFlaggedEvent;
+import com.lumina_bank.common.dto.event.payment_events.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
@@ -56,6 +53,18 @@ public class PaymentEventsPublisher {
             log.info("PaymentBlocked event sent successfully, paymentId={}", event.paymentId());
         }else{
             log.warn("Failed to publish PaymentBlockedEvent, paymentId={}", event.paymentId());
+        }
+    }
+
+    public void publishPaymentReminder(PaymentReminderEvent event){
+        log.info("Publishing PaymentReminder event to stream");
+
+        boolean sent = streamBridge.send("paymentReminder-out-0", event);
+
+        if(sent){
+            log.info("PaymentReminder event sent successfully");
+        }else {
+            log.warn("Failed to publish PaymentReminderEvent");
         }
     }
 }

@@ -10,7 +10,10 @@ import com.lumina_bank.authservice.domain.model.User;
 import com.lumina_bank.authservice.application.service.AuthService;
 import com.lumina_bank.authservice.application.service.EmailVerificationService;
 import com.lumina_bank.authservice.application.service.UserService;
+import com.lumina_bank.authservice.infrastructure.messaging.producer.UserEventsPublisher;
+import com.lumina_bank.common.dto.event.user_events.UserLoginEvent;
 import com.lumina_bank.common.security.JwtUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.time.Duration;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/auth")
@@ -36,10 +40,12 @@ public class AuthController {
     private final AuthService authService;
     private final UserService userService;
     private final EmailVerificationService emailVerificationService;
+    private final UserEventsPublisher userEventsPublisher;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(
             @Valid @RequestBody LoginRequest req,
+            HttpServletRequest request,
             HttpServletResponse response) {
         log.info("POST /auth/login - Login request received for email: {}", req.email());
 
@@ -56,6 +62,11 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         log.info("User successfully authenticated for email: {}", req.email());
+
+        String userAgent = request.getHeader("User-Agent");
+
+        userEventsPublisher.publishUserLogin(new UserLoginEvent(req.email(),userAgent, LocalDateTime.now()));
+
         return ResponseEntity.ok(
                 TokensResponse.builder()
                         .accessToken(tokens.accessToken())

@@ -28,14 +28,11 @@ public class UserEventsConsumerConfig {
 
             log.info("Received UserRegisteredEvent authUserId={}", event.authUserId());
             switch (event) {
-                case IndividualUserRegisteredEvent e ->
-                        userService.createUser(e);
+                case IndividualUserRegisteredEvent e -> userService.createUser(e);
 
-                case BusinessUserRegisteredEvent e ->
-                        businessUserService.createUser(e);
+                case BusinessUserRegisteredEvent e -> businessUserService.createUser(e);
 
-                default ->
-                        log.warn("Unknown event type: {}", event.getClass().getName());
+                default -> log.warn("Unknown event type: {}", event.getClass().getName());
             }
 
 //            if (event instanceof IndividualUserRegisteredEvent e){

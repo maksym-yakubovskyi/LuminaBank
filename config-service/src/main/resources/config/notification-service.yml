@@ -19,8 +19,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: carrental8080@gmail.com
-    password: qoae imhk nsfa coiz
+    username: luminabank.app@gmail.com
+    password:
     protocol: smtp
     default-encoding: UTF-8
     properties:
@@ -44,4 +44,5 @@ eureka:
 
 app:
   mail:
-    from: no-reply@luminabank.com
+    from: luminabank.app@gmail.com
+    from-name: LuminaBank
