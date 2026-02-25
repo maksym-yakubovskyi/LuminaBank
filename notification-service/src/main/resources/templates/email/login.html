@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="uk">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Вхід у ваш акаунт</title>
+</head>
+
+<body style="margin:0; padding:0; background-color:#f4f6f8; font-family:Arial, Helvetica, sans-serif;">
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:40px 0;">
+    <tr>
+        <td align="center">
+
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                   style="max-width:520px; background:#ffffff; padding:40px; border-radius:12px;">
+
+                <tr>
+                    <td style="text-align:center; padding-bottom:20px;">
+                        <h2 style="margin:0; color:#1a1a1a;">
+                            Вхід у ваш акаунт
+                        </h2>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="color:#555555; font-size:15px; padding-bottom:20px; text-align:center;">
+                        Ми зафіксували вхід у ваш акаунт.
+                        Якщо це були ви — ніяких дій не потрібно.
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="background:#f9fafb; padding:20px; border-radius:8px; font-size:14px; color:#333333;">
+                        <p style="margin:5px 0;">
+                            <strong>Дата і час:</strong>
+                            <span th:text="${loginTime}">24.02.2026 18:45 (UTC+2)</span>
+                        </p>
+                        <p style="margin:5px 0;">
+                            <strong>Пристрій:</strong>
+                            <span th:text="${device}">Windows 11 / Chrome</span>
+                        </p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="font-size:12px; color:#888888; text-align:center;">
+                        Якщо ви не здійснювали цей вхід, негайно змініть пароль
+                        або зверніться до служби підтримки.
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding-top:30px; text-align:center; font-size:12px; color:#cccccc;">
+                        © 2026 LuminaBank. Усі права захищені.
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

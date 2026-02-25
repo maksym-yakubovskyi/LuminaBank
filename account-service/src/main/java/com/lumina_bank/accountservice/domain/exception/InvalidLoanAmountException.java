@@ -1,0 +1,11 @@
+package com.lumina_bank.accountservice.domain.exception;
+
+import com.lumina_bank.common.exception.BusinessException;
+import org.springframework.http.HttpStatus;
+
+public class InvalidLoanAmountException extends BusinessException {
+
+    public InvalidLoanAmountException(String message) {
+        super(message, HttpStatus.BAD_REQUEST.value());
+    }
+}

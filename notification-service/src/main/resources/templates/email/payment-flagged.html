@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="uk">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Платіж на перевірці</title>
+</head>
+
+<body style="margin:0; padding:0; background:#f4f6f8; font-family:Arial, sans-serif;">
+
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0;">
+    <tr>
+        <td align="center">
+
+            <table width="100%" cellpadding="0" cellspacing="0"
+                   style="max-width:520px; background:#ffffff; padding:40px; border-radius:12px;">
+
+                <tr>
+                    <td style="text-align:center; padding-bottom:20px;">
+                        <h2 style="margin:0; color:#f0ad4e;">
+                            Платіж на перевірці ⚠
+                        </h2>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="font-size:15px; color:#555; padding-bottom:20px;">
+                        Ваш платіж тимчасово перевіряється системою безпеки.
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="background:#fff8e1; padding:20px; border-radius:8px; font-size:14px;">
+                        <p><strong>Сума:</strong> <span th:text="${amount}"></span></p>
+                        <p><strong>Категорія:</strong> <span th:text="${category}"></span></p>
+                        <p><strong>Дата:</strong> <span th:text="${flaggedAt}"></span></p>
+                        <p><strong>Рівень ризику:</strong> <span th:text="${riskScore}"></span></p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding-top:20px; font-size:13px; color:#888;">
+                        Ми повідомимо вас після завершення перевірки.
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding-top:30px; text-align:center; font-size:12px; color:#cccccc;">
+                        © 2026 LuminaBank. Усі права захищені.
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

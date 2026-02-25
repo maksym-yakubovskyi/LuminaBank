@@ -6,6 +6,6 @@ import org.springframework.http.HttpStatus;
 public class ServiceCallException extends BusinessException {
 
     public ServiceCallException(String message) {
-        super(message, HttpStatus.INTERNAL_SERVER_ERROR);
+        super(message, HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
 }
