@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 
 @Builder
 public record ServicePaymentRequest(
-        @NotBlank @Size(min = 16, max = 16) String fromCardNumber,
+        @NotBlank String fromCardNumber,
         @NotNull Long providerId,
         @NotBlank String category,
         @NotNull @DecimalMin(value = "0.01") BigDecimal amount,

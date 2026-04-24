@@ -30,4 +30,7 @@ public interface IntentDefinition {
     default boolean requiresFinalConfirmation() {
         return false;
     }
+    default boolean requiresParams(AssistantContext context) {
+        return !requiredParams(context).isEmpty();
+    }
 }

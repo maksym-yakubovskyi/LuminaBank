@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class RefreshTokenExpiredException extends BusinessException {
     public RefreshTokenExpiredException(String message) {
-        super(message, HttpStatus.UNAUTHORIZED);
+        super(message, HttpStatus.UNAUTHORIZED.value());
     }
 }

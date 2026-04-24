@@ -37,13 +37,13 @@ public class CollectingParamsHandler implements FlowHandler {
         IntentDefinition def = registry.get(c.getActiveIntent());
 
         Map<String, Object> extracted =
-                extractor.extract(message, c.getActiveIntent(), def.requiredParams(context), c.getId());
+                extractor.extract(message, c.getActiveIntent(), def.requiredParams(context), c.getAwaitingParam(), c.getId());
 
         Map<String, Object> params = paramsService.merge(c, extracted);
 
         params.put("originalMessage", message);
 
-        AssistantExecutionResult result =  def.execute(params, c.getId(),context);
+        AssistantExecutionResult result = def.execute(params, c.getId(),context);
 
         if (result.status() == ExecutionStatus.SUCCESS && def.requiresFinalConfirmation()) {
 
@@ -65,4 +65,3 @@ public class CollectingParamsHandler implements FlowHandler {
         return result;
     }
 }
-

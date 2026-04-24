@@ -6,6 +6,6 @@ import org.springframework.http.HttpStatus;
 public class SameAccountTransactionException extends BusinessException
 {
     public SameAccountTransactionException(String message) {
-        super(message, HttpStatus.BAD_REQUEST);
+        super(message, HttpStatus.BAD_REQUEST.value());
     }
 }

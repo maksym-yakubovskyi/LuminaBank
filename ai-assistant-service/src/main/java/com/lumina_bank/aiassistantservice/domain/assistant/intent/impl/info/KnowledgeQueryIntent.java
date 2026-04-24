@@ -38,10 +38,10 @@ public class KnowledgeQueryIntent implements IntentDefinition {
             AssistantContext context
     ) {
         try {
-            String userQuestion =
+            String userMessage =
                     (String) params.getOrDefault("originalMessage", "");
 
-            if (userQuestion == null || userQuestion.isBlank()) {
+            if (userMessage == null || userMessage.isBlank()) {
                 return AssistantExecutionResult.error(
                         intent(),
                         "EMPTY_QUESTION"
@@ -51,7 +51,7 @@ public class KnowledgeQueryIntent implements IntentDefinition {
 
             String answer = aiModelService.generateWithRag(
                     systemPrompt,
-                    userQuestion,
+                    userMessage,
                     context.role(),
                     conversationId.toString()
             );

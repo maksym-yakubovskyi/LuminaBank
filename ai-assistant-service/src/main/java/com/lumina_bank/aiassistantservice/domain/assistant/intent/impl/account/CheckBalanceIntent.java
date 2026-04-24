@@ -52,7 +52,12 @@ public class CheckBalanceIntent implements IntentDefinition {
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new BalanceData(accounts)
+                    new BalanceData(accounts),
+                    List.of(
+                            Intent.PAYMENT_HISTORY,
+                            Intent.TRANSFER_BY_CARD,
+                            Intent.ANALYTICS_MONTHLY
+                    )
             );
 
         }catch (ServiceCallException e) {

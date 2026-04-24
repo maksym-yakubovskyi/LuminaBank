@@ -136,7 +136,11 @@ public class CreateAccountIntent implements IntentDefinition {
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new AccountCreatedData(created)
+                    new AccountCreatedData(created),
+                    List.of(
+                            Intent.CREATE_CARD,
+                            Intent.CHECK_BALANCE
+                    )
             );
 
         } catch (ServiceCallException e) {

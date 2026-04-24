@@ -46,6 +46,9 @@ public class EmailConsumersConfig {
                 log.warn("Received null UserRegisteredEvent");
                 return;
             }
+
+            userContactInfoService.saveOrUpdate(event.authUserId(), event.email());
+
             switch (event) {
                 case IndividualUserRegisteredEvent e -> emailNotificationService.sendWelcomeIndividual(e);
 

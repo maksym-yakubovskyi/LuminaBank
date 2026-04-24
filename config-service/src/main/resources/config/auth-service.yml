@@ -4,8 +4,8 @@ server:
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/auth-service-DB
-    username: postgres
-    password: max228488
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -15,12 +15,17 @@ spring:
     stream:
       bindings:
         userRegistered-out-0:
-          destination: user-events
+          destination: user-registered-events
+          content-type: application/json
+
+        userLogin-out-0:
+          destination: user-login-events
           content-type: application/json
 
         emailVerificationRequested-out-0:
           destination: email-verification-events
           content-type: application/json
+
       kafka:
         binder:
           brokers: localhost:9092
@@ -41,4 +46,4 @@ app:
       refresh-token-ttl: 30d
       token-type: "Bearer"
     refresh-token:
-      hmac-secret: my-secret-123
+      hmac-secret: ${JWT_REFRESH_HMAC_SECRET}

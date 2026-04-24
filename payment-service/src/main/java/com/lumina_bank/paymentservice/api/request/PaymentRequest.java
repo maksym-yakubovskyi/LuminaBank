@@ -10,8 +10,8 @@ import java.math.BigDecimal;
 
 @Builder
 public record PaymentRequest(
-        @NotBlank @Size(min = 16, max = 16) String fromCardNumber,
-        @NotBlank @Size(min = 16, max = 16) String toCardNumber,
+        @NotBlank  String fromCardNumber,
+        @NotBlank  String toCardNumber,
         @NotNull @DecimalMin(value = "0.01") BigDecimal amount,
         @Size(max = 255) String description
 ) {}

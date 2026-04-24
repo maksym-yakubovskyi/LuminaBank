@@ -6,5 +6,6 @@ public enum MessageType {
     ANALYTICS,
     CONFIRM,
     ADVICE,
-    ERROR
+    ERROR,
+    CHAT_CLOSED
 }

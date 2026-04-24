@@ -1,0 +1,17 @@
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: stretch;
+    width: 100%;
+}
+.left,
+.right{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: var(--background);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+}

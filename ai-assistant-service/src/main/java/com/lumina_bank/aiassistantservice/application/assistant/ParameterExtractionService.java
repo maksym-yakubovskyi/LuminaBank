@@ -26,6 +26,7 @@ public class ParameterExtractionService  {
             String message,
             Intent intent,
             List<RequiredParam> schema,
+            String awaitingParam,
             UUID conversationId
     ) {
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
@@ -82,6 +83,9 @@ public class ParameterExtractionService  {
         - Extract exact meaningful phrase.
         - Trim spaces.
         - Do not modify content unless normalization required.
+        - If the user message consists of a short free-form phrase (1–3 words)
+          and a STRING parameter exists in the schema,
+          treat the entire message as the value of that parameter.
         
         DATE:
         - Normalize to YYYY-MM-DD.
@@ -103,16 +107,31 @@ public class ParameterExtractionService  {
           - MM-yyyy
           - yyyy-MM
           - yyyy/MM
+        - explicit month names (January, лютий, март, etc.)
+        - numeric formats (MM.yyyy, yyyy-MM, etc.)
+        - relative expressions
+        Relative expressions:
+        - "this month" / "цей місяць" → current month
+        - "last month" / "минулий місяць" → previous month
+        - "next month" → next month
         
-        SELECTION CONTEXT:
-        If schema contains options (e.g. account list):
-        - User may refer by:
-          - ordinal (first, другий)
-          - currency name
-          - partial identifier (last digits)
-          - descriptive phrase
-        - Map to the correct option value from schema.
-        
+        CONTEXT SELECTION RULE:
+        If the assistant previously asked for a specific parameter,
+        treat the user's reply as the value of that parameter.
+        If the assistant message contains a numbered or bulleted list of options,
+        the user may respond with:
+        - ordinal words (first, second, перший, другий)
+        - the number of the option
+        - partial identifier
+        - description
+        You must map the user response to the correct value from the assistant message list.
+
+        CLARIFICATION PRIORITY RULE:
+        If the assistant previously asked the user to provide a specific parameter,
+        the user's reply MUST be interpreted as the value of that parameter.
+        This rule has higher priority than all other extraction rules.
+        Do not attempt to map the message to other parameters.
+
         OUTPUT FORMAT:
         Return ONLY valid JSON.
         Example:
@@ -127,11 +146,15 @@ public class ParameterExtractionService  {
         
         Message: "%s"
         
+        CURRENT PARAMETER:
+        %s
+        
         Schema(JSON format):
         %s
         """.formatted(
                 intent,
                 message,
+                awaitingParam,
                 paramsJsonMapper.toJsonSchema(schema)
         );
 

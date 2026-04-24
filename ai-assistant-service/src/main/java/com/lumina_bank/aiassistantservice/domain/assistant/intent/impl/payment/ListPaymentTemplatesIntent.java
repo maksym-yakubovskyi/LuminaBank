@@ -53,7 +53,11 @@ public class ListPaymentTemplatesIntent implements IntentDefinition {
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new PaymentTemplatesData(templates)
+                    new PaymentTemplatesData(templates),
+                    List.of(
+                            Intent.PAYMENT_BY_TEMPLATE,
+                            Intent.PAYMENT_SERVICE_PROVIDER
+                    )
             );
 
         } catch (ServiceCallException e) {

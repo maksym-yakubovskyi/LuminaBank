@@ -1,0 +1,38 @@
+.container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.container > :first-child {
+    flex: 1;
+}
+
+.textarea {
+    min-height: 44px;
+    max-height: 120px;
+    resize: none;
+}
+
+.sendButton {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.disabled {
+    opacity: 0.6;
+}
+
+.disabled textarea {
+    cursor: not-allowed;
+}
+
+.disabled button {
+    cursor: not-allowed;
+}

@@ -1,6 +1,9 @@
 package com.lumina_bank.aiassistantservice.domain.assistant.flow.impl;
 
 import com.lumina_bank.aiassistantservice.domain.assistant.AssistantContext;
+import com.lumina_bank.aiassistantservice.domain.assistant.intent.IntentDefinition;
+import com.lumina_bank.aiassistantservice.domain.assistant.intent.IntentRegistry;
+import com.lumina_bank.aiassistantservice.domain.enums.ExecutionStatus;
 import com.lumina_bank.aiassistantservice.domain.enums.FlowState;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
 import com.lumina_bank.aiassistantservice.domain.assistant.flow.FlowHandler;
@@ -12,12 +15,16 @@ import com.lumina_bank.aiassistantservice.application.assistant.history.Conversa
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Component
 @RequiredArgsConstructor
 public class IdleHandler implements FlowHandler {
 
     private final IntentDetectionService intentDetector;
     private final ConversationStateService stateService;
+    private final IntentRegistry registry;
 
     @Override
     public FlowState supportedState() {
@@ -29,8 +36,31 @@ public class IdleHandler implements FlowHandler {
 
         IntentResult intent = intentDetector.detect(message,c.getId());
 
-        if (intent.confidence() < 0.8) {
+        if (intent.confidence() < 0.6 || intent.intent() == Intent.UNKNOWN) {
             return AssistantExecutionResult.error(Intent.UNKNOWN, "UNKNOWN_MESSAGE");
+        }
+
+        IntentDefinition def = registry.get(intent.intent());
+
+        if (!def.requiresParams(context)) {
+
+            Map<String,Object> params = new HashMap<>();
+
+            params.put("originalMessage", message);
+
+            stateService.initIntent(c, intent.intent(), null);
+
+            AssistantExecutionResult result =
+                    def.execute(params, c.getId(), context);
+
+            stateService.applyExecutionResult(c, result);
+
+            if (result.status() == ExecutionStatus.SUCCESS
+                    || result.status() == ExecutionStatus.ERROR) {
+                stateService.finishFlow(c);
+            }
+
+            return result;
         }
 
         stateService.initIntent(c, intent.intent(),FlowState.COLLECTING_PARAMS);
@@ -38,4 +68,3 @@ public class IdleHandler implements FlowHandler {
         return AssistantExecutionResult.continueFlow(intent.intent(), FlowState.COLLECTING_PARAMS);
     }
 }
-

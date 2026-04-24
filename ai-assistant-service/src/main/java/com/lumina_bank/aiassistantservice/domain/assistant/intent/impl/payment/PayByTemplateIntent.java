@@ -105,7 +105,11 @@ public class PayByTemplateIntent implements IntentDefinition {
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new EmptyData()
+                    new EmptyData(),
+                    List.of(
+                            Intent.PAYMENT_HISTORY,
+                            Intent.TRANSFER_BY_CARD
+                    )
             );
 
         } catch (ServiceCallException e) {

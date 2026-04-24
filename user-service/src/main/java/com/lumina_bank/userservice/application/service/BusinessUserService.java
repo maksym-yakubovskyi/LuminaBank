@@ -11,7 +11,6 @@ import com.lumina_bank.userservice.domain.model.BusinessUser;
 import com.lumina_bank.userservice.domain.repository.BusinessUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -99,13 +98,5 @@ public class BusinessUserService {
         BusinessUser bUser = getBusinessUserById(id);
         bUser.setActive(false);
         businessUserRepository.save(bUser);
-    }
-
-    @Transactional(readOnly = true)
-    public String getBusinessUserNameById(Long id) {
-        BusinessUser businessUser = businessUserRepository.findById(id)
-                .orElseThrow(() ->new UsernameNotFoundException("Business User not found with id=" + id));
-
-        return businessUser.getCompanyName();
     }
 }

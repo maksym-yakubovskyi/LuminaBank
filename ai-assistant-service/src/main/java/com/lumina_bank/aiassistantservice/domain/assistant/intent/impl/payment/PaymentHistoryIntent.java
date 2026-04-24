@@ -39,15 +39,15 @@ public class PaymentHistoryIntent implements IntentDefinition {
     public List<RequiredParam> requiredParams(AssistantContext context) {
         return List.of(
                 new RequiredParam(
-                        "mode",
-                        ParamType.ENUM,
-                        List.of("ALL", "LIMITED"),
-                        "History mode. 'ALL' means full history, 'LIMITED' means limited number of recent transactions."),
-                new RequiredParam(
                         "accountId",
                         ParamType.NUMBER,
                         List.of(),
                         "ID of the account."),
+                new RequiredParam(
+                        "mode",
+                        ParamType.ENUM,
+                        List.of("ALL", "LIMITED"),
+                        "History mode. 'ALL' means full history, 'LIMITED' means limited number of recent transactions."),
                 new RequiredParam(
                         "limit",
                         ParamType.NUMBER,
@@ -117,7 +117,7 @@ public class PaymentHistoryIntent implements IntentDefinition {
             if (!params.containsKey("mode")) {
                 return AssistantExecutionResult.askParam(
                         intent(),
-                        requiredParams(context).getFirst()
+                        requiredParams(context).get(1)
                 );
             }
 
@@ -173,7 +173,11 @@ public class PaymentHistoryIntent implements IntentDefinition {
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new PaymentHistoryData(history)
+                    new PaymentHistoryData(history),
+                    List.of(
+                            Intent.ANALYTICS_MONTHLY,
+                            Intent.ANALYTICS_BY_CATEGORY
+                    )
             );
 
         } catch (ServiceCallException e) {

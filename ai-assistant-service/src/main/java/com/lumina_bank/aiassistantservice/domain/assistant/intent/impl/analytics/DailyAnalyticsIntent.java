@@ -142,6 +142,10 @@ public class DailyAnalyticsIntent implements IntentDefinition {
                             overview.totalIncome(),
                             overview.totalExpense(),
                             overview.transactionCount()
+                    ),
+                    List.of(
+                            Intent.ANALYTICS_MONTHLY,
+                            Intent.ANALYTICS_BY_CATEGORY
                     )
             );
 

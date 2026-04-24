@@ -11,44 +11,73 @@ import com.lumina_bank.aiassistantservice.domain.enums.Intent;
 import java.util.List;
 
 public record AssistantExecutionResult(
+
         ExecutionStatus status,
         Intent intent,
         AssistantData data,
         String errorMessage,
+
         FlowState nextFlowState,
         Intent nextIntent,
+
+        List<Intent> nextActions,
+
         ExecutionDirective directive
 ) {
+
     public static AssistantExecutionResult success(
-            Intent intent, AssistantData data
+            Intent intent,
+            AssistantData data
     ) {
-        return respond(
+        return success(intent, data, List.of());
+    }
+
+    public static AssistantExecutionResult success(
+            Intent intent,
+            AssistantData data,
+            List<Intent> nextActions
+    ) {
+        return new AssistantExecutionResult(
                 ExecutionStatus.SUCCESS,
                 intent,
                 data,
-                null
+                null,
+                null,
+                null,
+                nextActions,
+                ExecutionDirective.RESPOND
         );
     }
 
     public static AssistantExecutionResult error(
-            Intent intent, String errorMessage
+            Intent intent,
+            String errorMessage
     ) {
-        return respond(
+        return new AssistantExecutionResult(
                 ExecutionStatus.ERROR,
                 intent,
                 new EmptyData(),
-                errorMessage
+                errorMessage,
+                null,
+                null,
+                List.of(),
+                ExecutionDirective.RESPOND
         );
     }
 
     public static AssistantExecutionResult needClarification(
-            Intent intent, AssistantData data
-    ){
-        return respond(
+            Intent intent,
+            AssistantData data
+    ) {
+        return new AssistantExecutionResult(
                 ExecutionStatus.NEED_CLARIFICATION,
                 intent,
                 data,
-                null
+                null,
+                null,
+                null,
+                List.of(),
+                ExecutionDirective.RESPOND
         );
     }
 
@@ -58,7 +87,7 @@ public record AssistantExecutionResult(
     ) {
         return needClarification(
                 intent,
-                new MissingParamsData(intent, List.of(param))
+                new MissingParamsData(intent, List.of(param),param.name())
         );
     }
 
@@ -67,11 +96,15 @@ public record AssistantExecutionResult(
             AssistantData data,
             Intent nextIntent
     ) {
-        return confirmation(
+        return new AssistantExecutionResult(
+                ExecutionStatus.NEED_CONFIRMATION,
                 currentIntent,
                 data,
+                null,
                 FlowState.CONFIRM_NAVIGATION,
-                nextIntent
+                nextIntent,
+                List.of(),
+                ExecutionDirective.RESPOND
         );
     }
 
@@ -79,14 +112,17 @@ public record AssistantExecutionResult(
             Intent intent,
             AssistantData data
     ) {
-        return confirmation(
+        return new AssistantExecutionResult(
+                ExecutionStatus.NEED_CONFIRMATION,
                 intent,
                 data,
+                null,
                 FlowState.CONFIRM_FINAL,
-                null
+                null,
+                List.of(),
+                ExecutionDirective.RESPOND
         );
     }
-
     public static AssistantExecutionResult continueFlow(
             Intent intent,
             FlowState nextFlowState
@@ -98,41 +134,8 @@ public record AssistantExecutionResult(
                 null,
                 nextFlowState,
                 null,
+                List.of(),
                 ExecutionDirective.CONTINUE_FLOW
-        );
-    }
-
-    private static AssistantExecutionResult respond(
-            ExecutionStatus status,
-            Intent intent,
-            AssistantData data,
-            String error
-    ) {
-        return new AssistantExecutionResult(
-                status,
-                intent,
-                data,
-                error,
-                null,
-                null,
-                ExecutionDirective.RESPOND
-        );
-    }
-
-    private static AssistantExecutionResult confirmation(
-            Intent intent,
-            AssistantData data,
-            FlowState flowState,
-            Intent nextIntent
-    ) {
-        return new AssistantExecutionResult(
-                ExecutionStatus.NEED_CONFIRMATION,
-                intent,
-                data,
-                null,
-                flowState,
-                nextIntent,
-                ExecutionDirective.RESPOND
         );
     }
 }

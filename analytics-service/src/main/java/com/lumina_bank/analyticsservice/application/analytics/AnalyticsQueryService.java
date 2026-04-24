@@ -4,6 +4,7 @@ import com.lumina_bank.analyticsservice.api.response.analytics.AnalyticsCategory
 import com.lumina_bank.analyticsservice.api.response.analytics.AnalyticsDailyOverviewResponse;
 import com.lumina_bank.analyticsservice.api.response.analytics.AnalyticsMonthlyOverviewResponse;
 import com.lumina_bank.analyticsservice.api.response.analytics.AnalyticsTopRecipientResponse;
+import com.lumina_bank.analyticsservice.application.service.UserContactInfoService;
 import com.lumina_bank.analyticsservice.domain.model.AnalyticsDailySummary;
 import com.lumina_bank.analyticsservice.domain.model.AnalyticsMonthlySummary;
 import com.lumina_bank.analyticsservice.domain.model.AnalyticsTopRecipients;
@@ -31,7 +32,7 @@ public class AnalyticsQueryService {
     private final AnalyticsTransactionEventRepository transactionEventRepo;
     private final AnalyticsMonthlySummaryRepository monthlyRepo;
     private final AnalyticsTopRecipientsRepository topRecipientsRepo;
-    private final RecipientNameResolver  resolver;
+    private final UserContactInfoService userContactInfoService;
     private final CategoryAnalyticsService categoryService;
 
     @Transactional(readOnly = true)
@@ -98,7 +99,7 @@ public class AnalyticsQueryService {
         return recipients.stream()
                 .map(r -> AnalyticsTopRecipientResponse.builder()
                         .recipientId(r.getRecipientId())
-                        .displayName(resolver.resolveRecipientName(r.getRecipientId()))
+                        .displayName(userContactInfoService.getName(r.getRecipientId()))
                         .totalAmount(r.getTotalAmount())
                         .transactionCount(r.getTransactionCount())
                         .build()

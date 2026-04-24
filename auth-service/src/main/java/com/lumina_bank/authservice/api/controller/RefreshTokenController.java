@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,9 +23,13 @@ public class RefreshTokenController {
     private final RefreshTokenService refreshTokenService;
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@CookieValue("refresh_token") String refreshToken,
-                                          HttpServletResponse response) {
+    public ResponseEntity<?> refreshToken(
+            @CookieValue(value = "refresh_token", required = false) String refreshToken,
+            HttpServletResponse response
+    ) {
         log.info("POST /refresh - Refresh token request received");
+
+        if (refreshToken == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         TokensWithRefresh tokens = refreshTokenService.refreshToken(refreshToken);
 

@@ -63,11 +63,4 @@ public class BusinessUserController {
         log.info("User deleted id={} (soft delete)", userId);
         return ResponseEntity.noContent().build();
     }
-
-    @GetMapping("/name/{id}")
-    public ResponseEntity<?> getBusinessUserNameById(@PathVariable Long id){
-        log.info("GET /businessusers/name/id - Fetching business user with id={}", id);
-
-        return ResponseEntity.ok(businessUserService.getBusinessUserNameById(id));
-    }
 }

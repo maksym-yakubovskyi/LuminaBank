@@ -1,0 +1,120 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+/* Заголовок */
+.title {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+/* Основна картка */
+.summaryCard {
+    background: var(--background);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+/* KPI */
+.kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.kpiLabel {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.kpiValue {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Статус */
+.status {
+    font-weight: 600;
+}
+
+.statusActive {
+    color: #16a34a;
+}
+
+.statusClosed {
+    color: #64748b;
+}
+
+.statusOverdue {
+    color: #dc2626;
+}
+
+/* Installments */
+
+.installmentsSection {
+    background: var(--background);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.installmentsTitle {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.installmentRow {
+    display: grid;
+    grid-template-columns: 80px 120px 1fr 120px;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #eef2f6;
+    font-size: 14px;
+}
+
+.installmentNumber {
+    font-weight: 600;
+}
+
+.installmentStatus {
+    font-weight: 600;
+    text-align: right;
+}
+
+.paid {
+    color: #16a34a;
+}
+.pending {
+    color: #64748b;
+}
+
+.due {
+    color: #f59e0b;
+}
+
+.partial {
+    color: #0ea5e9;
+}
+
+.paid {
+    color: #16a34a;
+}
+
+.overdue {
+    color: #dc2626;
+}
+
+.closed {
+    color: #94a3b8;
+}

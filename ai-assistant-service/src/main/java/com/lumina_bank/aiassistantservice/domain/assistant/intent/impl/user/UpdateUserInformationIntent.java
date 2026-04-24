@@ -187,7 +187,10 @@ public class UpdateUserInformationIntent implements IntentDefinition {
 
         return AssistantExecutionResult.success(
                 intent(),
-                new UserUpdatedData(updated)
+                new UserUpdatedData(updated),
+                List.of(
+                        Intent.USER_INFORMATION
+                )
         );
     }
 

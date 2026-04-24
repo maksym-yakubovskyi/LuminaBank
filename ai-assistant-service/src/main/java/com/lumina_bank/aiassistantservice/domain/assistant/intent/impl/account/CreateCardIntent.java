@@ -230,7 +230,11 @@ public class CreateCardIntent implements IntentDefinition{
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new CardCreatedData(created)
+                    new CardCreatedData(created),
+                    List.of(
+                            Intent.CHECK_BALANCE,
+                            Intent.TRANSFER_BY_CARD
+                    )
             );
         }catch (ServiceCallException e) {
             return AssistantExecutionResult.error(

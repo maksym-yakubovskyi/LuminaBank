@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class UnknownOperationException extends BusinessException {
     public UnknownOperationException(String message) {
-        super(message, HttpStatus.BAD_REQUEST);
+        super(message, HttpStatus.BAD_REQUEST.value());
     }
 }

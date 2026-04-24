@@ -53,11 +53,4 @@ public class UserController {
         log.info("User deleted id={} (soft delete)", userId);
         return ResponseEntity.noContent().build();
     }
-
-    @GetMapping("/name/{id}")
-    public ResponseEntity<?> getUserNameById(@PathVariable Long id){
-        log.info("GET /users/name/{id} - Fetching user with id={}", id);
-
-        return ResponseEntity.ok(userService.getUserNameById(id));
-    }
 }

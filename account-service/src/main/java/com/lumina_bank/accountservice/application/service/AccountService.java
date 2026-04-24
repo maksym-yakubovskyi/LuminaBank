@@ -44,7 +44,7 @@ public class AccountService {
 
     @Transactional(readOnly = true)
     public List<Account> getAccountsByUserId(Long userId) {
-        return accountRepository.findAllByUserIdAndStatus(userId, Status.ACTIVE);
+        return accountRepository.findAllByUserIdAndStatusOrderByCreatedAtAsc(userId, Status.ACTIVE);
     }
 
     @Transactional(readOnly = true)
@@ -127,7 +127,7 @@ public class AccountService {
 
     @Transactional(readOnly = true)
     public Account getCreditAccountById(Long userId, Long accountId) {
-        Account account = accountRepository.findByIdAndUserIdAndStatus(userId,accountId,Status.ACTIVE)
+        Account account = accountRepository.findByIdAndUserIdAndStatus(accountId, userId,Status.ACTIVE)
                 .orElseThrow(() -> new AccountNotFoundException("Account with id " + accountId + " not found"));
 
         if(account.getType() != AccountType.CREDIT) throw new IllegalArgumentException("Only CREDIT accounts allowed");

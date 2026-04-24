@@ -8,5 +8,6 @@ import java.util.List;
 
 public record MissingParamsData(
         Intent intent,
-        List<RequiredParam> missingParams
+        List<RequiredParam> missingParams,
+        String currentParam
 ) implements AssistantData {}

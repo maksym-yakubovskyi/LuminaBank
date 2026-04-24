@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class EmailVerificationNotFoundException extends BusinessException {
     public EmailVerificationNotFoundException(String message) {
-        super(message, HttpStatus.NOT_FOUND);
+        super(message, HttpStatus.NOT_FOUND.value());
     }
 }

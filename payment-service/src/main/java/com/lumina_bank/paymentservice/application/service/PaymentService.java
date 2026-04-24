@@ -56,7 +56,7 @@ public class PaymentService {
                 .toCardNumber(request.toCardNumber())
                 .amount(request.amount())
                 .description(request.description())
-                .paymentStatus(PaymentStatus.RISK_PENDING)
+                .paymentStatus(PaymentStatus.PENDING)
                 .category("TRANSFER")
                 .build();
 
@@ -86,7 +86,7 @@ public class PaymentService {
                 .toCardNumber(providerCard)
                 .amount(request.amount())
                 .description(finalDescription)
-                .paymentStatus(PaymentStatus.RISK_PENDING)
+                .paymentStatus(PaymentStatus.PENDING)
                 .category(request.category())
                 .build();
 
@@ -121,8 +121,7 @@ public class PaymentService {
             throw new PaymentCancellationException("Recurring payments cannot be canceled");
         }
 
-        if (payment.getPaymentStatus() != PaymentStatus.PENDING &&
-                payment.getPaymentStatus() != PaymentStatus.RISK_PENDING)
+        if (payment.getPaymentStatus() != PaymentStatus.PENDING)
             throw new PaymentStateConflictException("Payment cannot be canceled");
 
         if (Duration.between(payment.getCreatedAt(), LocalDateTime.now()).compareTo(CANCEL_WINDOW) > 0) {

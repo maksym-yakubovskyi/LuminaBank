@@ -1,0 +1,27 @@
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sectionDivider {
+    margin-top: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #eef2f6;
+}
+
+.checkboxRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.helperText {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.errorText {
+    font-size: 13px;
+    color: #dc2626;
+}
