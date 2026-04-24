@@ -158,10 +158,13 @@ public class TransferByCardIntent implements IntentDefinition {
     @Override
     public AssistantExecutionResult perform(Map<String, Object> params,AssistantContext context) {
         try {
+            String fromCardNumber = params.get("fromCardNumber").toString().replaceAll("\\s+", "");
+            String toCardNumber = params.get("toCardNumber").toString().replaceAll("\\s+", "");
+
             PaymentResponse payment = paymentGateway.makePayment(
                     new PaymentRequest(
-                            params.get("fromCardNumber").toString(),
-                            params.get("toCardNumber").toString(),
+                            fromCardNumber,
+                            toCardNumber,
                             new BigDecimal(params.get("amount").toString()),
                             (String) params.get("description")
                     )
@@ -169,7 +172,12 @@ public class TransferByCardIntent implements IntentDefinition {
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new EmptyData()
+                    new EmptyData(),
+                    List.of(
+                            Intent.PAYMENT_HISTORY,
+                            Intent.ANALYTICS_MONTHLY,
+                            Intent.LIST_PAYMENT_TEMPLATES
+                    )
             );
 
         }catch (NumberFormatException e) {

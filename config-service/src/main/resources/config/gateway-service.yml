@@ -78,4 +78,3 @@ app:
     jwt:
       issuer: "https://auth.luminabank.com"
       jwks-uri: ${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}
-  #    jwks-uri: "http://localhost:9000/.well-known/jwks.json"

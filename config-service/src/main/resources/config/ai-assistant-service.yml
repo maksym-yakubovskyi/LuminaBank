@@ -1,0 +1,45 @@
+server:
+  port: 8090
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ai-assistant-service-DB
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 5000
+            readTimeout: 10000
+            loggerLevel: basic
+  ai:
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: always
+    openai:
+      api-key: ${OPENAI_API_KEY}
+    vectorstore:
+      qdrant:
+        host: ${QDRANT_HOST}
+        port: 6334
+        api-key: ${QDRANT_API_KEY}
+        collection-name: knowledge_base
+        use-tls: true
+        initialize-schema: true
+
+eureka:
+  instance:
+    hostname: localhost
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

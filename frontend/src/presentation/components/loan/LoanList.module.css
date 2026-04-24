@@ -1,0 +1,72 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.title {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.card {
+    background: var(--background);
+    border-radius: 16px;
+    padding: 20px;
+
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    transition: 0.2s;
+}
+
+.card:hover {
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.left {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.amount {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.meta {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.status {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.active {
+    color: #16a34a;
+}
+
+.closed {
+    color: #64748b;
+}
+
+.overdue {
+    color: #dc2626;
+}
+
+.button {
+    width: auto;
+    padding: 10px 16px;
+}

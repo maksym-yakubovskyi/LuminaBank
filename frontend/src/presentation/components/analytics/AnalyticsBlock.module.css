@@ -1,0 +1,132 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+/* Заголовок секції */
+.section {
+    background: var(--background);
+    border-radius: 16px;
+    padding: 24px;
+
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sectionTitle {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* Категорії */
+
+.categoriesLayout {
+    display: grid;
+    grid-template-columns: minmax(260px, 380px) 1fr;
+    gap: 40px;
+    align-items: center;
+}
+.chartWrapper {
+    width: 100%;
+    max-width: 360px;
+    aspect-ratio: 1 / 1;
+}
+.categoryList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 220px;
+}
+
+.categoryRow {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 14px;
+}
+
+.categoryValue {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.categoryName {
+    color: #475569;
+}
+
+/* Підсумок місяця */
+
+.overviewGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.overviewItem {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 16px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.overviewLabel {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.overviewValue {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.income {
+    color: #16a34a;
+}
+
+.expense {
+    color: #dc2626;
+}
+
+.balancePositive {
+    color: #16a34a;
+}
+
+.balanceNegative {
+    color: #dc2626;
+}
+
+/* Топ отримувачі */
+
+.recipientList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.recipientRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #eef2f6;
+    font-size: 14px;
+}
+
+.recipientName {
+    font-weight: 500;
+}
+
+.recipientMeta {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.stateText {
+    color: #64748b;
+}

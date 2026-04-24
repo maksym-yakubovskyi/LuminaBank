@@ -1,0 +1,40 @@
+.container {
+    background: var(--background);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+
+    max-width: 800px;
+    width: 100%;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sectionTitle {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.divider {
+    height: 1px;
+    background: #eef2f6;
+}
+
+.dangerTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #b91c1c;
+}

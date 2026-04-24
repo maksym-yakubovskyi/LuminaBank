@@ -29,7 +29,6 @@ public class Account {
 
     @Column(nullable = false)
     private Long userId;
-    @Enumerated(EnumType.STRING)
 
     @Column(nullable = false,precision = 15, scale = 2)
     private BigDecimal balance;

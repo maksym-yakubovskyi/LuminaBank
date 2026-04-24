@@ -118,7 +118,11 @@ public class ListAccountCardsIntent implements IntentDefinition {
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new CardsListData(cards)
+                    new CardsListData(cards),
+                    List.of(
+                            Intent.PAYMENT_HISTORY,
+                            Intent.TRANSFER_BY_CARD
+                    )
             );
 
         }catch (ServiceCallException e) {

@@ -84,7 +84,11 @@ public class CategoryAnalyticsIntent implements IntentDefinition {
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new CategoryAnalyticsData(categories)
+                    new CategoryAnalyticsData(categories),
+                    List.of(
+                            Intent.ANALYTICS_MONTHLY,
+                            Intent.ANALYTICS_RECOMMENDATIONS
+                    )
             );
         } catch (ServiceCallException e) {
             return AssistantExecutionResult.error(

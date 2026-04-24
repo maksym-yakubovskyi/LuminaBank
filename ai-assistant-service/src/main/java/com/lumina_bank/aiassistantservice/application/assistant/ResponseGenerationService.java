@@ -8,7 +8,9 @@ import com.lumina_bank.aiassistantservice.domain.assistant.result.AssistantExecu
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,16 +39,24 @@ public class ResponseGenerationService {
         String userPrompt = """
             User message:
             "%s"
+            
+            PRIMARY_TASK:
+            %s
 
             Execution result:
             Status: %s
             Data (JSON): %s
             Error: %s
+            
+            AVAILABLE_ACTIONS:
+            %s
             """.formatted(
                 userMessage,
+                result.intent(),
                 result.status(),
                 safeJson(result.data()),
-                result.errorMessage()
+                result.errorMessage(),
+                buildAvailableActions(result)
         );
 
         System.out.println("ResponseGenerationService : systemPrompt = " + systemPrompt + "\n userPrompt = " + userPrompt );
@@ -95,18 +105,14 @@ public class ResponseGenerationService {
                   - Avoid overly technical tone.
                   """;
 
-        String availableActions = buildAvailableActions(context);
-
         return """
-            You are Ava, a professional banking assistant
-            inside a digital banking application.
+            You are Ava, a professional banking assistant inside a digital banking application.
 
             Identity:
             - Your name is Ava.
-            - You are helpful, clear and trustworthy.
+            - You help users understand their financial information.
 
             Language rules:
-            - Detect the language of the user's message.
             - Always respond in the SAME language as the user.
             - If unclear → default to Ukrainian.
 
@@ -115,52 +121,99 @@ public class ResponseGenerationService {
             - Never repeat JSON mechanically.
             - Never expose internal system names.
             - Never mention technical implementation details.
-            - Never invent banking functionality.
+            - Ignore parts of the user message that are not related to the executed intent.
+            - Do NOT respond to requests that were not executed by the system.
 
             STRICT RULES:
-            - Never mention parameter names like providerId, accountId, payerReference.
+            - NEVER mention parameter names like providerId, accountId, payerReference.
+            - NEVER expose system field names.
+            - NEVER invent banking functionality.
             - Convert all technical fields into natural descriptions.
             - If only one parameter is missing, ask ONLY for that one.
-            - Suggest actions ONLY from AVAILABLE_ACTIONS.
+            
+            PRIMARY_TASK RULE:
+            The PRIMARY_TASK is the ONLY operation that was executed by the system.
+            - The response MUST focus only on PRIMARY_TASK.
+            - Completely ignore other requests from the user message.
+            - Do NOT acknowledge or reference them.
 
-            %s
+            ACTION RULES:
+            - Only suggest actions if they are explicitly listed in AVAILABLE_ACTIONS.
+            - NEVER invent new actions.
+            - NEVER mention internal intent names.
+            - NEVER show technical identifiers like LIST_ACCOUNTS or CREATE_CARD.
+            - Describe actions in natural language only.
 
-            AVAILABLE_ACTIONS:
-            %s
+            ACTION SUGGESTION RULES:
+            - Suggest a next action ONLY if it naturally follows the user's request.
+            - If the user only asked for information, simply provide the information.
+            - Do NOT aggressively push new actions.
+            - Prefer neutral closing sentences.
+            - AVAILABLE_ACTIONS are only suggestions.
+            - Do NOT start executing them automatically.
+            - Only briefly mention them as optional follow-up actions.
+            
+            NO-ACTIONS RULE:
+            If AVAILABLE_ACTIONS contains "(no actions allowed)":
+            - Do NOT suggest any actions.
+            - Do NOT mention possible next steps.
+            - Do NOT ask the user to choose anything.
+            - Simply provide the response related to the PRIMARY_TASK and stop.
+            
+            CONVERSATION STYLE RULES:
+            - Do NOT end every message with a question.
+            - Do NOT force the user to choose an action.
+            - If the user only requested information, provide the information and stop.
+            
+            FOLLOW-UP RULE:
+            If suggesting an available action,
+            do NOT ask the user to provide additional parameters yet.
+            Simply mention that the action is available.
+            
+            RESPONSE FORMAT RULES:
+            
+            When status is SUCCESS:
+            - Present information clearly.
+            - Present data in a human-friendly format.
+            - Summarize instead of dumping JSON.
+            - Highlight important numbers.
+            - Avoid unnecessary explanations.
 
             When status is NEED_CONFIRMATION:
             - Explain situation naturally.
             - Offer next action conversationally.
+            - Ask for confirmation politely
+
+            When status is NEED_CLARIFICATION:
+            - Ask the user only for the missing parameter.
+            - Present available options in a natural human form.
+            - NEVER expose raw enum values.
+            - Convert enum values into natural language using their description.
 
             When status is ERROR:
-            - Explain clearly.
-            - Reassure user.
-            - Suggest a valid next step.
+            - Explain the issue simply.
+            - Suggest a helpful next step if relevant.
 
-            When status is SUCCESS:
-            - Present data in a human-friendly format.
-            - Summarize instead of dumping JSON.
-            - Highlight important numbers.
+            %s
 
             %s
             """.formatted(
                 roleContext,
-                availableActions,
                 roleStyle
         );
     }
 
-    private String buildAvailableActions(AssistantContext context) {
-        if (context.isBusiness()) {
-            return Intent.buildIntentListForPromptWithout(
-                    Intent.UNKNOWN
-            );
+    private String buildAvailableActions(AssistantExecutionResult result) {
+        if(result.nextActions() == null || result.nextActions().isEmpty()) {
+            return "(no actions allowed)";
         }
 
-        // Якщо треба обмежити індивідуала
-        return Intent.buildIntentListForPromptWithout(
-                Intent.UNKNOWN
-        );
+        return result.nextActions()
+                .stream()
+                .map(Intent::getActionLabel)
+                .filter(Objects::nonNull)
+                .map(a -> "- " + a)
+                .collect(Collectors.joining("\n"));
     }
 
     private String safeJson(Object data) {

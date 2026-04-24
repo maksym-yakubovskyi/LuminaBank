@@ -25,12 +25,14 @@ public class PaymentTransactionService {
     public void markProcessing(Payment payment) {
         if (payment.getPaymentStatus() != PaymentStatus.PENDING) return;
         payment.setPaymentStatus(PaymentStatus.PROCESSING);
+        paymentRepository.save(payment);
     }
 
     @Transactional
     public void markSuccess(Payment  payment) {
         payment.setPaymentStatus(PaymentStatus.SUCCESS);
         payment.setCompletedAt(LocalDateTime.now());
+        paymentRepository.save(payment);
 
         paymentEventsPublisher.publishPaymentCompleted(
                 new PaymentCompletedEvent(
@@ -53,21 +55,14 @@ public class PaymentTransactionService {
     public void markFailed(Payment  payment) {
         payment.setPaymentStatus(PaymentStatus.FAILED);
         payment.setCompletedAt(LocalDateTime.now());
-    }
-
-    @Transactional
-    public void markPending(Long paymentId) {
-        Payment payment = paymentRepository.findById(paymentId).orElse(null);
-        if (payment == null) return;
-        if (payment.getPaymentStatus() != PaymentStatus.RISK_PENDING) return;
-        payment.setPaymentStatus(PaymentStatus.PENDING);
+        paymentRepository.save(payment);
     }
 
     @Transactional
     public void markBlocking(Long paymentId, int riskScore,List<String> reasons) {
         Payment payment = paymentRepository.findById(paymentId).orElse(null);
         if (payment == null) return;
-        if (payment.getPaymentStatus() != PaymentStatus.RISK_PENDING) return;
+        if (payment.getPaymentStatus() != PaymentStatus.PENDING) return;
         payment.setPaymentStatus(PaymentStatus.BLOCKED);
 
         paymentEventsPublisher.publishPaymentBlocking(
@@ -87,7 +82,7 @@ public class PaymentTransactionService {
     public void markFlagged(Long paymentId, int riskScore, List<String> reasons) {
         Payment payment = paymentRepository.findById(paymentId).orElse(null);
         if (payment == null) return;
-        if (payment.getPaymentStatus() != PaymentStatus.RISK_PENDING) return;
+        if (payment.getPaymentStatus() != PaymentStatus.PENDING) return;
         payment.setPaymentStatus(PaymentStatus.FLAGGED);
 
         paymentEventsPublisher.publishPaymentFlagged(

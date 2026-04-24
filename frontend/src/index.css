@@ -1,0 +1,75 @@
+/* RESET */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body,
+#root {
+    height: 100%;
+}
+
+/* BODY */
+body {
+    font-family:
+            Inter,
+            system-ui,
+            -apple-system,
+            Segoe UI,
+            Roboto,
+            Arial,
+            sans-serif;
+
+    background-color: #f4f6f8;
+    color: #023047;
+
+    line-height: 1.5;
+}
+
+/* LINKS */
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* BUTTON RESET */
+button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+img {
+    max-width: 100%;
+    display: block;
+}
+
+input::placeholder {
+    color: #94a3b8;
+}
+
+/* INPUT */
+input,
+button,
+textarea {
+    font-family: inherit;
+}
+
+/* VARIABLES */
+:root {
+    --primary: #219ebc;
+    --primary-hover: #023047;
+
+    --accent: #fb8500;
+    --accent-hover: #ffb703;
+
+    --border: #8ecae6;
+    --background: #ffffff;
+
+    --radius: 10px;
+}

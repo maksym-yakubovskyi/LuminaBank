@@ -1,7 +1,6 @@
 package com.lumina_bank.paymentservice.domain.enums;
 
 public enum PaymentStatus {
-    RISK_PENDING,
     PENDING,     // створено, очікує виконання
     PROCESSING,  // виконується
     SUCCESS,     // успішно виконано

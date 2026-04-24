@@ -3,7 +3,7 @@ package com.lumina_bank.analyticsservice.api.controller;
 import com.lumina_bank.analyticsservice.api.response.analytics.*;
 import com.lumina_bank.analyticsservice.application.analytics.AnalyticsQueryService;
 import com.lumina_bank.analyticsservice.application.analytics.ForecastService;
-import com.lumina_bank.analyticsservice.application.analytics.LoanAnalyticsFacade;
+import com.lumina_bank.analyticsservice.application.analytics.LoanAnalyticsService;
 import com.lumina_bank.analyticsservice.application.analytics.RecommendationService;
 import com.lumina_bank.common.security.JwtUtils;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ import java.util.List;
 public class AnalyticsController {
     private final AnalyticsQueryService analyticsQueryService;
     private final ForecastService forecastService;
-    private final LoanAnalyticsFacade loanAnalyticsFacade;
+    private final LoanAnalyticsService loanAnalyticsService;
     private final RecommendationService  recommendationService;
 
     @GetMapping("/overview")
@@ -132,7 +132,7 @@ public class AnalyticsController {
     public ResponseEntity<?> getLoanInfo(@AuthenticationPrincipal Jwt jwt){
         Long userId = JwtUtils.extractUserId(jwt);
 
-        LoanInfoResponse response = loanAnalyticsFacade.buildLoanInfo(userId);
+        LoanInfoResponse response = loanAnalyticsService.buildLoanInfo(userId);
 
         return ResponseEntity.ok(response);
     }

@@ -1,17 +1,18 @@
 import {createBrowserRouter, Navigate} from "react-router-dom";
-import LoginPage from "@/pages/login/LoginPage.tsx";
-import RegisterPage from "@/pages/register/RegisterPage.tsx";
-import App from "@/app/App.tsx";
-import {AuthLayouts} from "@/app/layouts/AuthLayouts.tsx";
-import {MainLayout} from "@/app/layouts/MainLayouts.tsx";
-import DashboardPage from "@/pages/dashboard/DashboardPage.tsx";
-import {ProtectedRoute} from "@/app/router/ProtectedRoute.tsx";
-import TransactionHistoryPage from "@/pages/transaction_history/TransactionHistoryPage.tsx";
-import AccountsPage from "@/pages/account/AccountsPage.tsx";
-import UserProfilePage from "@/pages/profile/UserProfilePage.tsx";
-import {PublicRoute} from "@/app/router/PublicRouter.tsx";
-import PaymentsPage from "@/pages/payment/PaymentsPage.tsx";
-import AnalyticsPage from "@/pages/analytics/AnalyticsPage.tsx";
+import LoginPage from "@/presentation/pages/auth/LoginPage.tsx";
+import RegisterPage from "@/presentation/pages/auth/RegisterPage.tsx";
+import App from "@/App.tsx";
+import {AuthLayouts} from "@/app/layouts/auth-layout.tsx";
+import {MainLayout} from "@/app/layouts/main-layout.tsx";
+import DashboardPage from "@/presentation/pages/dashboard/DashboardPage.tsx";
+import {ProtectedRoute} from "@/app/router/protected-route.tsx";
+import TransactionHistoryPage from "@/presentation/pages/payment/TransactionHistoryPage.tsx";
+import AccountsPage from "@/presentation/pages/account/AccountsPage.tsx";
+import UserProfilePage from "@/presentation/pages/profile/UserProfilePage.tsx";
+import {PublicRoute} from "@/app/router/public-route.tsx";
+import PaymentsPage from "@/presentation/pages/payment/PaymentsPage.tsx";
+import AnalyticsPage from "@/presentation/pages/analytics/AnalyticsPage.tsx";
+import LoanPage from "@/presentation/pages/loan/LoanPage.tsx";
 
 export const router = createBrowserRouter([
     {
@@ -103,6 +104,14 @@ export const router = createBrowserRouter([
                         element: (
                             <ProtectedRoute>
                                 <AnalyticsPage />
+                            </ProtectedRoute>
+                        )
+                    },
+                    {
+                        path: "loan",
+                        element: (
+                            <ProtectedRoute>
+                                <LoanPage />
                             </ProtectedRoute>
                         )
                     }

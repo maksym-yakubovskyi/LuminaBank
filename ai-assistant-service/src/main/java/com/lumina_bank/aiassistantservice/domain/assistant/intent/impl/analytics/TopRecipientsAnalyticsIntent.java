@@ -54,7 +54,11 @@ public class TopRecipientsAnalyticsIntent implements IntentDefinition {
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new TopRecipientsAnalyticsData(recipients)
+                    new TopRecipientsAnalyticsData(recipients),
+                    List.of(
+                            Intent.ANALYTICS_MONTHLY,
+                            Intent.ANALYTICS_BY_CATEGORY
+                    )
             );
 
         } catch (ServiceCallException e) {

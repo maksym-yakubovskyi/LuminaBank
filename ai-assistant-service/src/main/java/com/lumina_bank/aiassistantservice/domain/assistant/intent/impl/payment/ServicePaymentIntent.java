@@ -124,7 +124,7 @@ public class ServicePaymentIntent implements IntentDefinition {
                                 "providerId",
                                 ParamType.NUMBER,
                                 providers.stream()
-                                        .map(p -> p.id() + " | " + p.companyName() + " | " + p.category())
+                                        .map(p -> "id " + p.id() + " | " + p.companyName() + " | " + p.category())
                                         .toList(),
                                 "Provider list to select"
                         )
@@ -200,10 +200,12 @@ public class ServicePaymentIntent implements IntentDefinition {
                 );
             }
 
+            String fromCardNumber = params.get("fromCardNumber").toString().replaceAll("\\s+", "");
+
             PaymentResponse payment =
                     paymentGateway.makePaymentService(
                             new ServicePaymentRequest(
-                                    params.get("fromCardNumber").toString(),
+                                    fromCardNumber,
                                     providerId,
                                     selected.category(),
                                     new BigDecimal(params.get("amount").toString()),
@@ -214,7 +216,11 @@ public class ServicePaymentIntent implements IntentDefinition {
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new EmptyData()
+                    new EmptyData(),
+                    List.of(
+                            Intent.PAYMENT_HISTORY,
+                            Intent.LIST_PAYMENT_TEMPLATES
+                    )
             );
 
         } catch (NumberFormatException e) {

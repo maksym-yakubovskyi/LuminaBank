@@ -55,7 +55,11 @@ public class ListCardsIntent implements IntentDefinition {
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new CardsListData(cards)
+                    new CardsListData(cards),
+                    List.of(
+                            Intent.TRANSFER_BY_CARD,
+                            Intent.LIST_ACCOUNT_CARDS
+                    )
             );
 
         } catch (ServiceCallException e) {

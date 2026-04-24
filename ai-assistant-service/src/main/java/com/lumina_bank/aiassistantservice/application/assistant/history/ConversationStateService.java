@@ -1,5 +1,6 @@
 package com.lumina_bank.aiassistantservice.application.assistant.history;
 
+import com.lumina_bank.aiassistantservice.domain.assistant.result.data.MissingParamsData;
 import com.lumina_bank.aiassistantservice.domain.enums.FlowState;
 import com.lumina_bank.aiassistantservice.domain.enums.Intent;
 import com.lumina_bank.aiassistantservice.domain.model.Conversation;
@@ -39,6 +40,12 @@ public class ConversationStateService {
 
     @Transactional
     public void applyExecutionResult(Conversation c, AssistantExecutionResult r) {
+        if(r.data() instanceof MissingParamsData data){
+            c.setAwaitingParam(data.currentParam());
+        } else {
+            c.setAwaitingParam(null);
+        }
+
         if (r.nextIntent() != null) {
             c.setPendingIntent(r.nextIntent());
         }

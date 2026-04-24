@@ -56,7 +56,12 @@ public class ListAccountsIntent implements IntentDefinition {
 
             return AssistantExecutionResult.success(
                     intent(),
-                    new AccountsListData(accounts)
+                    new AccountsListData(accounts),
+                    List.of(
+                            Intent.CHECK_BALANCE,
+                            Intent.CREATE_ACCOUNT,
+                            Intent.LIST_ACCOUNT_CARDS
+                    )
             );
 
         } catch (ServiceCallException e) {

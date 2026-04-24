@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class EmailVerificationException extends BusinessException {
     public EmailVerificationException(String message) {
-        super(message, HttpStatus.BAD_REQUEST);
+        super(message, HttpStatus.BAD_REQUEST.value());
     }
 }

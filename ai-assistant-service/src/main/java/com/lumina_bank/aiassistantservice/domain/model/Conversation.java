@@ -46,11 +46,16 @@ public class Conversation {
     @Column(columnDefinition = "TEXT")
     private String collectedParamsJson;
 
+    private String awaitingParam;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
     private LocalDateTime lastMessageAt;
+
+    @Column(nullable = false)
+    private int messageCount;
 
 }

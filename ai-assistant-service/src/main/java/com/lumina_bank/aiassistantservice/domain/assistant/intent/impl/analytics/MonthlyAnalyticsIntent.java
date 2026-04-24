@@ -142,6 +142,11 @@ public class MonthlyAnalyticsIntent implements IntentDefinition {
                             summary.totalExpense(),
                             summary.cashFlow(),
                             summary.transactionCount()
+                    ),
+                    List.of(
+                            Intent.ANALYTICS_BY_CATEGORY,
+                            Intent.ANALYTICS_FORECAST,
+                            Intent.ANALYTICS_RECOMMENDATIONS
                     )
             );
 

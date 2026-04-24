@@ -34,18 +34,11 @@ public class ReportGenerationJob {
         try{
             updateStatus(reportId,ReportStatus.PROCESSING);
 
-            System.out.println(reportId);
-            System.out.println(month);
-
             var overview = analyticsQueryService.getMonthlyOverview(userId, accountId, month);
 
             var categories = analyticsQueryService.getCategoryExpenses(userId,month);
 
             var topRecipients = analyticsQueryService.getTopRecipients(userId);
-
-            System.out.println(overview);
-            System.out.println(categories);
-            System.out.println(topRecipients);
 
             byte[] pdf = pdfGenerator.generate(
                     overview,categories,topRecipients
@@ -74,13 +67,7 @@ public class ReportGenerationJob {
         try{
             updateStatus(reportId,ReportStatus.PROCESSING);
 
-            System.out.println(reportId);
-            System.out.println(from);
-            System.out.println(to);
-
             List<AnalyticsDailySummary> summaries = analyticsQueryService.getDailySummaries(userId, from, to);
-
-            System.out.println(summaries);
 
             byte[] csv = csvGenerator.generateDailyActivity(summaries);
             String path = storage.save(reportId + ".csv", csv);

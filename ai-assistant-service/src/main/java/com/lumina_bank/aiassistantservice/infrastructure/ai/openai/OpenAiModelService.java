@@ -2,6 +2,7 @@ package com.lumina_bank.aiassistantservice.infrastructure.ai.openai;
 
 import com.lumina_bank.aiassistantservice.application.ai.port.AiModelService;
 import com.lumina_bank.common.enums.user.Role;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
@@ -14,6 +15,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class OpenAiModelService implements AiModelService {
 
     private final ChatClient chatClient;
@@ -69,8 +71,49 @@ public class OpenAiModelService implements AiModelService {
                 .entity(typeRef);
     }
 
+//    @Override
+//    public String generateWithRag(String systemPrompt, String userPrompt, Role role, String conversationId) {
+//
+//        if (role == null) {
+//            return "audience == 'ALL'";
+//        }
+//
+//        String audienceFilter = switch (role) {
+//            case Role.BUSINESS_USER ->
+//                    "audience == 'BUSINESS' OR audience == 'ALL'";
+//            case Role.INDIVIDUAL_USER ->
+//                    "audience == 'INDIVIDUAL' OR audience == 'ALL'";
+//            default ->
+//                    "audience == 'ALL'";
+//        };
+//
+//
+//        QuestionAnswerAdvisor qaAdvisor = QuestionAnswerAdvisor.builder(vectorStore)
+//                .searchRequest(
+//                        SearchRequest.builder()
+//                                .similarityThreshold(0.75)
+//                                .topK(5)
+//                                .filterExpression(audienceFilter)
+//                                .build()
+//                )
+//                .build();
+//
+//        return chatClient.prompt()
+//                .system(systemPrompt)
+//                .user(userPrompt)
+//                .advisors(qaAdvisor)
+//                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+//                .call()
+//                .content();
+//    }
+
     @Override
-    public String generateWithRag(String systemPrompt, String userPrompt, Role role, String conversationId) {
+    public String generateWithRag(
+            String systemPrompt,
+            String userPrompt,
+            Role role,
+            String conversationId
+    ) {
 
         if (role == null) {
             return "audience == 'ALL'";
@@ -85,16 +128,29 @@ public class OpenAiModelService implements AiModelService {
                     "audience == 'ALL'";
         };
 
-
-        QuestionAnswerAdvisor qaAdvisor = QuestionAnswerAdvisor.builder(vectorStore)
-                .searchRequest(
-                        SearchRequest.builder()
-                                .similarityThreshold(0.75)
-                                .topK(5)
-                                .filterExpression(audienceFilter)
-                                .build()
-                )
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(userPrompt)
+                .similarityThreshold(0.75)
+                .topK(5)
+                .filterExpression(audienceFilter)
                 .build();
+
+        var documents = vectorStore.similaritySearch(searchRequest);
+
+        if (documents.isEmpty()) {
+            log.info("RAG: No documents found for query: {}", userPrompt);
+        } else {
+            log.info("RAG: Found {} documents", documents.size());
+
+            documents.forEach(doc ->
+                            System.out.println("RAG doc score= "+ doc.getScore() + " content= " + doc.getFormattedContent())
+            );
+        }
+
+        QuestionAnswerAdvisor qaAdvisor =
+                QuestionAnswerAdvisor.builder(vectorStore)
+                        .searchRequest(searchRequest)
+                        .build();
 
         return chatClient.prompt()
                 .system(systemPrompt)

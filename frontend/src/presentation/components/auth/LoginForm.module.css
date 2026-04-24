@@ -1,0 +1,13 @@
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.serverError {
+    background: #ffe5d0;
+    color: var(--accent);
+    padding: 8px;
+    border-radius: var(--radius);
+    font-size: 13px;
+}

@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class UserLockedException extends BusinessException {
     public UserLockedException(String message) {
-        super(message, HttpStatus.LOCKED);
+        super(message, HttpStatus.LOCKED.value());
     }
 }

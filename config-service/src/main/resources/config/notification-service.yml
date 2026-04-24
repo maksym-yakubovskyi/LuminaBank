@@ -2,13 +2,64 @@ server:
   port: 8085
 
 spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/notification-service-DB
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  kafka:
+    consumer:
+      properties:
+        spring.json.trusted.packages: "com.lumina_bank"
+
   cloud:
     function:
-      definition: emailVerificationRequestedConsumer
+      definition: emailVerificationRequestedConsumer;
+                  userRegisteredConsumer;
+                  userLoginConsumer;
+                  paymentCompletedConsumer;
+                  paymentFlaggedConsumer;
+                  paymentBlockedConsumer;
+                  paymentReminderConsumer
+
     stream:
       bindings:
         emailVerificationRequestedConsumer-in-0:
           destination: email-verification-events
+          group: notification-service
+          content-type: application/json
+
+        userRegisteredConsumer-in-0:
+          destination: user-registered-events
+          group: notification-service
+          content-type: application/json
+
+        userLoginConsumer-in-0:
+          destination: user-login-events
+          group: notification-service
+          content-type: application/json
+
+        paymentCompletedConsumer-in-0:
+          destination: payments-completed
+          group: notification-service
+          content-type: application/json
+
+        paymentFlaggedConsumer-in-0:
+          destination: payments-flagged
+          group: notification-service
+          content-type: application/json
+
+        paymentBlockedConsumer-in-0:
+          destination: payments-blocked
+          group: notification-service
+          content-type: application/json
+
+        paymentReminderConsumer-in-0:
+          destination: payments-reminder
           group: notification-service
           content-type: application/json
 
@@ -19,8 +70,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: luminabank.app@gmail.com
-    password:
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     protocol: smtp
     default-encoding: UTF-8
     properties:

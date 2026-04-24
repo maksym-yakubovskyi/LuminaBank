@@ -1,0 +1,15 @@
+.state {
+    padding: 40px 20px;
+
+    text-align: center;
+
+    color: #64748b;
+
+    font-size: 14px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    border-radius: 12px;
+}
