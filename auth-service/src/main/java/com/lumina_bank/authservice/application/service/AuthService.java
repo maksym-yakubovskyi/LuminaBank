@@ -24,9 +24,12 @@ public class AuthService {
     private final JwtTokenService jwtTokenService;
     private final JwtProperties jwtProperties;
     private final RefreshTokenService refreshTokenService;
+    private final EmailVerificationService emailVerificationService;
 
     public TokensWithRefresh login(LoginRequest req) {
         log.debug("Authentication attempt for email:{}", req.email());
+
+        emailVerificationService.validateVerificationCode(req.email(), req.code());
 
         var authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(

@@ -4,6 +4,7 @@ import type {BusinessCategory} from "@/domain/business/business-category.enum.ts
 export interface LoginRequest {
     email: string
     password: string
+    code: string
 }
 
 export interface LoginResponse {
