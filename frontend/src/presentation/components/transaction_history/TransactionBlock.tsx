@@ -25,7 +25,6 @@ export default function TransactionBlock({transaction}: Props) {
                 return styles.failed
             case "PENDING":
             case "PROCESSING":
-            case "RISK_PENDING":
                 return styles.pending
             default:
                 return styles.defaultStatus

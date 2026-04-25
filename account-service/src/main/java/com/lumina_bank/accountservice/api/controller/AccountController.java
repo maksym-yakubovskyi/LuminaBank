@@ -63,7 +63,7 @@ public class AccountController {
     public ResponseEntity<List<AccountResponse>> getMyAccounts(@AuthenticationPrincipal Jwt jwt) {
         Long userId = JwtUtils.extractUserId(jwt);
 
-        List<Account> accounts = accountService.getAccountsByUserId(userId);
+        List<Account> accounts = accountService.getAccountsByUserIdActive(userId);
 
         log.debug("Fetched accounts for userId={} count={}", userId, accounts.size());
 
@@ -95,5 +95,11 @@ public class AccountController {
         log.info("Account status changed accountId={} newStatus={}", accountId, status);
 
         return ResponseEntity.ok(accountMapper.toResponse(account));
+    }
+
+    @GetMapping("/admin/user/{userId}")
+    public ResponseEntity<?> getUserAccounts(@PathVariable Long userId) {
+        List<Account> accounts = accountService.getAccountsByUserId(userId);
+        return ResponseEntity.ok().body(accountMapper.toResponseList(accounts));
     }
 }

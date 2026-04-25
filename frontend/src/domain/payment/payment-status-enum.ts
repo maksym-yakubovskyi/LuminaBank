@@ -1,5 +1,4 @@
 export const PaymentStatus = {
-    RISK_PENDING: "RISK_PENDING",
     PENDING: "PENDING",
     PROCESSING: "PROCESSING",
     SUCCESS: "SUCCESS",

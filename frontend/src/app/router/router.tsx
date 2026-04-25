@@ -13,6 +13,8 @@ import {PublicRoute} from "@/app/router/public-route.tsx";
 import PaymentsPage from "@/presentation/pages/payment/PaymentsPage.tsx";
 import AnalyticsPage from "@/presentation/pages/analytics/AnalyticsPage.tsx";
 import LoanPage from "@/presentation/pages/loan/LoanPage.tsx";
+import {RoleProtectedRoute} from "@/app/router/role-protected-route.tsx";
+import OperatorPage from "@/presentation/pages/operator/OperatorPage.tsx";
 
 export const router = createBrowserRouter([
     {
@@ -113,6 +115,14 @@ export const router = createBrowserRouter([
                             <ProtectedRoute>
                                 <LoanPage />
                             </ProtectedRoute>
+                        )
+                    },
+                    {
+                        path: "operator",
+                        element: (
+                            <RoleProtectedRoute>
+                                <OperatorPage />
+                            </RoleProtectedRoute>
                         )
                     }
                 ]
