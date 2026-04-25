@@ -9,5 +9,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     if (!initialized) return <StateMessage>Завантаження...</StateMessage>
     if (!user) return <Navigate to="/login" replace />
 
+    if(user.role === "ADMIN") return <Navigate to="/operator" replace />
+
     return <>{children}</>
 }

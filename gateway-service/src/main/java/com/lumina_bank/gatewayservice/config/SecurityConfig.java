@@ -70,31 +70,4 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
         return source;
     }
-
-//    @Bean
-//    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-//
-//        JwtGrantedAuthoritiesConverter rolesConverter =
-//                new JwtGrantedAuthoritiesConverter();
-//
-//        rolesConverter.setAuthoritiesClaimName("roles");
-//        rolesConverter.setAuthorityPrefix("");
-//
-//        JwtAuthenticationConverter converter =
-//                new JwtAuthenticationConverter();
-//
-//        converter.setJwtGrantedAuthoritiesConverter(rolesConverter);
-//        return converter;
-//    }
-    //        .authorizeHttpRequests(auth -> auth
-//                .requestMatchers("/admin/**").hasRole("ADMIN")
-//                .requestMatchers("/user/**").hasRole("USER")
-//                .anyRequest().authenticated()
-//        )
-//        .oauth2ResourceServer(oauth -> oauth
-//                .jwt(jwt -> jwt
-//                        .jwtAuthenticationConverter(jwtAuthenticationConverter())
-//                )
-//        )
-
 }

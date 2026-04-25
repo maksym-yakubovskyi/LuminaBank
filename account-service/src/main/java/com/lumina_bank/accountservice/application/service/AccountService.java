@@ -43,8 +43,13 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public List<Account> getAccountsByUserId(Long userId) {
+    public List<Account> getAccountsByUserIdActive(Long userId) {
         return accountRepository.findAllByUserIdAndStatusOrderByCreatedAtAsc(userId, Status.ACTIVE);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Account> getAccountsByUserId(Long userId) {
+        return accountRepository.findAllByUserIdOrderByCreatedAtAsc(userId);
     }
 
     @Transactional(readOnly = true)

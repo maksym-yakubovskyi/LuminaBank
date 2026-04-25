@@ -4,6 +4,7 @@ import com.lumina_bank.common.security.JwtUtils;
 import com.lumina_bank.paymentservice.api.request.PaymentRequest;
 import com.lumina_bank.paymentservice.api.request.ServicePaymentRequest;
 import com.lumina_bank.paymentservice.application.mapper.PaymentMapper;
+import com.lumina_bank.paymentservice.domain.enums.PaymentStatus;
 import com.lumina_bank.paymentservice.domain.model.Payment;
 import com.lumina_bank.paymentservice.application.service.PaymentService;
 import jakarta.validation.Valid;
@@ -88,4 +89,27 @@ public class PaymentController {
 
         return ResponseEntity.ok(paymentService.getUserHistory(userId, accountId));
     }
+
+    @GetMapping("/admin/user/history")
+    public ResponseEntity<?> getUserHistory(
+            @RequestParam Long userId,
+            @RequestParam Long accountId,
+            @RequestParam(required = false) PaymentStatus status){
+        return ResponseEntity.ok(paymentService.getUserHistory(userId, accountId, status));
+    }
+
+    @PostMapping("/admin/approve/{paymentId}")
+    public ResponseEntity<?> approvePayment(@PathVariable Long paymentId) {
+
+        paymentService.approvePayment(paymentId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/admin/reject/{paymentId}")
+    public ResponseEntity<?> rejectPayment(@PathVariable Long paymentId) {
+
+        paymentService.rejectPayment(paymentId);
+        return ResponseEntity.ok().build();
+    }
+
 }

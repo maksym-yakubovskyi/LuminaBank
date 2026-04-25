@@ -162,9 +162,58 @@ public class PaymentService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<TransactionHistoryItemResponse> getUserHistory(Long userId, Long accountId,PaymentStatus status) {
+        List<PaymentStatus> statuses = mapStatus(status);
+
+        return paymentRepository.findUserHistory(userId, accountId, statuses)
+                .stream()
+                .map(p -> transactionHistoryMapper.toHistoryItem(p, userId, accountId))
+                .toList();
+    }
+
+    @Transactional
+    public void rejectPayment (Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found with id: " + paymentId));
+
+        payment.setPaymentStatus(PaymentStatus.REJECTED);
+    }
+
+    @Transactional
+    public void approvePayment (Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found with id: " + paymentId));
+
+        executionService.execute(payment);
+    }
+
     // PRIVATE HELPERS
     private void validateCards(String fromCardNumber, String toCardNumber) {
         if (fromCardNumber.equals(toCardNumber))
             throw new InvalidPaymentRequestException("Card numbers must not be the same");
+    }
+
+    private List<PaymentStatus> mapStatus(PaymentStatus status) {
+        if (status == null) return null;
+
+        return switch (status) {
+            case SUCCESS -> List.of(PaymentStatus.SUCCESS);
+
+            case FAILED -> List.of(
+                    PaymentStatus.FAILED,
+                    PaymentStatus.CANCELLED,
+                    PaymentStatus.FLAGGED,
+                    PaymentStatus.BLOCKED,
+                    PaymentStatus.REJECTED
+            );
+
+            case PENDING -> List.of(
+                    PaymentStatus.PENDING,
+                    PaymentStatus.PROCESSING
+            );
+
+            default -> List.of(status);
+        };
     }
 }

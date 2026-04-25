@@ -45,4 +45,22 @@ public interface PaymentRepository extends JpaRepository<Payment,Long> {
             @Param("userId") Long userId,
             @Param("accountId") Long accountId
     );
+
+    @Query("""
+    SELECT p FROM Payment p
+    WHERE
+        (p.userId = :userId OR p.toAccountOwnerId = :userId)
+        AND
+        (:accountId IS NULL
+            OR p.fromAccountId = :accountId
+            OR p.toAccountId = :accountId)
+        AND
+        (:statuses IS NULL OR p.paymentStatus IN :statuses)
+    ORDER BY p.createdAt DESC
+""")
+    List<Payment> findUserHistory(
+            @Param("userId") Long userId,
+            @Param("accountId") Long accountId,
+            @Param("statuses") List<PaymentStatus> statuses
+    );
 }
