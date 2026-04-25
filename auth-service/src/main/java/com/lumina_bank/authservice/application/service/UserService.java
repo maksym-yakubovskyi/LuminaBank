@@ -1,5 +1,6 @@
 package com.lumina_bank.authservice.application.service;
 
+import com.lumina_bank.authservice.domain.exception.UserAlreadyExistsException;
 import com.lumina_bank.authservice.domain.exception.UserDisabledException;
 import com.lumina_bank.authservice.domain.exception.UserLockedException;
 import com.lumina_bank.authservice.domain.exception.UserNotFoundException;
@@ -51,7 +52,7 @@ public class UserService {
     @Transactional
     public User registerUser(RegisterUserRequest req) {
         log.debug("Attempt to register new user with email={}", req.email());
-
+        validateUserEmail(req.email());
         emailVerificationService.validateVerificationCode(req.email(), req.verificationCode());
 
         User userSaved = userRepository.save(
@@ -76,6 +77,7 @@ public class UserService {
     public User registerUser(RegisterBusinessUserRequest req) {
         log.debug("Attempt to register new b user with email={}", req.email());
 
+        validateUserEmail(req.email());
         emailVerificationService.validateVerificationCode(req.email(), req.verificationCode());
 
         User userSaved = userRepository.save(
@@ -94,5 +96,12 @@ public class UserService {
         log.debug("B User registered (DB saved), userId={}, email={}", userSaved.getId(), userSaved.getEmail());
 
         return userSaved;
+    }
+
+    private void validateUserEmail(String email) {
+        if (userRepository.existsByEmail(email)) {
+            log.debug("User with email={} already exists", email);
+            throw new UserAlreadyExistsException("User already exists with email=" + email);
+        }
     }
 }

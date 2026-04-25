@@ -2,10 +2,8 @@ package com.lumina_bank.authservice.application.service;
 
 import com.lumina_bank.authservice.domain.exception.EmailVerificationException;
 import com.lumina_bank.authservice.domain.exception.EmailVerificationNotFoundException;
-import com.lumina_bank.authservice.domain.exception.UserAlreadyExistsException;
 import com.lumina_bank.authservice.domain.model.EmailVerification;
 import com.lumina_bank.authservice.domain.repository.EmailVerificationRepository;
-import com.lumina_bank.authservice.domain.repository.UserRepository;
 import com.lumina_bank.authservice.infrastructure.security.util.VerificationCodeGenerator;
 import com.lumina_bank.common.dto.event.user_events.EmailVerificationRequestedEvent;
 import lombok.RequiredArgsConstructor;
@@ -22,14 +20,11 @@ import java.time.temporal.ChronoUnit;
 @Slf4j
 public class EmailVerificationService {
     private final EmailVerificationRepository emailVerificationRepository;
-    private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void sendVerificationCode(String email) {
         log.debug("Generating verification code for email={}", email);
-
-        validateUserEmail(email);
 
         String code = VerificationCodeGenerator.generateVerificationCode();
         Instant expiresAt = Instant.now().plus(5, ChronoUnit.MINUTES);
@@ -50,8 +45,6 @@ public class EmailVerificationService {
     @Transactional(readOnly = true)
     public void validateVerificationCode(String email, String code) {
         log.debug("Validating verification code for email={}", email);
-
-        validateUserEmail(email);
 
         EmailVerification verification = emailVerificationRepository.findByEmail(email)
                 .orElseThrow(() -> new EmailVerificationNotFoundException("Verification code not found for email=" + email));
@@ -82,10 +75,4 @@ public class EmailVerificationService {
         log.info("Verification code deleted for email={}", email);
     }
 
-    private void validateUserEmail(String email) {
-        if (userRepository.existsByEmail(email)) {
-            log.debug("User with email={} already exists", email);
-            throw new UserAlreadyExistsException("User already exists with email=" + email);
-        }
-    }
 }
